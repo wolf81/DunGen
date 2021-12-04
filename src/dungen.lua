@@ -487,6 +487,9 @@ function DunGen.generate(options)
 	dungeon["max_col"] = dungeon["n_cols"] - 1
 	dungeon["n_rooms"] = 0
 
+	-- TODO: perhaps ugly to copy
+	dungeon["cell_size"] = options["cell_size"]
+
 	local max = options["room_max"]
 	local min = options["room_min"]
 	dungeon["room_base"] = math.floor((min + 1) / 2)
@@ -511,4 +514,202 @@ function DunGen.generate(options)
 		end
 	end
 	print(s)
+
+	return dungeon
+end
+
+--[[
+    var b = {
+        map_style: a.map_style,
+        grid: a.grid
+    };
+    b.cell_size = a.cell_size;
+    b.width = (a.n_cols + 1) * b.cell_size + 1;
+    b.height = (a.n_rows + 1) * b.cell_size + 1;
+    b.max_x = b.width - 1;
+    b.max_y = b.height - 1;
+    a = Math.floor(b.cell_size * 0.75);
+    b.font = a.toString() + "px sans-serif";
+    return b
+]]
+
+--[[  
+    my $image = {
+        'cell_size' => $dungeon->{'cell_size'},
+        'map_style' => $dungeon->{'map_style'},
+    };
+    $image->{'width'}  = (($dungeon->{'n_cols'} + 1)
+    *   $image->{'cell_size'}) + 1;
+    $image->{'height'} = (($dungeon->{'n_rows'} + 1)
+    *   $image->{'cell_size'}) + 1;
+    $image->{'max_x'}  = $image->{'width'} - 1;
+    $image->{'max_y'}  = $image->{'height'} - 1;
+    
+    if ($image->{'cell_size'} > 16) {
+        $image->{'font'} = gdLargeFont;
+    } elsif ($image->{'cell_size'} > 12) {
+        $image->{'font'} = gdSmallFont;
+    } else {
+        $image->{'font'} = gdTinyFont;
+    }
+    $image->{'char_w'} = $image->{'font'}->width;
+    $image->{'char_h'} = $image->{'font'}->height;
+    $image->{'char_x'} = int(($image->{'cell_size'}
+    -      $image->{'char_w'}) / 2) + 1;
+    $image->{'char_y'} = int(($image->{'cell_size'}
+    -      $image->{'char_h'}) / 2) + 1;
+    
+    return $image;
+]]
+
+local function scaleDungeon(dungeon)
+	local image = {
+		["cell_size"] = dungeon["cell_size"],
+		["map_style"] = dungeon["map_style"],
+	}
+	image["width"] = (dungeon["n_cols"] + 1) * (image["cell_size"]) + 1
+	image["height"] = (dungeon["n_rows"] + 1) * (image["cell_size"]) + 1
+	image["max_x"] = image["width"] - 1
+	image["max_y"] = image["height"] - 1
+
+	return image
+end
+
+--[[
+    standard: {
+        colors: {
+            fill: "#000000",
+            open: "#ffffff",
+            open_grid: "#cccccc"
+        }
+    },
+]]
+
+local function getPalette()
+	return {
+		["colors"] = {
+			["fill"] = { 0.0, 0.0, 0.0, 1.0 },
+			["open"] = { 1.0, 1.0, 1.0, 1.0 },
+			["open_grid"] = { 0.5, 0.5, 0.5, 1.0 },
+		},
+		["black"] = { 0.0, 0.0, 0.0, 1.0 },
+		["white"] = { 1.0, 1.0, 1.0, 1.0 },
+	}
+end
+
+--[[
+sub square_grid {
+    my ($dungeon,$image,$color,$ih) = @_;
+    my $dim = $image->{'cell_size'};
+    
+    my $x; for ($x = 0; $x <= $image->{'max_x'}; $x += $dim) {
+        $ih->line($x,0,$x,$image->{'max_y'},$color);
+    }
+    my $y; for ($y = 0; $y <= $image->{'max_y'}; $y += $dim) {
+        $ih->line(0,$y,$image->{'max_x'},$y,$color);
+    }
+    return $ih;
+}
+]]
+
+--[[
+    my ($dungeon,$image,$color,$ih) = @_;
+    my $dim = $image->{'cell_size'};
+    
+    my $x; for ($x = 0; $x <= $image->{'max_x'}; $x += $dim) {
+        $ih->line($x,0,$x,$image->{'max_y'},$color);
+    }
+    my $y; for ($y = 0; $y <= $image->{'max_y'}; $y += $dim) {
+        $ih->line(0,$y,$image->{'max_x'},$y,$color);
+    }
+    return $ih;
+]]
+
+local function squareGrid(dungeon, image, color, canvas)
+	local dim = image["cell_size"]
+
+	love.graphics.setColor(0.0, 0.0, 0.0)
+
+	for x = 0, image["max_x"], dim do
+		love.graphics.line(x, 0, x, image["max_y"])
+	end
+
+	for y = 0, image["max_y"], dim do
+		love.graphics.line(0, y, image["max_x"], y)
+	end
+	
+	love.graphics.setColor(1.0, 1.0, 1.0)
+end
+
+local function imageGrid(dungeon, image, color, canvas)
+	squareGrid(dungeon, image, color, canvas)
+end
+
+local function fillImage(dungeon, image, color, canvas)
+	love.graphics.clear(color)
+
+	imageGrid(dungeon, image, color, canvas)
+end
+
+--[[
+sub open_cells {
+    my ($dungeon,$image,$ih) = @_;
+    my $cell = $dungeon->{'cell'};
+    my $dim = $image->{'cell_size'};
+    my $base = $image->{'base_layer'};
+    
+    my $r; for ($r = 0; $r <= $dungeon->{'n_rows'}; $r++) {
+        my $y1 = $r * $dim;
+        my $y2 = $y1 + $dim;
+        
+        my $c; for ($c = 0; $c <= $dungeon->{'n_cols'}; $c++) {
+            next unless ($cell->[$r][$c] & $OPENSPACE);
+            
+            my $x1 = $c * $dim;
+            my $x2 = $x1 + $dim;
+            
+            $ih->copy($base,$x1,$y1,$x1,$y1,($dim+1),($dim+1));
+        }
+    }
+    return $ih;
+}
+
+]]
+
+local function openCells(dungeon, image, canvas)
+	local cell = dungeon["cell"]
+	local dim = image["cell_size"]
+
+	love.graphics.setColor(0, 0, 0)
+
+	for r = 0, dungeon["n_rows"] do
+		for c = 0, dungeon["n_cols"] do
+			-- TODO: should check for Flags.OPENSPACE instead, but currently no open space assigned
+			if bit.band(cell[r][c], Flags.BLOCKED) == Flags.BLOCKED then
+				local x = c * dim
+				local y = r * dim
+
+				love.graphics.rectangle('fill', x, y, dim, dim)
+			end
+		end
+	end
+
+	love.graphics.setColor(1, 1, 1)
+end
+
+function DunGen.getTexture(dungeon)
+	local image = scaleDungeon(dungeon)
+	local palette = getPalette()
+
+	local canvas = love.graphics.newCanvas(image["width"], image["height"])
+	love.graphics.setCanvas(canvas)
+
+	local color = palette["colors"]["open"]
+
+	fillImage(dungeon, image, color, canvas)
+	openCells(dungeon, image, canvas)
+
+	love.graphics.setCanvas()
+
+	return canvas
 end
