@@ -4,16 +4,35 @@ local ffi = require'ffi'
 DunGen = {}
 
 local Flags = {
-	["NOTHING"] = 0LL, 		-- 0x00000000
+	["NOTHING"] = 0LL, 			-- 0x00000000
 	
-	["BLOCKED"] = 1LL,  	-- 0x00000001
-	["ROOM"] = 2LL,			-- 0x00000002
-	["CORRIDOR"] = 4LL,		-- 0x00000004
+	["BLOCKED"] = 1LL,  		-- 0x00000001
+	["ROOM"] = 2LL,				-- 0x00000002
+	["CORRIDOR"] = 4LL,			-- 0x00000004
 
-	["PERIMETER"] = 16LL,	-- 0x00000010
-	["ENTRANCE"] = 32LL,	-- 0x00000020
-	["ROOM_ID"] = 65472LL,	-- 0x0000FFC0
+	["PERIMETER"] = 16LL,		-- 0x00000010
+	["ENTRANCE"] = 32LL,		-- 0x00000020
+	["ROOM_ID"] = 65472LL,		-- 0x0000FFC0
+
+	["ARCH"] = 65536LL,			-- 0x00010000
+	["DOOR"] = 131072LL,		-- 0x00020000
+	["LOCKED"] = 262144LL,		-- 0x00040000
+	["TRAPPED"] = 524288LL,		-- 0x00080000
+	["SECRET"] = 1048576LL,		-- 0x00100000
+	["PORTC"] = 2097152LL,		-- 0x00200000
+	["STAIR_DN"] = 4194304LL,	-- 0x00400000
+	["STAIR_UP"] = 8388608LL,	-- 0x00800000
+
+	["LABEL"] = 4278190080LL,	-- 0xFF000000
 }
+
+Flags["OPENSPACE"] = bit.bor(Flags.ROOM, Flags.CORRIDOR)
+Flags["DOORSPACE"] = bit.bor(Flags.ARCH, Flags.DOOR, Flags.LOCKED, Flags.TRAPPED, Flags.SECRET, Flags.PORTC)
+Flags["ESPACE"] = bit.bor(Flags.ENTRANCE, Flags.DOORSPACE, 4278190080LL) -- why not Flags.LABEL?
+Flags["STAIRS"] = bit.bor(Flags.STAIR_DN, Flags.STAIR_UP)
+Flags["BLOCK_ROOM"] = bit.bor(Flags.BLOCKED, Flags.ROOM)
+Flags["BLOCK_CORR"] = bit.bor(Flags.BLOCKED, Flags.PERIMETER, Flags.CORRIDOR)
+Flags["BLOCK_DOOR"] = bit.bor(Flags.BLOCKED, Flags.DOORSPACE)
 
 --[[ TODO: 
 	* Improve implementation, all layout names should be public
@@ -54,6 +73,18 @@ local function merge(table1, table2)
 	end 
 
 	return table1
+end
+
+local function getKeys(table)
+	local n = 0
+	local keys = {}
+
+	for k, v in pairs(table) do
+		n = n + 1
+		keys[n] = k
+	end
+
+	return keys
 end
 
 local function getOpts()
@@ -345,21 +376,51 @@ local function emplaceRoom(dungeon, proto)
 
 	if hit["blocked"] == true then return end
 
+	local hitList = getKeys(hit)
+	local hits = #hitList
+	local roomId = nil
+
+	if hits == 0 then
+		roomId = dungeon["n_rooms"] + 1
+		dungeon["n_rooms"] = roomId
+	else
+		return
+	end
+
+	dungeon["last_room_id"] = roomId
+
 --[[
-	my $hit = &sound_room($dungeon,$r1,$c1,$r2,$c2);
-    return $dungeon if ($hit->{'blocked'});
-    my @hit_list = keys %{ $hit };
-    my $n_hits = scalar @hit_list;
-    my $room_id;
-    
-    if ($n_hits == 0) {
-        $room_id = $dungeon->{'n_rooms'} + 1;
-        $dungeon->{'n_rooms'} = $room_id;
-    } else {
-        return $dungeon;
+	for ($r = $r1; $r <= $r2; $r++) {
+        for ($c = $c1; $c <= $c2; $c++) {
+            if ($cell->[$r][$c] & $ENTRANCE) {
+                $cell->[$r][$c] &= ~ $ESPACE;
+            } elsif ($cell->[$r][$c] & $PERIMETER) {
+                $cell->[$r][$c] &= ~ $PERIMETER;
+            }
+            $cell->[$r][$c] |= $ROOM | ($room_id << 6);
+        }
     }
-    $dungeon->{'last_room_id'} = $room_id;
---]]
+    my $height = (($r2 - $r1) + 1) * 10;
+    my $width = (($c2 - $c1) + 1) * 10;
+    
+    my $room_data = {
+        'id' => $room_id, 'row' => $r1, 'col' => $c1,
+        'north' => $r1, 'south' => $r2, 'west' => $c1, 'east' => $c2,
+        'height' => $height, 'width' => $width, 'area' => ($height * $width)
+    };
+    $dungeon->{'room'}[$room_id] = $room_data;
+]]
+	
+	for r = r1, r2, 1 do
+		for c = c1, c2, 1 do
+			if bit.band(cell[r][c], Flags.ENTRANCE) == Flags.ENTRANCE then
+				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.ESPACE))
+			else
+
+			end
+		end
+	end
+
 end
 
 local function allocRooms(dungeon, roomMax)
@@ -424,7 +485,7 @@ function DunGen.generate(options)
 	dungeon["n_cols"] = dungeon["n_j"] * 2
 	dungeon["max_row"] = dungeon["n_rows"] - 1
 	dungeon["max_col"] = dungeon["n_cols"] - 1
-	dungeon["rooms"] = 0
+	dungeon["n_rooms"] = 0
 
 	local max = options["room_max"]
 	local min = options["room_min"]
