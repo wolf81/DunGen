@@ -111,7 +111,7 @@ local function maskCells(dungeon, mask)
 
 	for r = 0, dungeon["n_rows"] do
 		for c = 0, dungeon["n_cols"] do
-			cell[r][c] = mask[math.floor(r * r_x + 0.5)][math.floor(c * c_x + 0.5)] == 1 and 0 or 1
+			cell[r][c] = mask[math.floor(r * r_x + 0.5)][math.floor(c * c_x + 0.5)] == 1 and Flags.NOTHING or Flags.BLOCKED
 		end
 	end
 end
@@ -126,7 +126,7 @@ local function roundMask(dungeon)
 			local d = math.sqrt(
 				math.pow((r - center_r), 2) + 
 				math.pow((c - center_c), 2))
-			cell[r][c] = d > center_c and 1 or 0
+			cell[r][c] = d > center_c and Flags.BLOCKED or Flags.NOTHING
 		end
 	end
 end
@@ -137,7 +137,7 @@ local function initCells(dungeon, mask)
 	for r = 0, dungeon["n_rows"] do
 		dungeon["cell"][r] = {}
 		for c = 0, dungeon["n_cols"] do
-			dungeon["cell"][r][c] = 0
+			dungeon["cell"][r][c] = Flags.NOTHING
 		end
 	end
 
@@ -416,7 +416,7 @@ local function emplaceRoom(dungeon, proto)
 			if bit.band(cell[r][c], Flags.ENTRANCE) == Flags.ENTRANCE then
 				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.ESPACE))
 			else
-
+				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.PERIMETER))
 			end
 		end
 	end
@@ -507,7 +507,7 @@ function DunGen.generate(options)
 	for r = 0, dungeon["n_rows"] do
 		s = s .. '\n'
 		for c = 0, dungeon["n_cols"] do
-			s = s .. dungeon["cell"][r][c]
+			s = s .. tostring(dungeon["cell"][r][c])
 		end
 	end
 	print(s)
