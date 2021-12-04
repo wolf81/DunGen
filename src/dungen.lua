@@ -1,4 +1,19 @@
+-- LuaJIT 2.1 required
+local ffi = require'ffi'
+
 DunGen = {}
+
+local Flags = {
+	["NOTHING"] = 0LL, 		-- 0x00000000
+	
+	["BLOCKED"] = 1LL,  	-- 0x00000001
+	["ROOM"] = 2LL,			-- 0x00000002
+	["CORRIDOR"] = 4LL,		-- 0x00000004
+
+	["PERIMETER"] = 16LL,	-- 0x00000010
+	["ENTRANCE"] = 32LL,	-- 0x00000020
+	["ROOM_ID"] = 65472LL,	-- 0x0000FFC0
+}
 
 --[[ TODO: 
 	* Improve implementation, all layout names should be public
@@ -132,9 +147,9 @@ local function soundRoom(dungeon, r1, c1, r2, c2)
 				return { ["blocked"] = true }
 			end
 
-			-- TODO: check room bitmask value instead
-			if cell[r][c] == 2 then
-				-- update hit count for the room
+			if bit.band(cell[r][c], Flags.ROOM) == Flags.ROOM then
+				local id = bit.rshift(bit.band(cell[r][c], Flags.ROOM_ID))
+				hit[id] = hit[id] + 1
 			end
 		end
 	end
@@ -197,8 +212,7 @@ local function setRoom(dungeon, proto)
 
 	if proto["width"] == nil then
 		if proto["j"] ~= nil then
-			local a = dungeon["n_j"] - base - proto["j"]
-			a = math.max(a, 0)
+			local a = math.max(dungeon["n_j"] - base - proto["j"], 0)
 			local r = math.min(a, radix)
 			proto["width"] = math.floor(love.math.random(r) + base)
 		else
@@ -361,7 +375,7 @@ local function packRooms(dungeon)
 		for j = 0, dungeon["n_j"] - 1 do
 			local c = j * 2 + 1
 
-			local hasRoom = cell[r][c] == 2
+			local hasRoom = bit.band(cell[r][c], Flags.ROOM) == Flags.ROOM
 			local shouldSkip = (i == 0 or j == 0) and love.math.random(0, 1) == 1
 
 			if not hasRoom and not shouldSkip then
