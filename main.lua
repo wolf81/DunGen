@@ -8,5 +8,6 @@ function love.load(args)
 	DunGen.generate({ 
 		['seed'] = 0.32, 
 		["dungeon_layout"] = "Cross",
+		--["room_layout"] = "Packed",
 	})
 end
