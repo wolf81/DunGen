@@ -149,7 +149,8 @@ local function soundRoom(dungeon, r1, c1, r2, c2)
 
 			if bit.band(cell[r][c], Flags.ROOM) == Flags.ROOM then
 				local id = bit.rshift(bit.band(cell[r][c], Flags.ROOM_ID))
-				hit[id] = hit[id] + 1
+				local sId = tostring(id)
+				hit[sId] = hit[sId] + 1
 			end
 		end
 	end
@@ -341,6 +342,8 @@ local function emplaceRoom(dungeon, proto)
 	if c1 < 1 or c2 > dungeon["max_col"] then return end
 
 	local hit = soundRoom(dungeon, r1, c1, r2, c2)
+
+	if hit["blocked"] == true then return end
 
 --[[
 	my $hit = &sound_room($dungeon,$r1,$c1,$r2,$c2);
