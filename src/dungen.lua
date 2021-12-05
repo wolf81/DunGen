@@ -104,6 +104,7 @@ function shuffle(tbl)
 		local j = math.random(i)
 		tbl[i], tbl[j] = tbl[j], tbl[i]
 	end
+	return tbl
 end
 
 local function getOpts()
@@ -397,16 +398,16 @@ local function emplaceRoom(dungeon, proto)
 
 	local hitList = getKeys(hit)
 	local hits = #hitList
-	local roomId = nil
+	local room_id = nil
 
 	if hits == 0 then
-		roomId = dungeon["n_rooms"] + 1
-		dungeon["n_rooms"] = roomId
+		room_id = dungeon["n_rooms"] + 1
+		dungeon["n_rooms"] = room_id
 	else
 		return
 	end
 
-	dungeon["last_room_id"] = roomId
+	dungeon["last_room_id"] = room_id
 
 --[[
 	for ($r = $r1; $r <= $r2; $r++) {
@@ -437,21 +438,21 @@ local function emplaceRoom(dungeon, proto)
 			elseif bit.band(cell[r][c], Flags.PERIMETER) == Flags.PERIMETER then
 				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.PERIMETER))
 			end
-			cell[r][c] = bit.bor(cell[r][c], Flags.ROOM, bit.lshift(roomId, 6))
+			cell[r][c] = bit.bor(cell[r][c], Flags.ROOM, bit.lshift(room_id, 6))
 		end
 	end
 
 	local height = ((r2 - r1) + 1) * 10
 	local width = ((c2 - c1) + 1) * 10
 
-	local roomData = {
-		["id"] = roomId, 
+	local room_data = {
+		["id"] = room_id, 
 		["row"] = r1, ["col"] = c1,
 		["north"] = r1, ["south"] = r2, ["west"] = c1, ["east"] = c2,
 		["height"] = height, ["width"] = width, 
 		["area"] = height * width,
 	}
-	dungeon["room"][roomId] = roomData
+	dungeon["room"][room_id] = room_data
 
 	--[[    
     for ($r = $r1 - 1; $r <= $r2 + 1; $r++) {
@@ -491,12 +492,12 @@ local function emplaceRoom(dungeon, proto)
 	end
 end
 
-local function allocRooms(dungeon, roomMax)
-	local dungeonArea = dungeon["n_cols"] * dungeon["n_rows"]
-	local roomArea = roomMax * roomMax
-	local nRooms = math.floor(dungeonArea / roomArea)
+local function allocRooms(dungeon, room_max)
+	local dungeon_area = dungeon["n_cols"] * dungeon["n_rows"]
+	local room_area = room_max * room_max
+	local n_rooms = math.floor(dungeon_area / room_area)
 
-	return nRooms
+	return n_rooms
 end
 
 local function packRooms(dungeon)
@@ -507,10 +508,10 @@ local function packRooms(dungeon)
 		for j = 0, dungeon["n_j"] - 1 do
 			local c = j * 2 + 1
 
-			local hasRoom = bit.band(cell[r][c], Flags.ROOM) == Flags.ROOM
-			local shouldSkip = (i == 0 or j == 0) and love.math.random(0, 1) == 1
+			local has_room = bit.band(cell[r][c], Flags.ROOM) == Flags.ROOM
+			local is_ignore = (i == 0 or j == 0) and love.math.random(0, 1) == 1
 
-			if not hasRoom and not shouldSkip then
+			if not has_room and not is_ignore then
 				local proto = { 
 					["i"] = i, 
 					["j"] = j 
@@ -521,20 +522,41 @@ local function packRooms(dungeon)
 	end
 end
 
-local function scatterRooms(dungeon, roomMax)
-	local nRooms = allocRooms(dungeon, roomMax)
+local function scatterRooms(dungeon, room_max)
+	local nRooms = allocRooms(dungeon, room_max)
 
 	for i = 0, nRooms - 1 do
 		emplaceRoom(dungeon)
 	end
 end
 
-local function emplaceRooms(dungeon, roomLayout, roomMax)
+local function emplaceRooms(dungeon, roomLayout, room_max)
 	if roomLayout == 'Packed' then
-		packRooms(dungeon, roomMax)
+		packRooms(dungeon, room_max)
 	else 
-		scatterRooms(dungeon, roomMax)
+		scatterRooms(dungeon, room_max)
 	end	
+end
+
+--[[
+sub alloc_opens {
+    my ($dungeon,$room) = @_;
+    my $room_h = (($room->{'south'} - $room->{'north'}) / 2) + 1;
+    my $room_w = (($room->{'east'} - $room->{'west'}) / 2) + 1;
+    my $flumph = int(sqrt($room_w * $room_h));
+    my $n_opens = $flumph + int(rand($flumph));
+    
+    return $n_opens;
+}
+]]
+
+local function allocOpens(dungeon, room)
+	local room_h = (room["south"] - room["north"]) / 2 + 1
+	local room_w = (room["east"] - room["west"]) / 2 + 1
+	local flumph = math.floor(math.sqrt(room_w * room_h))
+	local n_opens = flumph + math.floor(love.math.random(flumph))
+
+	return n_opens
 end
 
 --[[
@@ -565,8 +587,32 @@ sub check_sill {
 }
 ]]
 
-local function checkSill(cell, room, sillR, sillC, dir)
-	-- body
+local function checkSill(cell, room, sill_r, sill_c, dir)
+	local door_r = sill_r + di[dir]
+	local door_c = sill_c + dj[dir]
+	local door_cell = cell[door_r][door_c]
+	if bit.band(door_cell, Flags.PERIMETER) ~= Flags.PERIMETER then return end
+	if bit.band(door_cell, Flags.BLOCK_DOOR) == Flags.BLOCK_DOOR then return end
+	local out_r = door_r + di[dir]
+	local out_c = door_c + dj[dir]
+	local out_cell = cell[out_r][out_c]
+	if bit.band(out_cell, Flags.BLOCKED) == Flags.BLOCKED then return end
+
+	local out_id = nil
+
+	if bit.band(out_cell, Flags.ROOM) == Flags.ROOM then
+		out_id = bit.rshift(bit.band(out_cell, Flags.ROOM_ID), 6)
+		if out_id == room["id"] then return end
+	end
+
+	return {
+		["sill_r"] = sill_r,
+		["sill_c"] = sill_c,
+		["dir"] = dir,
+		["door_r"] = door_r,
+		["door_c"] = door_c,
+		["out_id"] = out_id,
+	}
 end
 
 --[[
@@ -707,7 +753,12 @@ sub open_room {
 ]]
 
 local function openRoom(dungeon, room)
-	print('open room: ', room)
+	local list = doorSills(dungeon, room)
+	if #list == 0 then return end
+
+	local n_opens = allocOpens(dungeon, room)
+	local cell = dungeon["cell"]
+
 end
 
 --[[
