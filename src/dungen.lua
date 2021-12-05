@@ -34,6 +34,18 @@ Flags["BLOCK_ROOM"] = bit.bor(Flags.BLOCKED, Flags.ROOM)
 Flags["BLOCK_CORR"] = bit.bor(Flags.BLOCKED, Flags.PERIMETER, Flags.CORRIDOR)
 Flags["BLOCK_DOOR"] = bit.bor(Flags.BLOCKED, Flags.DOORSPACE)
 
+-- directions
+local di = { ["north"] = -1, ["south"] = 1, ["west"] =  0, ["east"] = 0 }
+local dj = { ["north"] =  0, ["south"] = 0, ["west"] = -1, ["east"] = 1 }
+--my @dj_dirs = sort keys %{ $dj };
+
+local opposite = {
+	["north"] = "south",
+	["south"] = "north",
+	["east"] = "west",
+	["west"] = "east",
+}
+
 --[[ TODO: 
 	* Improve implementation, all layout names should be public
 	or perhaps just forward layout tables instead, so users 
@@ -65,26 +77,33 @@ local dungeonLayout = {
 	}
 }
 
-local function merge(table1, table2)
-	for k, v in pairs(table2) do
-		assert(table1[k] ~= nil, "invalid key: " .. k)
+local function merge(tbl1, tbl2)
+	for k, v in pairs(tbl2) do
+		assert(tbl1[k] ~= nil, "invalid key: " .. k)
 
-		table1[k] = v
+		tbl1[k] = v
 	end 
 
-	return table1
+	return tbl1
 end
 
-local function getKeys(table)
+local function getKeys(tbl)
 	local n = 0
 	local keys = {}
 
-	for k, v in pairs(table) do
+	for k, v in pairs(tbl) do
 		n = n + 1
 		keys[n] = k
 	end
 
 	return keys
+end
+
+function shuffle(tbl)
+	for i = #tbl, 2, -1 do
+		local j = math.random(i)
+		tbl[i], tbl[j] = tbl[j], tbl[i]
+	end
 end
 
 local function getOpts()
@@ -518,6 +537,194 @@ local function emplaceRooms(dungeon, roomLayout, roomMax)
 	end	
 end
 
+--[[
+sub check_sill {
+    my ($cell,$room,$sill_r,$sill_c,$dir) = @_;
+    my $door_r = $sill_r + $di->{$dir};
+    my $door_c = $sill_c + $dj->{$dir};
+    my $door_cell = $cell->[$door_r][$door_c];
+    return unless ($door_cell & $PERIMETER);
+    return if ($door_cell & $BLOCK_DOOR);
+    my $out_r  = $door_r + $di->{$dir};
+    my $out_c  = $door_c + $dj->{$dir};
+    my $out_cell = $cell->[$out_r][$out_c];
+    return if ($out_cell & $BLOCKED);
+    
+    my $out_id; if ($out_cell & $ROOM) {
+        $out_id = ($out_cell & $ROOM_ID) >> 6;
+        return if ($out_id == $room->{'id'});
+    }
+    return {
+        'sill_r'    => $sill_r,
+        'sill_c'    => $sill_c,
+        'dir'       => $dir,
+        'door_r'    => $door_r,
+        'door_c'    => $door_c,
+        'out_id'    => $out_id,
+    };
+}
+]]
+
+local function checkSill(cell, room, sillR, sillC, dir)
+	-- body
+end
+
+--[[
+sub door_sills {
+    my ($dungeon,$room) = @_;
+    my $cell = $dungeon->{'cell'};
+    my @list;
+    
+    if ($room->{'north'} >= 3) {
+        my $c; for ($c = $room->{'west'}; $c <= $room->{'east'}; $c += 2) {
+            my $sill = &check_sill($cell,$room,$room->{'north'},$c,'north');
+            push(@list,$sill) if ($sill);
+        }
+    }
+    if ($room->{'south'} <= ($dungeon->{'n_rows'} - 3)) {
+        my $c; for ($c = $room->{'west'}; $c <= $room->{'east'}; $c += 2) {
+            my $sill = &check_sill($cell,$room,$room->{'south'},$c,'south');
+            push(@list,$sill) if ($sill);
+        }
+    }
+    if ($room->{'west'} >= 3) {
+        my $r; for ($r = $room->{'north'}; $r <= $room->{'south'}; $r += 2) {
+            my $sill = &check_sill($cell,$room,$r,$room->{'west'},'west');
+            push(@list,$sill) if ($sill);
+        }
+    }
+    if ($room->{'east'} <= ($dungeon->{'n_cols'} - 3)) {
+        my $r; for ($r = $room->{'north'}; $r <= $room->{'south'}; $r += 2) {
+            my $sill = &check_sill($cell,$room,$r,$room->{'east'},'east');
+            push(@list,$sill) if ($sill);
+        }
+    }
+    return &shuffle(@list);
+}
+]]
+
+local function doorSills(dungeon, room)
+	local cell = dungeon["cell"]
+	local list = {}
+
+	if room["north"] >= 3 then
+		for c = room["west"], room["east"], 2 do
+			local sill = checkSill(cell, room, room["north"], c, "north")
+			if sill ~= nil then list[#list + 1] = sill end
+		end
+	end
+
+	if room["south"] <= dungeon["n_rows"] - 3 then
+		for c = room["west"], room["east"], 2 do
+			local sill = checkSill(cell, room, room["south"], c, "south")
+			if sill ~= nil then list[#list + 1] = sill end
+		end
+	end
+
+	if room["west"] >= 3 then
+		for r = room["north"], room["south"], 2 do
+			local sill = checkSill(cell, room, r, room["west"], "west")
+			if sill ~= nil then list[#list + 1] = sill end
+		end
+	end
+
+	if room["east"] <= dungeon["n_cols"] - 3 then
+		for r = room["north"], room["south"], 2 do
+			local sill = checkSill(cell, room, r, room["east"], "east")			
+			if sill ~= nil then list[#list + 1] = sill end
+		end
+	end
+
+	return shuffle(list)
+end
+
+--[[
+sub open_room {
+    my ($dungeon,$room) = @_;
+    my @list = &door_sills($dungeon,$room);
+    return $dungeon unless (@list);
+    my $n_opens = &alloc_opens($dungeon,$room);
+    my $cell = $dungeon->{'cell'};
+    
+    my $i; for ($i = 0; $i < $n_opens; $i++) {
+        my $sill = splice(@list,int(rand(@list)),1);
+        last unless ($sill);
+        my $door_r = $sill->{'door_r'};
+        my $door_c = $sill->{'door_c'};
+        my $door_cell = $cell->[$door_r][$door_c];
+        redo if ($door_cell & $DOORSPACE);
+        
+        my $out_id; if ($out_id = $sill->{'out_id'}) {
+            my $connect = join(',',(sort($room->{'id'},$out_id)));
+            redo if ($dungeon->{'connect'}{$connect}++);
+        }
+        my $open_r = $sill->{'sill_r'};
+        my $open_c = $sill->{'sill_c'};
+        my $open_dir = $sill->{'dir'};
+        
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # open door
+        
+        my $x; for ($x = 0; $x < 3; $x++) {
+            my $r = $open_r + ($di->{$open_dir} * $x);
+            my $c = $open_c + ($dj->{$open_dir} * $x);
+            
+            $cell->[$r][$c] &= ~ $PERIMETER;
+            $cell->[$r][$c] |= $ENTRANCE;
+        }
+        my $door_type = &door_type();
+        my $door = { 'row' => $door_r, 'col' => $door_c };
+        
+        if ($door_type == $ARCH) {
+            $cell->[$door_r][$door_c] |= $ARCH;
+            $door->{'key'} = 'arch'; $door->{'type'} = 'Archway';
+        } elsif ($door_type == $DOOR) {
+            $cell->[$door_r][$door_c] |= $DOOR;
+            $cell->[$door_r][$door_c] |= (ord('o') << 24);
+            $door->{'key'} = 'open'; $door->{'type'} = 'Unlocked Door';
+        } elsif ($door_type == $LOCKED) {
+            $cell->[$door_r][$door_c] |= $LOCKED;
+            $cell->[$door_r][$door_c] |= (ord('x') << 24);
+            $door->{'key'} = 'lock'; $door->{'type'} = 'Locked Door';
+        } elsif ($door_type == $TRAPPED) {
+            $cell->[$door_r][$door_c] |= $TRAPPED;
+            $cell->[$door_r][$door_c] |= (ord('t') << 24);
+            $door->{'key'} = 'trap'; $door->{'type'} = 'Trapped Door';
+        } elsif ($door_type == $SECRET) {
+            $cell->[$door_r][$door_c] |= $SECRET;
+            $cell->[$door_r][$door_c] |= (ord('s') << 24);
+            $door->{'key'} = 'secret'; $door->{'type'} = 'Secret Door';
+        } elsif ($door_type == $PORTC) {
+            $cell->[$door_r][$door_c] |= $PORTC;
+            $cell->[$door_r][$door_c] |= (ord('#') << 24);
+            $door->{'key'} = 'portc'; $door->{'type'} = 'Portcullis';
+        }
+        $door->{'out_id'} = $out_id if ($out_id);
+        push(@{ $room->{'door'}{$open_dir} },$door) if ($door);
+    }
+    return $dungeon;
+}
+]]
+
+local function openRoom(dungeon, room)
+	print('open room: ', room)
+end
+
+--[[
+    my $id; for ($id = 1; $id <= $dungeon->{'n_rooms'}; $id++) {
+        $dungeon = &open_room($dungeon,$dungeon->{'room'}[$id]);
+    }
+    delete($dungeon->{'connect'});
+    return $dungeon;
+]]
+
+local function openRooms(dungeon)
+	for id = 1, dungeon["n_rooms"] do
+		openRoom(dungeon, dungeon["room"][id])
+	end
+	dungeon["connect"] = nil
+end
+
 function DunGen.generate(options)
 	local options = merge(getOpts(), options or {})
 
@@ -555,6 +762,8 @@ function DunGen.generate(options)
 
 	local roomLayout, roomMax = options["room_layout"], options["room_max"]
 	emplaceRooms(dungeon, roomLayout, roomMax)
+
+	openRooms(dungeon)
 
 	for k, v in ipairs(dungeon["room"]) do
 		for k2, v2 in pairs(v) do
