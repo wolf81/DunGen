@@ -6,8 +6,8 @@ local texture = nil
 
 local function generate()
 	local dungeon = DunGen.generate({ 
-		--['seed'] = 0.32, 
-		["dungeon_layout"] = "Cross",
+		-- ['seed'] = 0.32, 
+		-- ["dungeon_layout"] = "Cross",
 		["cell_size"] = 15,
 		--["room_layout"] = "Packed",
 	})

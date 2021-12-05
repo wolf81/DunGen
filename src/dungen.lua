@@ -77,6 +77,8 @@ local dungeonLayout = {
 	}
 }
 
+local connect = nil
+
 local function merge(tbl1, tbl2)
 	for k, v in pairs(tbl2) do
 		assert(tbl1[k] ~= nil, "invalid key: " .. k)
@@ -109,7 +111,7 @@ end
 
 local function getOpts()
 	return {
-		["seed"] = love.math.random(),
+		["seed"] = love.timer.getTime(),
 		["n_rows"] = 39, -- must be an odd number
 		["n_cols"] = 39, -- must be an odd number
 		["dungeon_layout"] = 'None',
@@ -122,6 +124,24 @@ local function getOpts()
 		["map_style"] = 'Standard',
 		["cell_size"] = 18, -- pixels
 	}
+end
+
+local function getDoorType()
+	local i = math.floor(love.math.random(110))
+
+	if i < 15 then
+		return Flags.ARCH
+	elseif i < 60 then
+		return Flags.DOOR
+	elseif i < 75 then
+		return Flags.LOCKED
+	elseif i < 90 then
+		return Flags.TRAPPED
+	elseif i < 100 then
+		return Flags.SECRET
+	else
+		return Flags.PORTC
+	end
 end
 
 local function maskCells(dungeon, mask)
@@ -451,6 +471,12 @@ local function emplaceRoom(dungeon, proto)
 		["north"] = r1, ["south"] = r2, ["west"] = c1, ["east"] = c2,
 		["height"] = height, ["width"] = width, 
 		["area"] = height * width,
+		["door"] = {
+			["north"] = {},
+			["east"] = {},
+			["west"] = {},
+			["south"] = {},
+		},
 	}
 	dungeon["room"][room_id] = room_data
 
@@ -611,7 +637,7 @@ local function checkSill(cell, room, sill_r, sill_c, dir)
 		["dir"] = dir,
 		["door_r"] = door_r,
 		["door_c"] = door_c,
-		["out_id"] = out_id,
+		["out_id"] = tonumber(out_id),
 	}
 end
 
@@ -752,6 +778,31 @@ sub open_room {
 }
 ]]
 
+--[[
+function open_room(a, b) {
+    var c = door_sills(a, b);
+    if (!c.length) return a;
+    var d = alloc_opens(a, b),
+        e;
+    for (e = 0; e < d; e++) {
+        var g = c.splice(random(c.length), 1).shift();
+        if (!g) break;
+        var f = g.door_r,
+            h = g.door_c;
+        f = a.cell[f][h];
+        if (!(f & DOORSPACE))
+            if (f = g.out_id) {
+                f = [b.id, f].sort(cmp_int).join(",");
+                if (!connect[f]) {
+                    a = open_door(a, b, g);
+                    connect[f] = 1
+                }
+            } else a = open_door(a, b, g)
+    }
+    return a
+}
+]]
+
 local function openRoom(dungeon, room)
 	local list = doorSills(dungeon, room)
 	if #list == 0 then return end
@@ -759,6 +810,114 @@ local function openRoom(dungeon, room)
 	local n_opens = allocOpens(dungeon, room)
 	local cell = dungeon["cell"]
 
+	for i = 0, n_opens do
+		if #list == 0 then break end
+
+		local idx = love.math.random(#list)
+		local sill = table.remove(list, idx)
+		local door_r = sill["door_r"]
+		local door_c = sill["door_c"]
+		local door_cell = cell[door_r][door_c]
+
+		if bit.band(door_cell, Flags.DOORSPACE) == Flags.DOORSPACE then 
+			goto continue
+		end
+
+		local out_id = sill["out_id"]
+		if out_id ~= nil then
+			local room_ids = { room["id"], out_id } 			
+			table.sort(room_ids, function(id1, id2) return id1 < id2 end)
+			local id = table.concat(room_ids, ',')
+			
+			--[[
+				TODO: seems Donjon's JavaScript and Perl implementations differ 
+				here - the Perl implementation restarts the loop on setting 
+				connection and the JavaScript implementation continues the loop.
+				I follow the JavaScript implementation here, otherwise I feel 1
+				door is always 'missing'.
+			--]]
+			if not connect[id] then connect[id] = true end
+		end
+
+		local open_r = sill["sill_r"]
+		local open_c = sill["sill_c"]
+		local open_dir = sill["dir"]
+	
+        for x = 0, 2 do
+        	local r = open_r + di[open_dir] * x
+        	local c = open_c + dj[open_dir] * x
+
+        	cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.PERIMETER))
+        	cell[r][c] = bit.bor(cell[r][c], Flags.ENTRANCE)
+        end
+
+        local doorType = getDoorType()
+        local door = {
+        	["row"] = door_r,
+        	["col"] = door_c,
+        }
+
+        if doorType == Flags.ARCH then
+        	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.ARCH)
+        	door["key"] = "arch"
+        	door["type"] = "Archway"
+        elseif doorType == Flags.DOOR then
+        	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.DOOR)
+        	door["key"] = "open"
+        	door["type"] = "Unlocked Door"
+        elseif doorType == Flags.LOCKED then
+        	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.LOCKED)
+        	door["key"] = "lock"
+        	door["type"] = "Locked Door"
+        elseif doorType == Flags.TRAPPED then
+        	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.TRAPPED)
+        	door["key"] = "trap"
+        	door["type"] = "Trapped Door"
+        elseif doorType == Flags.SECRET then
+        	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.SECRET)
+        	door["key"] = "secret"
+        	door["type"] = "Secret Door"
+        elseif doorType == Flags.PORTC then	        	
+        	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.PORTC)
+        	door["key"] = "portc"
+        	door["type"] = "Portcullis"
+        end
+
+        if out_id ~= nil then door["out_id"] = out_id end
+
+        table.insert(room["door"][open_dir], door)
+
+--[[
+        if ($door_type == $ARCH) {
+            $cell->[$door_r][$door_c] |= $ARCH;
+            $door->{'key'} = 'arch'; $door->{'type'} = 'Archway';
+        } elsif ($door_type == $DOOR) {
+            $cell->[$door_r][$door_c] |= $DOOR;
+            $cell->[$door_r][$door_c] |= (ord('o') << 24);
+            $door->{'key'} = 'open'; $door->{'type'} = 'Unlocked Door';
+        } elsif ($door_type == $LOCKED) {
+            $cell->[$door_r][$door_c] |= $LOCKED;
+            $cell->[$door_r][$door_c] |= (ord('x') << 24);
+            $door->{'key'} = 'lock'; $door->{'type'} = 'Locked Door';
+        } elsif ($door_type == $TRAPPED) {
+            $cell->[$door_r][$door_c] |= $TRAPPED;
+            $cell->[$door_r][$door_c] |= (ord('t') << 24);
+            $door->{'key'} = 'trap'; $door->{'type'} = 'Trapped Door';
+        } elsif ($door_type == $SECRET) {
+            $cell->[$door_r][$door_c] |= $SECRET;
+            $cell->[$door_r][$door_c] |= (ord('s') << 24);
+            $door->{'key'} = 'secret'; $door->{'type'} = 'Secret Door';
+        } elsif ($door_type == $PORTC) {
+            $cell->[$door_r][$door_c] |= $PORTC;
+            $cell->[$door_r][$door_c] |= (ord('#') << 24);
+            $door->{'key'} = 'portc'; $door->{'type'} = 'Portcullis';
+        }
+        $door->{'out_id'} = $out_id if ($out_id);
+        push(@{ $room->{'door'}{$open_dir} },$door) if ($door);
+]]
+
+        ::continue::
+	end
 end
 
 --[[
@@ -770,10 +929,11 @@ end
 ]]
 
 local function openRooms(dungeon)
+	connect = {}
+
 	for id = 1, dungeon["n_rooms"] do
 		openRoom(dungeon, dungeon["room"][id])
 	end
-	dungeon["connect"] = nil
 end
 
 function DunGen.generate(options)
@@ -783,6 +943,8 @@ function DunGen.generate(options)
 	for k, v in pairs(options) do
 		print(' ' .. k, v)
 	end
+
+	love.math.setRandomSeed(options["seed"])
 
 	local dungeon = {}
 
@@ -988,12 +1150,12 @@ local function openCells(dungeon, image, canvas)
 	local cell = dungeon["cell"]
 	local dim = image["cell_size"]
 
-	love.graphics.setColor(0, 0, 0)
+	love.graphics.setColor(0.0, 0.0, 0.0, 1.0)
 
 	for r = 0, dungeon["n_rows"] do
 		for c = 0, dungeon["n_cols"] do
 			-- TODO: should check for Flags.OPENSPACE instead, but currently no open space assigned
-			if bit.band(cell[r][c], Flags.BLOCKED) == Flags.BLOCKED then
+			if bit.band(cell[r][c], Flags.OPENSPACE) == 0 then
 				local x = c * dim
 				local y = r * dim
 
@@ -1002,7 +1164,7 @@ local function openCells(dungeon, image, canvas)
 		end
 	end
 
-	love.graphics.setColor(1, 1, 1)
+	love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
 end
 
 function DunGen.getTexture(dungeon)
