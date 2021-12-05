@@ -174,14 +174,14 @@ local function soundRoom(dungeon, r1, c1, r2, c2)
 
 	for r = r1, r2, 1 do
 		for c = c1, c2, 1 do
-			if cell[r][c] == 1 then
+			if bit.band(cell[r][c], Flags.BLOCKED) == Flags.BLOCKED then
 				return { ["blocked"] = true }
 			end
 
 			if bit.band(cell[r][c], Flags.ROOM) == Flags.ROOM then
-				local id = bit.rshift(bit.band(cell[r][c], Flags.ROOM_ID))
+				local id = bit.rshift(bit.band(cell[r][c], Flags.ROOM_ID), 6)
 				local sId = tostring(id)
-				hit[sId] = hit[sId] + 1
+				hit[sId] = id + 1
 			end
 		end
 	end
@@ -415,12 +415,61 @@ local function emplaceRoom(dungeon, proto)
 		for c = c1, c2, 1 do
 			if bit.band(cell[r][c], Flags.ENTRANCE) == Flags.ENTRANCE then
 				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.ESPACE))
-			else
+			elseif bit.band(cell[r][c], Flags.PERIMETER) == Flags.PERIMETER then
 				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.PERIMETER))
 			end
+			cell[r][c] = bit.bor(cell[r][c], Flags.ROOM, bit.lshift(roomId, 6))
 		end
 	end
 
+	local height = ((r2 - r1) + 1) * 10
+	local width = ((c2 - c1) + 1) * 10
+
+	local roomData = {
+		["id"] = roomId, 
+		["row"] = r1, ["col"] = c1,
+		["north"] = r1, ["south"] = r2, ["west"] = c1, ["east"] = c2,
+		["height"] = height, ["width"] = width, 
+		["area"] = height * width,
+	}
+	dungeon["room"][roomId] = roomData
+
+	--[[    
+    for ($r = $r1 - 1; $r <= $r2 + 1; $r++) {
+        unless ($cell->[$r][$c1 - 1] & ($ROOM | $ENTRANCE)) {
+            $cell->[$r][$c1 - 1] |= $PERIMETER;
+        }
+        unless ($cell->[$r][$c2 + 1] & ($ROOM | $ENTRANCE)) {
+            $cell->[$r][$c2 + 1] |= $PERIMETER;
+        }
+    }
+    for ($c = $c1 - 1; $c <= $c2 + 1; $c++) {
+        unless ($cell->[$r1 - 1][$c] & ($ROOM | $ENTRANCE)) {
+            $cell->[$r1 - 1][$c] |= $PERIMETER;
+        }
+        unless ($cell->[$r2 + 1][$c] & ($ROOM | $ENTRANCE)) {
+            $cell->[$r2 + 1][$c] |= $PERIMETER;
+        }
+    }
+	]]
+
+	for r = r1 - 1, r2 + 1, 1 do
+		if bit.band(cell[r][c1 - 1], bit.bor(Flags.ROOM, Flags.ENTRANCE)) == 0 then
+			cell[r][c1 - 1] = bit.bor(cell[r][c1 - 1], Flags.PERIMETER)
+		end
+		if bit.band(cell[r][c1 + 1], bit.bor(Flags.ROOM, Flags.ENTRANCE)) == 0 then
+			cell[r][c1 + 1] = bit.bor(cell[r][c1 + 1], Flags.PERIMETER)
+		end
+	end
+
+	for c = c1 - 1, c2 + 1, 1 do
+		if bit.band(cell[r1 - 1][c], bit.bor(Flags.ROOM, Flags.ENTRANCE)) == 0 then
+			cell[r1 - 1][c] = bit.bor(cell[r1 - 1][c], Flags.PERIMETER)
+		end
+		if bit.band(cell[r2 + 1][c], bit.bor(Flags.ROOM, Flags.ENTRANCE)) == 0 then
+			cell[r2 + 1][c] = bit.bor(cell[r2 + 1][c], Flags.PERIMETER)
+		end		
+	end
 end
 
 local function allocRooms(dungeon, roomMax)
@@ -486,6 +535,7 @@ function DunGen.generate(options)
 	dungeon["max_row"] = dungeon["n_rows"] - 1
 	dungeon["max_col"] = dungeon["n_cols"] - 1
 	dungeon["n_rooms"] = 0
+	dungeon["room"] = {}
 
 	-- TODO: perhaps ugly to copy
 	dungeon["cell_size"] = options["cell_size"]
@@ -506,14 +556,12 @@ function DunGen.generate(options)
 	local roomLayout, roomMax = options["room_layout"], options["room_max"]
 	emplaceRooms(dungeon, roomLayout, roomMax)
 
-	local s = ''
-	for r = 0, dungeon["n_rows"] do
-		s = s .. '\n'
-		for c = 0, dungeon["n_cols"] do
-			s = s .. tostring(dungeon["cell"][r][c])
+	for k, v in ipairs(dungeon["room"]) do
+		for k2, v2 in pairs(v) do
+			print(k2, v2)
 		end
+		print()
 	end
-	print(s)
 
 	return dungeon
 end
