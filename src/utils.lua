@@ -13,6 +13,17 @@ function merge(tbl1, tbl2)
 end
 
 --[[
+Add items of second table to first table.
+]]
+function concat(tbl1, tbl2)
+	for _, v in ipairs(tbl2) do
+		table.insert(tbl1, v)
+	end
+
+	return tbl1
+end
+
+--[[
 Returns a list of keys from the given table.
 ]]
 function getKeys(tbl)
@@ -36,4 +47,21 @@ function shuffle(tbl)
 		tbl[i], tbl[j] = tbl[j], tbl[i]
 	end
 	return tbl
+end
+
+--[[
+Traverse a table by alphabetically sorted keys or using custom sort function.
+]]
+function pairsByKeys(tbl, f)
+	local a = {}
+	for n in pairs(tbl) do table.insert(a, n) end
+	table.sort(a, f)
+	local i = 0      -- iterator variable
+	local iter = function ()   -- iterator function
+		i = i + 1
+		if a[i] == nil then return nil
+		else return a[i], tbl[a[i]]
+		end
+	end
+	return iter
 end
