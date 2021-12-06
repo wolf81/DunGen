@@ -1,6 +1,8 @@
 -- LuaJIT 2.1 required
 local ffi = require'ffi'
 
+require 'src/utils'
+
 DunGen = {}
 
 local Flags = {
@@ -78,36 +80,6 @@ local dungeonLayout = {
 }
 
 local connect = nil
-
-local function merge(tbl1, tbl2)
-	for k, v in pairs(tbl2) do
-		assert(tbl1[k] ~= nil, "invalid key: " .. k)
-
-		tbl1[k] = v
-	end 
-
-	return tbl1
-end
-
-local function getKeys(tbl)
-	local n = 0
-	local keys = {}
-
-	for k, v in pairs(tbl) do
-		n = n + 1
-		keys[n] = k
-	end
-
-	return keys
-end
-
-function shuffle(tbl)
-	for i = #tbl, 2, -1 do
-		local j = math.random(i)
-		tbl[i], tbl[j] = tbl[j], tbl[i]
-	end
-	return tbl
-end
 
 local function getOpts()
 	return {
@@ -416,11 +388,10 @@ local function emplaceRoom(dungeon, proto)
 
 	if hit["blocked"] == true then return end
 
-	local hitList = getKeys(hit)
-	local hits = #hitList
+	local hit_list = getKeys(hit)
 	local room_id = nil
 
-	if hits == 0 then
+	if #hit_list == 0 then
 		room_id = dungeon["n_rooms"] + 1
 		dungeon["n_rooms"] = room_id
 	else
@@ -851,70 +822,46 @@ local function openRoom(dungeon, room)
         	cell[r][c] = bit.bor(cell[r][c], Flags.ENTRANCE)
         end
 
-        local doorType = getDoorType()
+        local door_type = getDoorType()
         local door = {
         	["row"] = door_r,
         	["col"] = door_c,
         }
 
-        if doorType == Flags.ARCH then
+        if door_type == Flags.ARCH then
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.ARCH)
         	door["key"] = "arch"
         	door["type"] = "Archway"
-        elseif doorType == Flags.DOOR then
+        elseif door_type == Flags.DOOR then
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.DOOR)
         	door["key"] = "open"
         	door["type"] = "Unlocked Door"
-        elseif doorType == Flags.LOCKED then
+            -- $cell->[$door_r][$door_c] |= (ord('o') << 24);
+        elseif door_type == Flags.LOCKED then
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.LOCKED)
         	door["key"] = "lock"
         	door["type"] = "Locked Door"
-        elseif doorType == Flags.TRAPPED then
+            -- $cell->[$door_r][$door_c] |= (ord('x') << 24);
+        elseif door_type == Flags.TRAPPED then
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.TRAPPED)
         	door["key"] = "trap"
         	door["type"] = "Trapped Door"
-        elseif doorType == Flags.SECRET then
+            -- $cell->[$door_r][$door_c] |= (ord('t') << 24);
+        elseif door_type == Flags.SECRET then
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.SECRET)
         	door["key"] = "secret"
         	door["type"] = "Secret Door"
-        elseif doorType == Flags.PORTC then	        	
+            -- $cell->[$door_r][$door_c] |= (ord('s') << 24);
+        elseif door_type == Flags.PORTC then	        	
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.PORTC)
         	door["key"] = "portc"
         	door["type"] = "Portcullis"
+            -- $cell->[$door_r][$door_c] |= (ord('#') << 24);
         end
 
         if out_id ~= nil then door["out_id"] = out_id end
 
         table.insert(room["door"][open_dir], door)
-
---[[
-        if ($door_type == $ARCH) {
-            $cell->[$door_r][$door_c] |= $ARCH;
-            $door->{'key'} = 'arch'; $door->{'type'} = 'Archway';
-        } elsif ($door_type == $DOOR) {
-            $cell->[$door_r][$door_c] |= $DOOR;
-            $cell->[$door_r][$door_c] |= (ord('o') << 24);
-            $door->{'key'} = 'open'; $door->{'type'} = 'Unlocked Door';
-        } elsif ($door_type == $LOCKED) {
-            $cell->[$door_r][$door_c] |= $LOCKED;
-            $cell->[$door_r][$door_c] |= (ord('x') << 24);
-            $door->{'key'} = 'lock'; $door->{'type'} = 'Locked Door';
-        } elsif ($door_type == $TRAPPED) {
-            $cell->[$door_r][$door_c] |= $TRAPPED;
-            $cell->[$door_r][$door_c] |= (ord('t') << 24);
-            $door->{'key'} = 'trap'; $door->{'type'} = 'Trapped Door';
-        } elsif ($door_type == $SECRET) {
-            $cell->[$door_r][$door_c] |= $SECRET;
-            $cell->[$door_r][$door_c] |= (ord('s') << 24);
-            $door->{'key'} = 'secret'; $door->{'type'} = 'Secret Door';
-        } elsif ($door_type == $PORTC) {
-            $cell->[$door_r][$door_c] |= $PORTC;
-            $cell->[$door_r][$door_c] |= (ord('#') << 24);
-            $door->{'key'} = 'portc'; $door->{'type'} = 'Portcullis';
-        }
-        $door->{'out_id'} = $out_id if ($out_id);
-        push(@{ $room->{'door'}{$open_dir} },$door) if ($door);
-]]
 
         ::continue::
 	end
