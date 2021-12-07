@@ -8,13 +8,12 @@ Generator = {}
 -- directions
 local di = { ["north"] = -1, ["south"] = 1, ["west"] =  0, ["east"] = 0 }
 local dj = { ["north"] =  0, ["south"] = 0, ["west"] = -1, ["east"] = 1 }
---my @dj_dirs = sort keys %{ $dj };
 
 local opposite = {
-	["north"] = "south",
-	["south"] = "north",
-	["east"] = "west",
-	["west"] = "east",
+	["north"] 	= "south",
+	["south"] 	= "north",
+	["east"] 	= "west",
+	["west"] 	= "east",
 }
 
 --[[ TODO: 
@@ -24,7 +23,7 @@ local opposite = {
 	* Donjon's JavaScript implementation adds additional options 
 	for layouts and aspect ratios
 --]]
-local dungeonLayout = {
+local dungeon_layout = {
 	["Box"] = { 
 		[0] = 
 			{ [0] = 1, 1, 1 }, 
@@ -46,6 +45,12 @@ local dungeonLayout = {
 			{ [0] = 1, 1, 1, 1, 1, 1 },
 			{ [0] = 1, 1, 0, 0, 1, 1 },
 	}
+}
+
+local corridor_layout = {
+	["Labyrinth"] 	= 0,
+	["Bent"] 		= 50,
+	["Straight"] 	= 100,	
 }
 
 local connect = nil
@@ -107,8 +112,8 @@ local function initCells(dungeon, mask)
 
 	if mask == "Round" then
 		roundMask(dungeon)
-	elseif dungeonLayout[mask] ~= nil then
-		maskCells(dungeon, dungeonLayout[mask])		
+	elseif dungeon_layout[mask] ~= nil then
+		maskCells(dungeon, dungeon_layout[mask])		
 	end
 end
 
@@ -988,6 +993,215 @@ local function labelRooms(dungeon)
 	end
 end
 
+local function corridorLayout(layout)
+	-- body
+end
+
+--[[
+sub tunnel_dirs {
+    my ($dungeon,$last_dir) = @_;
+    my $p = $corridor_layout->{$dungeon->{'corridor_layout'}};
+    my @dirs = &shuffle(@dj_dirs);
+    
+    if ($last_dir && $p) {
+        unshift(@dirs,$last_dir) if (int(rand(100)) < $p);
+    }
+    return @dirs;
+}
+]]
+
+local function tunnelDirs(dungeon, layout, last_dir)
+	local p = corridor_layout[layout]
+
+	-- TODO: what does it matter if we use sorted table dj_dirs while
+	-- afterwards shuffling as in original code?
+	local keys = getKeys(dj)
+	local dirs = shuffle(keys)
+
+	if last_dir ~= nil and p ~= nil then
+		if love.math.random(100) < p then
+			table.insert(dirs, last_dir)
+		end
+	end
+
+	return dirs
+end
+
+--[[
+sub delve_tunnel {
+    my ($dungeon,$this_r,$this_c,$next_r,$next_c) = @_;
+    my $cell = $dungeon->{'cell'};
+    my ($r1,$r2) = sort { $a <=> $b } ($this_r,$next_r);
+    my ($c1,$c2) = sort { $a <=> $b } ($this_c,$next_c);
+    
+    my $r; for ($r = $r1; $r <= $r2; $r++) {
+        my $c; for ($c = $c1; $c <= $c2; $c++) {
+            $cell->[$r][$c] &= ~ $ENTRANCE;
+            $cell->[$r][$c] |= $CORRIDOR;
+        }
+    }
+    return 1;
+}
+]]
+
+local function delveTunnel(dungeon, this_r, this_c, next_r, next_c)
+	local cell = dungeon["cell"]
+
+	local tbl_r, tbl_c = { this_r, next_r }, { this_c, next_c }
+	
+	table.sort(tbl_r)
+	local r1, r2 = unpack(tbl_r)
+
+	table.sort(tbl_c)
+	local c1, c2 = unpack(tbl_c)
+
+	for r = r1, r2, 1 do
+		for c = c1, c2, 1 do
+			cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.ENTRANCE))
+			cell[r][c] = bit.bor(cell[r][c], Flags.CORRIDOR)
+		end
+	end
+
+	return true
+end
+
+--[[
+sub sound_tunnel {
+    my ($dungeon,$mid_r,$mid_c,$next_r,$next_c) = @_;
+    return 0 if ($next_r < 0 || $next_r > $dungeon->{'n_rows'});
+    return 0 if ($next_c < 0 || $next_c > $dungeon->{'n_cols'});
+    my $cell = $dungeon->{'cell'};
+    my ($r1,$r2) = sort { $a <=> $b } ($mid_r,$next_r);
+    my ($c1,$c2) = sort { $a <=> $b } ($mid_c,$next_c);
+    
+    my $r; for ($r = $r1; $r <= $r2; $r++) {
+        my $c; for ($c = $c1; $c <= $c2; $c++) {
+            return 0 if ($cell->[$r][$c] & $BLOCK_CORR);
+        }
+    }
+    return 1;
+}
+]]
+
+local function soundTunnel(dungeon, mid_r, mid_c, next_r, next_c)
+	if next_r < 0 or next_r > dungeon["n_rows"] then return false end
+	if next_c < 0 or next_c > dungeon["n_cols"] then return false end
+
+	local cell = dungeon["cell"]
+	local tbl_r, tbl_c = { mid_r, next_r }, { mid_c, next_c }
+
+	table.sort(tbl_r)
+	local r1, r2 = unpack(tbl_r)
+
+	table.sort(tbl_c)
+	local c1, c2 = unpack(tbl_c)
+
+	for r = r1, r2, 1 do
+		for c = c1, c2, 1 do
+			if bit.band(cell[r][c], Flags.BLOCK_CORR) ~= 0 then return false end
+		end
+	end	
+
+	return true
+end
+
+--[[
+sub open_tunnel {
+    my ($dungeon,$i,$j,$dir) = @_;
+    my $this_r = ($i * 2) + 1;
+    my $this_c = ($j * 2) + 1;
+    my $next_r = (($i + $di->{$dir}) * 2) + 1;
+    my $next_c = (($j + $dj->{$dir}) * 2) + 1;
+    my $mid_r = ($this_r + $next_r) / 2;
+    my $mid_c = ($this_c + $next_c) / 2;
+    
+    if (&sound_tunnel($dungeon,$mid_r,$mid_c,$next_r,$next_c)) {
+        return &delve_tunnel($dungeon,$this_r,$this_c,$next_r,$next_c);
+    } else {
+        return 0;
+    }
+}
+]]
+
+local function openTunnel(dungeon, i, j, dir)
+	local this_r = (i * 2) + 1
+	local this_c = (j * 2) + 1
+	local next_r = ((i + di[dir]) * 2) + 1
+	local next_c = ((j + dj[dir]) * 2) + 1
+	local mid_r = (this_r + next_r) / 2
+	local mid_c = (this_c + next_c) / 2
+
+	if soundTunnel(dungeon, mid_r, mid_c, next_r, next_c) then
+		return delveTunnel(dungeon, this_r, this_c, next_r, next_c)
+	else
+		return false
+	end
+end
+
+--[[
+sub tunnel {
+    my ($dungeon,$i,$j,$last_dir) = @_;
+    my @dirs = &tunnel_dirs($dungeon,$last_dir);
+    
+    my $dir; foreach $dir (@dirs) {
+        if (&open_tunnel($dungeon,$i,$j,$dir)) {
+            my $next_i = $i + $di->{$dir};
+            my $next_j = $j + $dj->{$dir};
+            
+            $dungeon = &tunnel($dungeon,$next_i,$next_j,$dir);
+        }
+    }
+    return $dungeon;
+}
+]]
+
+local function tunnel(dungeon, layout, i, j, last_dir)
+	local dirs = tunnelDirs(dungeon, layout, last_dir)
+
+	for _, dir in ipairs(dirs) do
+		if openTunnel(dungeon, i, j, dir) then
+			local next_i = i + di[dir]
+			local next_j = j + dj[dir]
+
+			tunnel(dungeon, layout, next_i, next_j, dir)
+		end
+	end
+end
+
+--[[
+sub corridors {
+    my ($dungeon) = @_;
+    my $cell = $dungeon->{'cell'};
+    
+    my $i; for ($i = 1; $i < $dungeon->{'n_i'}; $i++) {
+        my $r = ($i * 2) + 1;
+        my $j; for ($j = 1; $j < $dungeon->{'n_j'}; $j++) {
+            my $c = ($j * 2) + 1;
+            
+            next if ($cell->[$r][$c] & $CORRIDOR);
+            $dungeon = &tunnel($dungeon,$i,$j);
+        }
+    }
+    return $dungeon;
+}
+]]
+local function corridors(dungeon, layout)
+	local cell = dungeon["cell"]
+
+	for i = 1, dungeon["n_i"] - 1 do
+		local r = i * 2 + 1
+		for j = 1, dungeon["n_j"] - 1 do
+			local c = j * 2 + 1
+
+			if bit.band(cell[r][c], Flags.CORRIDOR) ~= 0 then goto continue end
+
+			tunnel(dungeon, layout, i, j, last_dir)
+
+			::continue::
+		end
+	end
+end
+
 function Generator.generate(options)
 	love.math.setRandomSeed(options["seed"])
 
@@ -1024,6 +1238,9 @@ function Generator.generate(options)
 
 	openRooms(dungeon)
 	labelRooms(dungeon)
+
+	local layout = options["corridor_layout"]
+	corridors(dungeon, layout)
 
 	cleanDungeon(dungeon)
 

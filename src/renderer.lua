@@ -56,7 +56,7 @@ local function scaleDungeon(dungeon, options)
 	image["max_x"] = image["width"] - 1
 	image["max_y"] = image["height"] - 1
     image["char_x"] = math.floor((image["cell_size"] - 10) / 2) + 1
-    image["char_y"] = math.floor((image["cell_size"] - 20) / 2) + 1 
+    image["char_y"] = math.floor((image["cell_size"] - 22) / 2) + 1 
 	return image
 end
 
@@ -172,7 +172,6 @@ local function openCells(dungeon, image, canvas)
 
 	for r = 0, dungeon["n_rows"] do
 		for c = 0, dungeon["n_cols"] do
-			-- TODO: should check for Flags.OPENSPACE instead, but currently no open space assigned
 			if bit.band(cell[r][c], Flags.OPENSPACE) == 0 then
 				local x = c * dim
 				local y = r * dim
@@ -331,8 +330,6 @@ local function imageDoors(dungeon, image, canvas)
     local arch_color = { 1.0, 0.0, 1.0, 1.0 }
     local door_color = { 1.0, 1.0, 0.0, 1.0 }
     
-    love.graphics.setColor(0.1, 0.8, 0.2, 1.0)
-
     for _, door in ipairs(list) do
     	local r = door["row"]
     	local y1 = r * dim
@@ -340,6 +337,10 @@ local function imageDoors(dungeon, image, canvas)
     	local c = door["col"]
     	local x1 = c * dim
     	local x2 = x1 + dim
+
+        love.graphics.setColor({ 1.0, 1.0, 1.0, 1.0 })
+        love.graphics.rectangle('fill', x1 + 1, y1 + 1, dim - 1, dim - 1)
+        love.graphics.setColor(0.0, 0.0, 0.0, 1.0)
 
     	local xc, yc = 0, 0
     	if bit.band(cell[r][c - 1], Flags.OPENSPACE) ~= 0 then
@@ -351,7 +352,7 @@ local function imageDoors(dungeon, image, canvas)
     	local attr = doorAttr(door)
 
     	if attr["wall"] == true then
-    		if xc ~= 0 then
+    		if xc ~= 0 then   
     			love.graphics.line(xc, y1, xc, y2)    			
     		else
     			love.graphics.line(x1, yc, x2, yc)
@@ -477,7 +478,7 @@ local function imageLabels(dungeon, image, canvas)
     local dim = image["cell_size"]
     local pal = getPalette()
     
-    love.graphics.setColor(0.0, 0.0, 1.0, 1.0)
+    love.graphics.setColor(0.0, 0.0, 0.0, 1.0)
 
     for r = 0, dungeon["n_rows"] do
         for c = 0, dungeon["n_cols"] do
@@ -488,7 +489,7 @@ local function imageLabels(dungeon, image, canvas)
             local x = (c * dim) + image["char_x"]
             local y = (r * dim) + image["char_y"]
 
-            love.graphics.print(char, x, y)
+            love.graphics.print(char, x + 0.5, y + 0.5)
 
             ::continue::
         end
