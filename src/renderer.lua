@@ -432,6 +432,100 @@ local function imageDoors(dungeon, image, canvas)
 end
 
 --[[
+sub image_stairs {
+    my ($dungeon,$image,$ih) = @_;
+    my $list = $dungeon->{'stair'};
+    return $ih unless ($list);
+    my $dim = $image->{'cell_size'};
+    my $s_px = int($dim / 2);
+    my $t_px = int($dim / 20) + 2;
+    my $pal = $image->{'palette'};
+    my $color = &get_color($pal,'stair');
+    
+    my $stair; foreach $stair (@{ $list }) {
+        if ($stair->{'next_row'} > $stair->{'row'}) {
+            my $xc = int(($stair->{'col'} + 0.5) * $dim);
+            my $y1 = $stair->{'row'} * $dim;
+            my $y2 = ($stair->{'next_row'} + 1) * $dim;
+            
+            my $y; for ($y = $y1; $y < $y2; $y += $t_px) {
+                my $dx; if ($stair->{'key'} eq 'down') {
+                    $dx = int((($y - $y1) / ($y2 - $y1)) * $s_px);
+                } else {
+                    $dx = $s_px;
+                }
+                $ih->line($xc-$dx,$y,$xc+$dx,$y,$color);
+            }
+        } elsif ($stair->{'next_row'} < $stair->{'row'}) {
+            my $xc = int(($stair->{'col'} + 0.5) * $dim);
+            my $y1 = ($stair->{'row'} + 1) * $dim;
+            my $y2 = $stair->{'next_row'} * $dim;
+            
+            my $y; for ($y = $y1; $y > $y2; $y -= $t_px) {
+                my $dx; if ($stair->{'key'} eq 'down') {
+                    $dx = int((($y - $y1) / ($y2 - $y1)) * $s_px);
+                } else {
+                    $dx = $s_px;
+                }
+                $ih->line($xc-$dx,$y,$xc+$dx,$y,$color);
+            }
+        } elsif ($stair->{'next_col'} > $stair->{'col'}) {
+            my $x1 = $stair->{'col'} * $dim;
+            my $x2 = ($stair->{'next_col'} + 1) * $dim;
+            my $yc = int(($stair->{'row'} + 0.5) * $dim);
+            
+            my $x; for ($x = $x1; $x < $x2; $x += $t_px) {
+                my $dy; if ($stair->{'key'} eq 'down') {
+                    $dy = int((($x - $x1) / ($x2 - $x1)) * $s_px);
+                } else {
+                    $dy = $s_px;
+                }
+                $ih->line($x,$yc-$dy,$x,$yc+$dy,$color);
+            }
+        } elsif ($stair->{'next_col'} < $stair->{'col'}) {
+            my $x1 = ($stair->{'col'} + 1) * $dim;
+            my $x2 = $stair->{'next_col'} * $dim;
+            my $yc = int(($stair->{'row'} + 0.5) * $dim);
+            
+            my $x; for ($x = $x1; $x > $x2; $x -= $t_px) {
+                my $dy; if ($stair->{'key'} eq 'down') {
+                    $dy = int((($x - $x1) / ($x2 - $x1)) * $s_px);
+                } else {
+                    $dy = $s_px;
+                }
+                $ih->line($x,$yc-$dy,$x,$yc+$dy,$color);
+            }
+        }
+    }
+    return $ih;
+}
+]]
+
+local function imageStairs(dungeon, image, canvas)
+    local list = dungeon["stair"]
+    local dim = image["cell_size"]
+    local s_px = math.floor(dim / 2)
+    local t_px = math.floor(dim / 20) + 2
+    local pal = getPalette()
+    local color = { 0.0, 0.0, 0.0, 1.0 }
+
+    for _, stair in ipairs(list) do
+        local x = stair["col"] * dim
+        local y = stair["row"] * dim
+
+        if stair["key"] == "up" then
+            love.graphics.setColor(0.8, 0.0, 0.0, 1.0)
+            love.graphics.rectangle('fill', x, y, dim, dim)
+        else
+            love.graphics.setColor(0.0, 0.8, 0.0, 1.0)
+            love.graphics.rectangle('fill', x, y, dim, dim)
+        end
+    end
+
+    love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
+end
+
+--[[
 sub cell_label {
     my ($cell) = @_;
     my $i = ($cell >> 24) & 0xFF;
@@ -511,6 +605,8 @@ function Renderer.render(dungeon, options)
 
 	imageDoors(dungeon, image, canvas)
     imageLabels(dungeon, image, canvas)
+
+    imageStairs(dungeon, image, canvas)
 
 	love.graphics.setCanvas()
 

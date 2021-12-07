@@ -1307,7 +1307,7 @@ local function stairEnds(dungeon)
 	for i = 0, dungeon["n_i"] - 1 do
 		local r = (i * 2) + 1
 		for j = 0, dungeon["n_j"] - 1 do
-			local c = (i * 2) + 1
+			local c = (j * 2) + 1
 
 			if cell[r][c] ~= Flags.CORRIDOR then goto continue end
 			if bit.band(cell[r][c], Flags.STAIRS) ~= 0 then goto continue end
@@ -1320,9 +1320,8 @@ local function stairEnds(dungeon)
 					s_end["next_col"] = s_end["col"] + n[2]
 
 					table.insert(list, s_end)
-					goto continue
-				end
-				
+					break
+				end				
 			end
 
 			::continue::
@@ -1370,24 +1369,30 @@ local function emplaceStairs(dungeon, n)
 
 	local cell = dungeon["cell"]
 
+	shuffle(list)
+
+	print('[!!!!]', #list, n)
+
 	for i = 0, n - 1 do
 		if #list == 0 then return end
 
-		local idx = love.math.random(#list) - 1
-		local stair = table.remove(list, idx)
+		local stair = table.remove(list)
 
 		local r = stair["row"]
 		local c = stair["col"]
 		local s_type = i < 2 and i or love.math.random(2)
 
 		if s_type == 0 then
+			print("ADD STAIRS DOWN @", r, c)
+
 			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_DN)
 			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte("d"), 24))
 			stair["key"] = "down"
 		else
+			print("ADD STAIRS UP @", r, c)
 			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_UP)
 			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte("u"), 24))
-			stair["key"] = "down"
+			stair["key"] = "up"
 		end
 
 		table.insert(dungeon["stair"], stair)
