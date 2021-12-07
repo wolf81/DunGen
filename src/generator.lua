@@ -1371,8 +1371,6 @@ local function emplaceStairs(dungeon, n)
 
 	shuffle(list)
 
-	print('[!!!!]', #list, n)
-
 	for i = 0, n - 1 do
 		if #list == 0 then return end
 
@@ -1383,13 +1381,10 @@ local function emplaceStairs(dungeon, n)
 		local s_type = i < 2 and i or love.math.random(2)
 
 		if s_type == 0 then
-			print("ADD STAIRS DOWN @", r, c)
-
 			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_DN)
 			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte("d"), 24))
 			stair["key"] = "down"
 		else
-			print("ADD STAIRS UP @", r, c)
 			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_UP)
 			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte("u"), 24))
 			stair["key"] = "up"
