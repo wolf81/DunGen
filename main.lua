@@ -1,6 +1,6 @@
 io.stdout:setvbuf('no') -- show debug output live in SublimeText console
 
-require 'src/dungen'
+local DunGen = require 'src/dungen'
 
 local texture = nil
 
@@ -12,7 +12,7 @@ local function generate()
 		--["room_layout"] = "Packed",
 	})
 
-	texture = DunGen.getTexture(dungeon)
+	texture = DunGen.render(dungeon)
 end
 
 function love.load(args)
