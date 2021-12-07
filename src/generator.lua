@@ -16,6 +16,33 @@ local opposite = {
 	["west"] 	= "east",
 }
 
+local stair_end = {
+    ["north"] = {
+        ["walled"]    = {{1,-1},{0,-1},{-1,-1},{-1,0},{-1,1},{0,1},{1,1}},
+        ["corridor"]  = {{0,0},{1,0},{2,0}},
+        ["stair"]     = {0,0},
+        ["next"]      = {1,0},
+    },
+    ["south"] = {
+        ["walled"]    = {{-1,-1},{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1}},
+        ["corridor"]  = {{0,0},{-1,0},{-2,0}},
+        ["stair"]     = {0,0},
+        ["next"]      = {-1,0},
+    },
+    ["west"] = {
+        ["walled"]    = {{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1},{1,0},{1,1}},
+        ["corridor"]  = {{0,0},{0,1},{0,2}},
+        ["stair"]     = {0,0},
+        ["next"]      = {0,1},
+    },
+    ["east"] = {
+        ["walled"]    = {{-1,-1},{-1,0},{-1,1},{0,1},{1,1},{1,0},{1,-1}},
+        ["corridor"]  = {{0,0},{0,-1},{0,-2}},
+        ["stair"]     = {0,0},
+        ["next"]      = {0,-1},
+    },
+};
+
 --[[ TODO: 
 	* Improve implementation, all layout names should be public
 	or perhaps just forward layout tables instead, so users 
@@ -1202,6 +1229,171 @@ local function corridors(dungeon, layout)
 	end
 end
 
+--[[
+sub check_tunnel {
+    my ($cell,$r,$c,$check) = @_;
+    my $list;
+    
+    if ($list = $check->{'corridor'}) {
+        my $p; foreach $p (@{ $list }) {
+            return 0 unless ($cell->[$r+$p[0][$c+$p[1] == $CORRIDOR);
+        }
+    }
+    if ($list = $check->{'walled'}) {
+        my $p; foreach $p (@{ $list }) {
+            return 0 if ($cell->[$r+$p[0][$c+$p[1] & $OPENSPACE);
+        }
+    }
+    return 1;
+}
+]]
+
+local function checkTunnel(cell, r, c, check)
+	local list = check["corridor"]
+	if list ~= nil then
+		for _, p in ipairs(list) do
+			if cell[r + p[1]][c + p[2]] ~= Flags.CORRIDOR then
+				return false
+			end
+		end
+	end
+
+	list = check["walled"]
+	if list ~= nil then
+		for _, p in ipairs(list) do
+			if bit.band(cell[r + p[1]][c + p[2]], Flags.OPENSPACE) ~= 0 then
+				return false
+			end			
+		end
+	end
+
+	return true
+end
+
+--[[
+sub stair_ends {
+    my ($dungeon) = @_;
+    my $cell = $dungeon->{'cell'};
+    my @list;
+    
+    my $i; ROW: for ($i = 0; $i < $dungeon->{'n_i'}; $i++) {
+        my $r = ($i * 2) + 1;
+        my $j; COL: for ($j = 0; $j < $dungeon->{'n_j'}; $j++) {
+            my $c = ($j * 2) + 1;
+            
+            next unless ($cell->[$r][$c] == $CORRIDOR);
+            next if ($cell->[$r][$c] & $STAIRS);
+            
+            my $dir; foreach $dir (keys %{ $stair_end }) {
+                if (&check_tunnel($cell,$r,$c,$stair_end->{$dir})) {
+                    my $end = { 'row' => $r, 'col' => $c };
+                    my $n = $stair_end->{$dir}{'next'};
+                    $end->{'next_row'} = $end->{'row'} + $n->[0];
+                    $end->{'next_col'} = $end->{'col'} + $n->[1];
+                    
+                    push(@list,$end); next COL;
+                }
+            }
+        }
+    }
+    return @list;
+}
+]]
+
+local function stairEnds(dungeon)
+	local cell = dungeon["cell"]
+	local list = {}
+
+	for i = 0, dungeon["n_i"] - 1 do
+		local r = (i * 2) + 1
+		for j = 0, dungeon["n_j"] - 1 do
+			local c = (i * 2) + 1
+
+			if cell[r][c] ~= Flags.CORRIDOR then goto continue end
+			if bit.band(cell[r][c], Flags.STAIRS) ~= 0 then goto continue end
+
+			for _, dir in ipairs(getKeys(stair_end)) do
+				if checkTunnel(cell, r, c, stair_end[dir]) then
+					local s_end = { ["row"] = r, ["col"] = c }
+					local n = stair_end[dir]["next"]
+					s_end["next_row"] = s_end["row"] + n[1]
+					s_end["next_col"] = s_end["col"] + n[2]
+
+					table.insert(list, s_end)
+					goto continue
+				end
+				
+			end
+
+			::continue::
+		end
+	end
+
+	return list
+end
+
+--[[
+sub emplace_stairs {
+    my ($dungeon) = @_;
+    my $n = $dungeon->{'add_stairs'};
+    return $dungeon unless ($n > 0);
+    my @list = &stair_ends($dungeon);
+    return $dungeon unless (@list);
+    my $cell = $dungeon->{'cell'};
+    
+    my $i; for ($i = 0; $i < $n; $i++) {
+        my $stair = splice(@list,int(rand(@list)),1);
+        last unless ($stair);
+        my $r = $stair->{'row'};
+        my $c = $stair->{'col'};
+        my $type = ($i < 2) ? $i : int(rand(2));
+        
+        if ($type == 0) {
+            $cell->[$r][$c] |= $STAIR_DN;
+            $cell->[$r][$c] |= (ord('d') << 24);
+            $stair->{'key'} = 'down';
+        } else {
+            $cell->[$r][$c] |= $STAIR_UP;
+            $cell->[$r][$c] |= (ord('u') << 24);
+            $stair->{'key'} = 'up';
+        }
+        push(@{ $dungeon->{'stair'} },$stair);
+    }
+    return $dungeon;
+}
+]]
+
+local function emplaceStairs(dungeon, n)
+	if n <= 0 then return end
+
+	local list = stairEnds(dungeon)
+
+	local cell = dungeon["cell"]
+
+	for i = 0, n - 1 do
+		if #list == 0 then return end
+
+		local idx = love.math.random(#list) - 1
+		local stair = table.remove(list, idx)
+
+		local r = stair["row"]
+		local c = stair["col"]
+		local s_type = i < 2 and i or love.math.random(2)
+
+		if s_type == 0 then
+			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_DN)
+			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte("d"), 24))
+			stair["key"] = "down"
+		else
+			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_UP)
+			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte("u"), 24))
+			stair["key"] = "down"
+		end
+
+		table.insert(dungeon["stair"], stair)
+	end
+end
+
 function Generator.generate(options)
 	love.math.setRandomSeed(options["seed"])
 
@@ -1216,6 +1408,7 @@ function Generator.generate(options)
 	dungeon["n_rooms"] = 0
 	dungeon["room"] = {}
 	dungeon["door"] = {}
+	dungeon["stair"] = {}
 
 	-- TODO: perhaps ugly to copy
 	dungeon["cell_size"] = options["cell_size"]
@@ -1241,6 +1434,9 @@ function Generator.generate(options)
 
 	local layout = options["corridor_layout"]
 	corridors(dungeon, layout)
+
+	local n_stairs = options["add_stairs"]
+	emplaceStairs(dungeon, n_stairs)
 
 	cleanDungeon(dungeon)
 
