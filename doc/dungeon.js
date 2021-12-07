@@ -928,8 +928,7 @@ function stair_ends(a) {
             g;
         for (g = 0; g < a.n_j; g++) {
             var f = g * 2 + 1;
-            if (a.cell[e][f] == CORRIDOR) 
-                a.cell[e][f] & STAIRS || $H(stair_end).keys().each(function(h) {
+            if (a.cell[e][f] == CORRIDOR) a.cell[e][f] & STAIRS || $H(stair_end).keys().each(function(h) {
                 if (check_tunnel(b, e, f, stair_end[h])) {
                     var i = {
                         row: e,

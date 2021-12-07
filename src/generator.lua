@@ -71,7 +71,17 @@ local dungeon_layout = {
 			{ [0] = 0, 1, 1, 1, 1, 0 },
 			{ [0] = 1, 1, 1, 1, 1, 1 },
 			{ [0] = 1, 1, 0, 0, 1, 1 },
-	}
+	},
+	["Dagger"] = {
+		[0] = 
+			{ [0] = 0, 1, 0 }, 
+			{ [0] = 1, 1, 1 },
+			{ [0] = 0, 1, 0 },
+			{ [0] = 0, 1, 0 },
+	},
+	["Round"] = {},
+	["Saltire"] = {},
+	["Hexagon"] = {}
 }
 
 local corridor_layout = {
@@ -112,6 +122,39 @@ local function maskCells(dungeon, mask)
 	end
 end
 
+local function saltireMask(dungeon)
+	local cell = dungeon["cell"]
+
+	local i_max = math.floor(dungeon["n_rows"] / 4)
+	for i = 0, i_max - 1 do
+		local j = i + i_max
+		local j_max = dungeon["n_cols"] - j
+
+		for j = j, j_max do
+			cell[i][j] = Flags.BLOCKED
+			cell[dungeon["n_rows"] - i][j] = Flags.BLOCKED
+			cell[j][i] = Flags.BLOCKED
+			cell[j][dungeon["n_cols"] - i] = Flags.BLOCKED
+		end
+	end
+end
+
+local function hexagonMask(dungeon)
+	local cell = dungeon["cell"]
+
+	local r_half = dungeon["n_rows"] / 2
+	for r = 0, dungeon["n_rows"] do
+		local c_min = math.floor(math.abs(r - r_half) * 0.57735)
+		local c_max = dungeon["n_cols"] - c_min
+
+		for c = 0, dungeon["n_cols"] do
+			if c < c_min or c > c_max then
+				cell[r][c] = Flags.BLOCKED
+			end
+		end
+	end
+end
+
 local function roundMask(dungeon)
 	local center_r = math.floor(dungeon["n_rows"] / 2)
 	local center_c = math.floor(dungeon["n_cols"] / 2)
@@ -139,6 +182,10 @@ local function initCells(dungeon, mask)
 
 	if mask == "Round" then
 		roundMask(dungeon)
+	elseif mask == "Saltire" then
+		saltireMask(dungeon)
+	elseif mask == "Hexagon" then
+		hexagonMask(dungeon)
 	elseif dungeon_layout[mask] ~= nil then
 		maskCells(dungeon, dungeon_layout[mask])		
 	end
