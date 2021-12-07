@@ -551,7 +551,7 @@ local function allocOpens(dungeon, room)
 	local room_h = (room["south"] - room["north"]) / 2 + 1
 	local room_w = (room["east"] - room["west"]) / 2 + 1
 	local flumph = math.floor(math.sqrt(room_w * room_h))
-	local n_opens = flumph + math.floor(love.math.random(flumph))
+	local n_opens = flumph + love.math.random(flumph)
 
 	return n_opens
 end
@@ -808,6 +808,8 @@ local function openRoom(dungeon, room)
 				door is always 'missing'.
 			--]]
 			if not connect[id] then connect[id] = true end
+
+			goto continue
 		end
 
 		local open_r = sill["sill_r"]
