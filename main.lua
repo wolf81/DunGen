@@ -8,11 +8,10 @@ local function generate()
 	local dungeon = DunGen.generate({ 
 		-- ['seed'] = 0.32, 
 		-- ["dungeon_layout"] = "Cross",
-		["cell_size"] = 15,
 		--["room_layout"] = "Packed",
 	})
 
-	texture = DunGen.render(dungeon)
+	texture = DunGen.render(dungeon, { ["cell_size"] = 14, })
 end
 
 function love.load(args)

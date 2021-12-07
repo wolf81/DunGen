@@ -46,10 +46,10 @@ Renderer = {}
     return $image;
 ]]
 
-local function scaleDungeon(dungeon)
+local function scaleDungeon(dungeon, options)
 	local image = {
-		["cell_size"] = dungeon["cell_size"],
-		["map_style"] = dungeon["map_style"],
+		["cell_size"] = options["cell_size"],
+		["map_style"] = options["map_style"],
 	}
 	image["width"] = (dungeon["n_cols"] + 1) * (image["cell_size"]) + 1
 	image["height"] = (dungeon["n_rows"] + 1) * (image["cell_size"]) + 1
@@ -321,7 +321,7 @@ sub image_doors {
 local function imageDoors(dungeon, image, canvas)
 	local list = dungeon["door"] or {}
 	local cell = dungeon["cell"]
-	local dim = dungeon["cell_size"]
+	local dim = image["cell_size"]
 	local a_px = math.floor(dim / 6)
 	local d_tx = math.floor(dim / 4)
 	local t_tx = math.floor(dim / 3)
@@ -429,11 +429,13 @@ local function imageDoors(dungeon, image, canvas)
     love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
 end
 
-function Renderer.render(dungeon)
-	local image = scaleDungeon(dungeon)
+function Renderer.render(dungeon, options)
+	local image = scaleDungeon(dungeon, options)
 
 	local canvas = love.graphics.newCanvas(image["width"], image["height"])
 	love.graphics.setCanvas(canvas)
+	-- move offset by half a pixel in order to draw sharp lines
+	love.graphics.translate(0.5, 0.5) 
 
 	fillImage(dungeon, image, canvas)
 	openCells(dungeon, image, canvas)
