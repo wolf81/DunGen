@@ -55,7 +55,8 @@ local function scaleDungeon(dungeon, options)
 	image["height"] = (dungeon["n_rows"] + 1) * (image["cell_size"]) + 1
 	image["max_x"] = image["width"] - 1
 	image["max_y"] = image["height"] - 1
-
+    image["char_x"] = math.floor((image["cell_size"] - 10) / 2) + 1
+    image["char_y"] = math.floor((image["cell_size"] - 20) / 2) + 1 
 	return image
 end
 
@@ -429,6 +430,73 @@ local function imageDoors(dungeon, image, canvas)
     love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
 end
 
+--[[
+sub cell_label {
+    my ($cell) = @_;
+    my $i = ($cell >> 24) & 0xFF;
+    return unless ($i);
+    my $char = chr($i);
+    return unless ($char =~ /^\d/);
+    return $char;
+}
+--]]
+
+local function cellLabel(cell)
+    local i = tonumber(bit.band(bit.rshift(cell, 24), 0xFF))
+    if i == 0 then return nil end
+    local char = string.char(i)
+    return tonumber(char)
+end
+
+--[[
+sub image_labels {
+    my ($dungeon,$image,$ih) = @_;
+    my $cell = $dungeon->{'cell'};
+    my $dim = $image->{'cell_size'};
+    my $pal = $image->{'palette'};
+    my $color = &get_color($pal,'label');
+    
+    my $r; for ($r = 0; $r <= $dungeon->{'n_rows'}; $r++) {
+        my $c; for ($c = 0; $c <= $dungeon->{'n_cols'}; $c++) {
+            next unless ($cell->[$r][$c] & $OPENSPACE);
+            
+            my $char = &cell_label($cell->[$r][$c]);
+            next unless (defined $char);
+            my $x = ($c * $dim) + $image->{'char_x'};
+            my $y = ($r * $dim) + $image->{'char_y'};
+            
+            $ih->string($image->{'font'},$x,$y,$char,$color);
+        }
+    }
+    return $ih;
+}
+--]]
+
+local function imageLabels(dungeon, image, canvas)
+    local cell = dungeon["cell"]
+    local dim = image["cell_size"]
+    local pal = getPalette()
+    
+    love.graphics.setColor(0.0, 0.0, 1.0, 1.0)
+
+    for r = 0, dungeon["n_rows"] do
+        for c = 0, dungeon["n_cols"] do
+            if bit.band(cell[r][c], Flags.OPENSPACE) == 0 then goto continue end
+
+            local char = cellLabel(cell[r][c])
+            if char == nil then goto continue end
+            local x = (c * dim) + image["char_x"]
+            local y = (r * dim) + image["char_y"]
+
+            love.graphics.print(char, x, y)
+
+            ::continue::
+        end
+    end
+
+    love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
+end
+
 function Renderer.render(dungeon, options)
 	local image = scaleDungeon(dungeon, options)
 
@@ -441,6 +509,7 @@ function Renderer.render(dungeon, options)
 	openCells(dungeon, image, canvas)
 
 	imageDoors(dungeon, image, canvas)
+    imageLabels(dungeon, image, canvas)
 
 	love.graphics.setCanvas()
 

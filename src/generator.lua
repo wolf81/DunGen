@@ -949,6 +949,45 @@ local function openRooms(dungeon)
 	end
 end
 
+--[[
+sub label_rooms {
+    my ($dungeon) = @_;
+    my $cell = $dungeon->{'cell'};
+    
+    my $id; for ($id = 1; $id <= $dungeon->{'n_rooms'}; $id++) {
+        my $room = $dungeon->{'room'}[$id];
+        my $label = "$room->{'id'}";
+        my $len = length($label);
+        my $label_r = int(($room->{'north'} + $room->{'south'}) / 2);
+        my $label_c = int(($room->{'west'} + $room->{'east'} - $len) / 2) + 1;
+        
+        my $c; for ($c = 0; $c < $len; $c++) {
+            my $char = substr($label,$c,1);
+            $cell->[$label_r][$label_c + $c] |= (ord($char) << 24);
+        }
+    }
+    return $dungeon;
+}
+]]
+
+local function labelRooms(dungeon)
+	local cell = dungeon["cell"]
+
+	for id = 1, dungeon["n_rooms"] do
+		local room = dungeon["room"][id]
+		local label = room["id"]
+		local len = string.len(label)
+		local label_r = math.floor((room["north"] + room["south"]) / 2)
+		local label_c = math.floor((room["west"] + room["east"] - len) / 2) + 1
+
+		for c = 0, len - 1 do
+			local char = string.sub(label, c, 1)
+			local mask = bit.lshift(string.byte(char), 24)
+			cell[label_r][label_c + c] = bit.bor(cell[label_r][label_c + c], mask)
+		end
+	end
+end
+
 function Generator.generate(options)
 	love.math.setRandomSeed(options["seed"])
 
@@ -984,6 +1023,7 @@ function Generator.generate(options)
 	emplaceRooms(dungeon, roomLayout, roomMax)
 
 	openRooms(dungeon)
+	labelRooms(dungeon)
 
 	cleanDungeon(dungeon)
 
