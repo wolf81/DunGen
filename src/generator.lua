@@ -978,7 +978,7 @@ local function fixDoors(dungeon)
 				local door_c = door["col"]
 				local door_cell = cell[door_r][door_c]
 
-				if bit.band(door_cell, Flags.OPENSPACE) ~= 0 then goto continue end
+				if bit.band(door_cell, Flags.OPENSPACE) == 0 then goto continue end
 
 				local door_id = door_r..'.'..door_c
 
