@@ -18,28 +18,51 @@ local opposite = {
 
 local stair_end = {
     ["north"] = {
-        ["walled"]    = {{1,-1},{0,-1},{-1,-1},{-1,0},{-1,1},{0,1},{1,1}},
-        ["corridor"]  = {{0,0},{1,0},{2,0}},
-        ["stair"]     = {0,0},
-        ["next"]      = {1,0},
+        ["walled"]		= {{1,-1},{0,-1},{-1,-1},{-1,0},{-1,1},{0,1},{1,1}},
+        ["corridor"]	= {{0,0},{1,0},{2,0}},
+        ["stair"]		= {0,0},
+        ["next"]		= {1,0},
     },
     ["south"] = {
-        ["walled"]    = {{-1,-1},{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1}},
-        ["corridor"]  = {{0,0},{-1,0},{-2,0}},
-        ["stair"]     = {0,0},
-        ["next"]      = {-1,0},
+        ["walled"]		= {{-1,-1},{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1}},
+        ["corridor"]	= {{0,0},{-1,0},{-2,0}},
+        ["stair"]		= {0,0},
+        ["next"]		= {-1,0},
     },
     ["west"] = {
-        ["walled"]    = {{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1},{1,0},{1,1}},
-        ["corridor"]  = {{0,0},{0,1},{0,2}},
-        ["stair"]     = {0,0},
-        ["next"]      = {0,1},
+        ["walled"]		= {{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1},{1,0},{1,1}},
+        ["corridor"]	= {{0,0},{0,1},{0,2}},
+        ["stair"]		= {0,0},
+        ["next"]		= {0,1},
     },
     ["east"] = {
-        ["walled"]    = {{-1,-1},{-1,0},{-1,1},{0,1},{1,1},{1,0},{1,-1}},
-        ["corridor"]  = {{0,0},{0,-1},{0,-2}},
-        ["stair"]     = {0,0},
-        ["next"]      = {0,-1},
+        ["walled"]		= {{-1,-1},{-1,0},{-1,1},{0,1},{1,1},{1,0},{1,-1}},
+        ["corridor"]	= {{0,0},{0,-1},{0,-2}},
+        ["stair"]		= {0,0},
+        ["next"]		= {0,-1},
+    },
+};
+
+local close_end = {
+    ["north"] = {
+        ["walled"]		= {{0,-1},{1,-1},{1,0},{1,1},{0,1}},
+        ["close"]		= {{0,0}},
+        ["recurse"]		= {-1,0},
+    },
+    ["south"] = {
+        ["walled"]		= {{0,-1},{-1,-1},{-1,0},{-1,1},{0,1}},
+        ["close"]		= {{0,0}},
+        ["recurse"]		= {1,0},
+    },
+    ["west"] = {
+        ["walled"]		= {{-1,0},{-1,1},{0,1},{1,1},{1,0}},
+        ["close"]		= {{0,0}},
+        ["recurse"]		= {0,-1},
+    },
+    ["east"] = {
+        ["walled"]		= {{-1,0},{-1,-1},{0,-1},{1,-1},{1,0}},
+        ["close"]		= {{0,0}},
+        ["recurse"]		= {0,1},
     },
 };
 
@@ -991,6 +1014,171 @@ local function fixDoors(dungeon)
 end
 
 --[[
+sub check_tunnel {
+    my ($cell,$r,$c,$check) = @_;
+    my $list;
+    
+    if ($list = $check->{'corridor'}) {
+        my $p; foreach $p (@{ $list }) {
+            return 0 unless ($cell->[$r+$p[0][$c+$p[1] == $CORRIDOR);
+        }
+    }
+    if ($list = $check->{'walled'}) {
+        my $p; foreach $p (@{ $list }) {
+            return 0 if ($cell->[$r+$p[0][$c+$p[1] & $OPENSPACE);
+        }
+    }
+    return 1;
+}
+]]
+
+local function checkTunnel(cell, r, c, check)
+	local list = check["corridor"]
+	if list ~= nil then
+		for _, p in ipairs(list) do
+			if cell[r + p[1]][c + p[2]] ~= Flags.CORRIDOR then
+				return false
+			end
+		end
+	end
+
+	list = check["walled"]
+	if list ~= nil then
+		for _, p in ipairs(list) do
+			if bit.band(cell[r + p[1]][c + p[2]], Flags.OPENSPACE) ~= 0 then
+				return false
+			end			
+		end
+	end
+
+	return true
+end
+
+--[[
+sub empty_blocks {
+    my ($dungeon) = @_;
+    my $cell = $dungeon->{'cell'};
+    
+    my $r; for ($r = 0; $r <= $dungeon->{'n_rows'}; $r++) {
+        my $c; for ($c = 0; $c <= $dungeon->{'n_cols'}; $c++) {
+            $cell->[$r][$c] = $NOTHING if ($cell->[$r][$c] & $BLOCKED);
+        }
+    }
+    return $dungeon;
+}
+]]
+
+local function emptyBlocks(dungeon)
+	local cell = dungeon["cell"]
+
+	for r = 0, dungeon["n_rows"] do
+		for c = 0, dungeon["n_cols"] do
+			if bit.band(cell[r][c], Flags.BLOCKED) ~= 0 then
+				cell[r][c] = Flags.NOTHING
+			end
+		end
+	end
+end
+
+--[[
+sub collapse {
+    my ($dungeon,$r,$c,$xc) = @_;
+    my $cell = $dungeon->{'cell'};
+    
+    unless ($cell->[$r][$c] & $OPENSPACE) {
+        return $dungeon;
+    }
+    my $dir; foreach $dir (keys %{ $xc }) {
+        if (&check_tunnel($cell,$r,$c,$xc->{$dir})) {
+            my $p; foreach $p (@{ $xc->{$dir}{'close'} }) {
+                $cell->[$r+$p->[0][$c+$p->[1] = $NOTHING;
+            }
+            if ($p = $xc->{$dir}{'open'}) {
+                $cell->[$r+$p->[0][$c+$p->[1] |= $CORRIDOR;
+            }
+            if ($p = $xc->{$dir}{'recurse'}) {
+                $dungeon = &collapse($dungeon,($r+$p->[0]),($c+$p->[1]),$xc);
+            }
+        }
+    }
+    return $dungeon;
+}
+]]
+
+local function collapse(dungeon, r, c, xc)
+	local cell = dungeon["cell"]
+
+	if bit.band(cell[r][c], Flags.OPENSPACE) == 0 then return end
+
+	for _, dir in pairs(getKeys(xc)) do
+		if checkTunnel(cell, r, c, xc[dir]) then
+			for _, p in ipairs(xc[dir]["close"]) do
+				cell[r + p[1]][c + p[2]] = Flags.NOTHING
+			end
+
+			local p = xc[dir]["open"]
+			if p ~= nil then
+				cell[r + p[1]][c + p[2]] = bit.bor(cell[r + p[1]][c + p[2]], Flags.CORRIDOR)
+			end
+
+			p = xc[dir]["recurse"]
+			if p ~= nil then
+				collapse(dungeon, r + p[1], c + p[2], xc)
+			end
+		end
+	end
+end
+
+--[[
+sub collapse_tunnels {
+    my ($dungeon,$p,$xc) = @_;
+    return $dungeon unless ($p);
+    my $all = ($p == 100);
+    my $cell = $dungeon->{'cell'};
+    
+    my $i; for ($i = 0; $i < $dungeon->{'n_i'}; $i++) {
+        my $r = ($i * 2) + 1;
+        my $j; for ($j = 0; $j < $dungeon->{'n_j'}; $j++) {
+            my $c = ($j * 2) + 1;
+            
+            next unless ($cell->[$r][$c] & $OPENSPACE);
+            next if ($cell->[$r][$c] & $STAIRS);
+            next unless ($all || (int(rand(100)) < $p));
+            
+            $dungeon = &collapse($dungeon,$r,$c,$xc);
+        }
+    }
+    return $dungeon;
+}
+]]
+
+local function collapseTunnels(dungeon, p, xc)
+	if p == 0 then return end
+
+	local all = p == 100
+	local cell = dungeon["cell"]
+
+	for i = 0, dungeon["n_i"] - 1 do
+		local r = (i * 2) + 1
+		for j = 0, dungeon["n_j"] - 1 do
+			local c = (j * 2) + 1
+
+			if bit.band(cell[r][c], Flags.OPENSPACE) == 0 then goto continue end
+			if bit.band(cell[r][c], Flags.STAIRS) ~= 0 then goto continue end
+			if all or love.math.random(100) < p then
+				collapse(dungeon, r, c, xc)
+			end
+
+			::continue::
+		end
+	end
+end
+
+local function removeDeadends(dungeon, percentage)
+	collapseTunnels(dungeon, percentage, close_end)    
+end
+
+--[[
     my ($dungeon) = @_;
     
     if ($dungeon->{'remove_deadends'}) {
@@ -1001,15 +1189,13 @@ end
     
     return $dungeon;
 ]]
-local function cleanDungeon(dungeon)
-	--[[
-	if dungeon["remove_deadends"] ~= nil then
-		removeDeadends(dungeon)
+local function cleanDungeon(dungeon, remove_deadends)
+	if remove_deadends > 0 then
+		removeDeadends(dungeon, remove_deadends)
 	end
-	--]]
 
 	fixDoors(dungeon)
-	--emptyBlocks(dungeon)
+	emptyBlocks(dungeon)
 end
 
 --[[
@@ -1065,10 +1251,6 @@ local function labelRooms(dungeon)
 			cell[label_r][label_c + c] = bit.bor(cell[label_r][label_c + c], mask)
 		end
 	end
-end
-
-local function corridorLayout(layout)
-	-- body
 end
 
 --[[
@@ -1277,47 +1459,6 @@ local function corridors(dungeon, layout)
 end
 
 --[[
-sub check_tunnel {
-    my ($cell,$r,$c,$check) = @_;
-    my $list;
-    
-    if ($list = $check->{'corridor'}) {
-        my $p; foreach $p (@{ $list }) {
-            return 0 unless ($cell->[$r+$p[0][$c+$p[1] == $CORRIDOR);
-        }
-    }
-    if ($list = $check->{'walled'}) {
-        my $p; foreach $p (@{ $list }) {
-            return 0 if ($cell->[$r+$p[0][$c+$p[1] & $OPENSPACE);
-        }
-    }
-    return 1;
-}
-]]
-
-local function checkTunnel(cell, r, c, check)
-	local list = check["corridor"]
-	if list ~= nil then
-		for _, p in ipairs(list) do
-			if cell[r + p[1]][c + p[2]] ~= Flags.CORRIDOR then
-				return false
-			end
-		end
-	end
-
-	list = check["walled"]
-	if list ~= nil then
-		for _, p in ipairs(list) do
-			if bit.band(cell[r + p[1]][c + p[2]], Flags.OPENSPACE) ~= 0 then
-				return false
-			end			
-		end
-	end
-
-	return true
-end
-
---[[
 sub stair_ends {
     my ($dungeon) = @_;
     my $cell = $dungeon->{'cell'};
@@ -1485,7 +1626,8 @@ function Generator.generate(options)
 	local n_stairs = options["add_stairs"]
 	emplaceStairs(dungeon, n_stairs)
 
-	cleanDungeon(dungeon)
+	local remove_deadends = options["remove_deadends"]
+	cleanDungeon(dungeon, remove_deadends)
 
 	for k, v in ipairs(dungeon["room"]) do
 		for k2, v2 in pairs(v) do
