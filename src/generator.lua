@@ -1,6 +1,3 @@
--- LuaJIT 2.1 required
-local ffi = require'ffi'
-
 require 'src/flags'
 BitMask = require 'src/bitmask'
 

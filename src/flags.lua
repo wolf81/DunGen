@@ -1,3 +1,6 @@
+-- LuaJIT 2.1 required
+local ffi = require'ffi'
+
 Flags = {
 	["NOTHING"] = 0LL, 			-- 0x00000000
 	
