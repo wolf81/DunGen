@@ -27,10 +27,12 @@ end
 local function generate(options)
 	local options = merge(generatorDefaults(), options or {})
 
+	--[[
 	print('\ngenerate:')
 	for k, v in pairs(options) do
 		print(' ' .. k, v)
 	end
+	--]]
 
 	return Generator.generate(options)
 end
@@ -38,10 +40,12 @@ end
 local function render(dungeon, options)
 	local options = merge(rendererDefaults(), options or {})
 
+	--[[
 	print('\nrender:')
 	for k, v in pairs(options) do
 		print(' ' .. k, v)
 	end
+	--]]
 
 	return Renderer.render(dungeon, options)
 end
@@ -50,4 +54,5 @@ end
 return setmetatable({
 	generate = generate,
 	render = render,
+	Flags = Flags,
 }, {})

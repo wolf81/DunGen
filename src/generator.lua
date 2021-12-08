@@ -113,8 +113,6 @@ local corridor_layout = {
 	["Straight"] 	= 100,	
 }
 
-local connect = nil
-
 local function getDoorType()
 	local i = math.floor(love.math.random(110))
 
@@ -214,26 +212,6 @@ local function initCells(dungeon, mask)
 	end
 end
 
---[[
-sub sound_room {
-    my ($dungeon,$r1,$c1,$r2,$c2) = @_;
-    my $cell = $dungeon->{'cell'};
-    my $hit;
-    
-    my $r; for ($r = $r1; $r <= $r2; $r++) {
-        my $c; for ($c = $c1; $c <= $c2; $c++) {
-            if ($cell->[$r][$c] & $BLOCKED) {
-                return { 'blocked' => 1 };
-            }
-            if ($cell->[$r][$c] & $ROOM) {
-                my $id = ($cell->[$r][$c] & $ROOM_ID) >> 6;
-                $hit->{$id} += 1;
-            }
-        }
-    }
-    return $hit;
-}
-]]
 local function soundRoom(dungeon, r1, c1, r2, c2)
 	local cell = dungeon["cell"]
 	local hit = {}
@@ -254,44 +232,6 @@ local function soundRoom(dungeon, r1, c1, r2, c2)
 
 	return hit
 end
-
---[[
-sub set_room {
-    my ($dungeon,$proto) = @_;
-    my $base = $dungeon->{'room_base'};
-    my $radix = $dungeon->{'room_radix'};
-    
-    unless (defined $proto->{'height'}) {
-        if (defined $proto->{'i'}) {
-            my $a = $dungeon->{'n_i'} - $base - $proto->{'i'};
-            $a = 0 if ($a < 0);
-            my $r = ($a < $radix) ? $a : $radix;
-            
-            $proto->{'height'} = int(rand($r)) + $base;
-        } else {
-            $proto->{'height'} = int(rand($radix)) + $base;
-        }
-    }
-    unless (defined $proto->{'width'}) {
-        if (defined $proto->{'j'}) {
-            my $a = $dungeon->{'n_j'} - $base - $proto->{'j'};
-            $a = 0 if ($a < 0);
-            my $r = ($a < $radix) ? $a : $radix;
-            
-            $proto->{'width'} = int(rand($r)) + $base;
-        } else {
-            $proto->{'width'} = int(rand($radix)) + $base;
-        }
-    }
-    unless (defined $proto->{'i'}) {
-        $proto->{'i'} = int(rand($dungeon->{'n_i'} - $proto->{'height'}));
-    }
-    unless (defined $proto->{'j'}) {
-        $proto->{'j'} = int(rand($dungeon->{'n_j'} - $proto->{'width'}));
-    }
-    return $proto;
-}
-]]
 
 local function setRoom(dungeon, proto)
 	local base = dungeon["room_base"]
@@ -325,102 +265,7 @@ local function setRoom(dungeon, proto)
 	if proto["j"] == nil then
 		proto["j"] = math.floor(love.math.random(dungeon["n_j"] - proto["width"]))
 	end
-
-	print('\nadd room:')
-	for k, v in pairs(proto) do
-		print(' ' .. k, v)
-	end
 end
-
---[[
-sub emplace_room {
-    my ($dungeon,$proto) = @_;
-    return $dungeon if ($dungeon->{'n_rooms'} == 999);
-    my ($r,$c);
-    my $cell = $dungeon->{'cell'};
-    
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # room position and size
-    
-    $proto = &set_room($dungeon,$proto);
-    
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # room boundaries
-    
-    my $r1 = ( $proto->{'i'}                       * 2) + 1;
-    my $c1 = ( $proto->{'j'}                       * 2) + 1;
-    my $r2 = (($proto->{'i'} + $proto->{'height'}) * 2) - 1;
-    my $c2 = (($proto->{'j'} + $proto->{'width'} ) * 2) - 1;
-    
-    return $dungeon if ($r1 < 1 || $r2 > $dungeon->{'max_row'});
-    return $dungeon if ($c1 < 1 || $c2 > $dungeon->{'max_col'});
-    
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # check for collisions with existing rooms
-    
-    my $hit = &sound_room($dungeon,$r1,$c1,$r2,$c2);
-    return $dungeon if ($hit->{'blocked'});
-    my @hit_list = keys %{ $hit };
-    my $n_hits = scalar @hit_list;
-    my $room_id;
-    
-    if ($n_hits == 0) {
-        $room_id = $dungeon->{'n_rooms'} + 1;
-        $dungeon->{'n_rooms'} = $room_id;
-    } else {
-        return $dungeon;
-    }
-    $dungeon->{'last_room_id'} = $room_id;
-    
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # emplace room
-    
-    for ($r = $r1; $r <= $r2; $r++) {
-        for ($c = $c1; $c <= $c2; $c++) {
-            if ($cell->[$r][$c] & $ENTRANCE) {
-                $cell->[$r][$c] &= ~ $ESPACE;
-            } elsif ($cell->[$r][$c] & $PERIMETER) {
-                $cell->[$r][$c] &= ~ $PERIMETER;
-            }
-            $cell->[$r][$c] |= $ROOM | ($room_id << 6);
-        }
-    }
-    my $height = (($r2 - $r1) + 1) * 10;
-    my $width = (($c2 - $c1) + 1) * 10;
-    
-    my $room_data = {
-        'id' => $room_id, 'row' => $r1, 'col' => $c1,
-        'north' => $r1, 'south' => $r2, 'west' => $c1, 'east' => $c2,
-        'height' => $height, 'width' => $width, 'area' => ($height * $width)
-    };
-    $dungeon->{'room'}[$room_id] = $room_data;
-    
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # block corridors from room boundary
-    # check for door openings from adjacent rooms
-    
-    for ($r = $r1 - 1; $r <= $r2 + 1; $r++) {
-        unless ($cell->[$r][$c1 - 1] & ($ROOM | $ENTRANCE)) {
-            $cell->[$r][$c1 - 1] |= $PERIMETER;
-        }
-        unless ($cell->[$r][$c2 + 1] & ($ROOM | $ENTRANCE)) {
-            $cell->[$r][$c2 + 1] |= $PERIMETER;
-        }
-    }
-    for ($c = $c1 - 1; $c <= $c2 + 1; $c++) {
-        unless ($cell->[$r1 - 1][$c] & ($ROOM | $ENTRANCE)) {
-            $cell->[$r1 - 1][$c] |= $PERIMETER;
-        }
-        unless ($cell->[$r2 + 1][$c] & ($ROOM | $ENTRANCE)) {
-            $cell->[$r2 + 1][$c] |= $PERIMETER;
-        }
-    }
-    
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    
-    return $dungeon;
-}
-]]
 
 local function emplaceRoom(dungeon, proto)
 	if dungeon["n_rooms"] == 999 then return end
@@ -453,31 +298,9 @@ local function emplaceRoom(dungeon, proto)
 	end
 
 	dungeon["last_room_id"] = room_id
-
---[[
-	for ($r = $r1; $r <= $r2; $r++) {
-        for ($c = $c1; $c <= $c2; $c++) {
-            if ($cell->[$r][$c] & $ENTRANCE) {
-                $cell->[$r][$c] &= ~ $ESPACE;
-            } elsif ($cell->[$r][$c] & $PERIMETER) {
-                $cell->[$r][$c] &= ~ $PERIMETER;
-            }
-            $cell->[$r][$c] |= $ROOM | ($room_id << 6);
-        }
-    }
-    my $height = (($r2 - $r1) + 1) * 10;
-    my $width = (($c2 - $c1) + 1) * 10;
-    
-    my $room_data = {
-        'id' => $room_id, 'row' => $r1, 'col' => $c1,
-        'north' => $r1, 'south' => $r2, 'west' => $c1, 'east' => $c2,
-        'height' => $height, 'width' => $width, 'area' => ($height * $width)
-    };
-    $dungeon->{'room'}[$room_id] = $room_data;
-]]
 	
-	for r = r1, r2, 1 do
-		for c = c1, c2, 1 do
+	for r = r1, r2 do
+		for c = c1, c2 do
 			if bit.band(cell[r][c], Flags.ENTRANCE) == Flags.ENTRANCE then
 				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.ESPACE))
 			elseif bit.band(cell[r][c], Flags.PERIMETER) == Flags.PERIMETER then
@@ -505,26 +328,7 @@ local function emplaceRoom(dungeon, proto)
 	}
 	dungeon["room"][room_id] = room_data
 
-	--[[    
-    for ($r = $r1 - 1; $r <= $r2 + 1; $r++) {
-        unless ($cell->[$r][$c1 - 1] & ($ROOM | $ENTRANCE)) {
-            $cell->[$r][$c1 - 1] |= $PERIMETER;
-        }
-        unless ($cell->[$r][$c2 + 1] & ($ROOM | $ENTRANCE)) {
-            $cell->[$r][$c2 + 1] |= $PERIMETER;
-        }
-    }
-    for ($c = $c1 - 1; $c <= $c2 + 1; $c++) {
-        unless ($cell->[$r1 - 1][$c] & ($ROOM | $ENTRANCE)) {
-            $cell->[$r1 - 1][$c] |= $PERIMETER;
-        }
-        unless ($cell->[$r2 + 1][$c] & ($ROOM | $ENTRANCE)) {
-            $cell->[$r2 + 1][$c] |= $PERIMETER;
-        }
-    }
-	]]
-
-	for r = r1 - 1, r2 + 1, 1 do
+	for r = r1 - 1, r2 + 1 do
 		if bit.band(cell[r][c1 - 1], bit.bor(Flags.ROOM, Flags.ENTRANCE)) == 0 then
 			cell[r][c1 - 1] = bit.bor(cell[r][c1 - 1], Flags.PERIMETER)
 		end
@@ -533,7 +337,7 @@ local function emplaceRoom(dungeon, proto)
 		end
 	end
 
-	for c = c1 - 1, c2 + 1, 1 do
+	for c = c1 - 1, c2 + 1 do
 		if bit.band(cell[r1 - 1][c], bit.bor(Flags.ROOM, Flags.ENTRANCE)) == 0 then
 			cell[r1 - 1][c] = bit.bor(cell[r1 - 1][c], Flags.PERIMETER)
 		end
@@ -589,18 +393,6 @@ local function emplaceRooms(dungeon, roomLayout, room_max)
 	end	
 end
 
---[[
-sub alloc_opens {
-    my ($dungeon,$room) = @_;
-    my $room_h = (($room->{'south'} - $room->{'north'}) / 2) + 1;
-    my $room_w = (($room->{'east'} - $room->{'west'}) / 2) + 1;
-    my $flumph = int(sqrt($room_w * $room_h));
-    my $n_opens = $flumph + int(rand($flumph));
-    
-    return $n_opens;
-}
-]]
-
 local function allocOpens(dungeon, room)
 	local room_h = (room["south"] - room["north"]) / 2 + 1
 	local room_w = (room["east"] - room["west"]) / 2 + 1
@@ -609,34 +401,6 @@ local function allocOpens(dungeon, room)
 
 	return n_opens
 end
-
---[[
-sub check_sill {
-    my ($cell,$room,$sill_r,$sill_c,$dir) = @_;
-    my $door_r = $sill_r + $di->{$dir};
-    my $door_c = $sill_c + $dj->{$dir};
-    my $door_cell = $cell->[$door_r][$door_c];
-    return unless ($door_cell & $PERIMETER);
-    return if ($door_cell & $BLOCK_DOOR);
-    my $out_r  = $door_r + $di->{$dir};
-    my $out_c  = $door_c + $dj->{$dir};
-    my $out_cell = $cell->[$out_r][$out_c];
-    return if ($out_cell & $BLOCKED);
-    
-    my $out_id; if ($out_cell & $ROOM) {
-        $out_id = ($out_cell & $ROOM_ID) >> 6;
-        return if ($out_id == $room->{'id'});
-    }
-    return {
-        'sill_r'    => $sill_r,
-        'sill_c'    => $sill_c,
-        'dir'       => $dir,
-        'door_r'    => $door_r,
-        'door_c'    => $door_c,
-        'out_id'    => $out_id,
-    };
-}
-]]
 
 local function checkSill(cell, room, sill_r, sill_c, dir)
 	local door_r = sill_r + di[dir]
@@ -665,40 +429,6 @@ local function checkSill(cell, room, sill_r, sill_c, dir)
 		["out_id"] = tonumber(out_id),
 	}
 end
-
---[[
-sub door_sills {
-    my ($dungeon,$room) = @_;
-    my $cell = $dungeon->{'cell'};
-    my @list;
-    
-    if ($room->{'north'} >= 3) {
-        my $c; for ($c = $room->{'west'}; $c <= $room->{'east'}; $c += 2) {
-            my $sill = &check_sill($cell,$room,$room->{'north'},$c,'north');
-            push(@list,$sill) if ($sill);
-        }
-    }
-    if ($room->{'south'} <= ($dungeon->{'n_rows'} - 3)) {
-        my $c; for ($c = $room->{'west'}; $c <= $room->{'east'}; $c += 2) {
-            my $sill = &check_sill($cell,$room,$room->{'south'},$c,'south');
-            push(@list,$sill) if ($sill);
-        }
-    }
-    if ($room->{'west'} >= 3) {
-        my $r; for ($r = $room->{'north'}; $r <= $room->{'south'}; $r += 2) {
-            my $sill = &check_sill($cell,$room,$r,$room->{'west'},'west');
-            push(@list,$sill) if ($sill);
-        }
-    }
-    if ($room->{'east'} <= ($dungeon->{'n_cols'} - 3)) {
-        my $r; for ($r = $room->{'north'}; $r <= $room->{'south'}; $r += 2) {
-            my $sill = &check_sill($cell,$room,$r,$room->{'east'},'east');
-            push(@list,$sill) if ($sill);
-        }
-    }
-    return &shuffle(@list);
-}
-]]
 
 local function doorSills(dungeon, room)
 	local cell = dungeon["cell"]
@@ -735,100 +465,9 @@ local function doorSills(dungeon, room)
 	return shuffle(list)
 end
 
---[[
-sub open_room {
-    my ($dungeon,$room) = @_;
-    my @list = &door_sills($dungeon,$room);
-    return $dungeon unless (@list);
-    my $n_opens = &alloc_opens($dungeon,$room);
-    my $cell = $dungeon->{'cell'};
-    
-    my $i; for ($i = 0; $i < $n_opens; $i++) {
-        my $sill = splice(@list,int(rand(@list)),1);
-        last unless ($sill);
-        my $door_r = $sill->{'door_r'};
-        my $door_c = $sill->{'door_c'};
-        my $door_cell = $cell->[$door_r][$door_c];
-        redo if ($door_cell & $DOORSPACE);
-        
-        my $out_id; if ($out_id = $sill->{'out_id'}) {
-            my $connect = join(',',(sort($room->{'id'},$out_id)));
-            redo if ($dungeon->{'connect'}{$connect}++);
-        }
-        my $open_r = $sill->{'sill_r'};
-        my $open_c = $sill->{'sill_c'};
-        my $open_dir = $sill->{'dir'};
-        
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # open door
-        
-        my $x; for ($x = 0; $x < 3; $x++) {
-            my $r = $open_r + ($di->{$open_dir} * $x);
-            my $c = $open_c + ($dj->{$open_dir} * $x);
-            
-            $cell->[$r][$c] &= ~ $PERIMETER;
-            $cell->[$r][$c] |= $ENTRANCE;
-        }
-        my $door_type = &door_type();
-        my $door = { 'row' => $door_r, 'col' => $door_c };
-        
-        if ($door_type == $ARCH) {
-            $cell->[$door_r][$door_c] |= $ARCH;
-            $door->{'key'} = 'arch'; $door->{'type'} = 'Archway';
-        } elsif ($door_type == $DOOR) {
-            $cell->[$door_r][$door_c] |= $DOOR;
-            $cell->[$door_r][$door_c] |= (ord('o') << 24);
-            $door->{'key'} = 'open'; $door->{'type'} = 'Unlocked Door';
-        } elsif ($door_type == $LOCKED) {
-            $cell->[$door_r][$door_c] |= $LOCKED;
-            $cell->[$door_r][$door_c] |= (ord('x') << 24);
-            $door->{'key'} = 'lock'; $door->{'type'} = 'Locked Door';
-        } elsif ($door_type == $TRAPPED) {
-            $cell->[$door_r][$door_c] |= $TRAPPED;
-            $cell->[$door_r][$door_c] |= (ord('t') << 24);
-            $door->{'key'} = 'trap'; $door->{'type'} = 'Trapped Door';
-        } elsif ($door_type == $SECRET) {
-            $cell->[$door_r][$door_c] |= $SECRET;
-            $cell->[$door_r][$door_c] |= (ord('s') << 24);
-            $door->{'key'} = 'secret'; $door->{'type'} = 'Secret Door';
-        } elsif ($door_type == $PORTC) {
-            $cell->[$door_r][$door_c] |= $PORTC;
-            $cell->[$door_r][$door_c] |= (ord('#') << 24);
-            $door->{'key'} = 'portc'; $door->{'type'} = 'Portcullis';
-        }
-        $door->{'out_id'} = $out_id if ($out_id);
-        push(@{ $room->{'door'}{$open_dir} },$door) if ($door);
-    }
-    return $dungeon;
-}
-]]
-
---[[
-function open_room(a, b) {
-    var c = door_sills(a, b);
-    if (!c.length) return a;
-    var d = alloc_opens(a, b),
-        e;
-    for (e = 0; e < d; e++) {
-        var g = c.splice(random(c.length), 1).shift();
-        if (!g) break;
-        var f = g.door_r,
-            h = g.door_c;
-        f = a.cell[f][h];
-        if (!(f & DOORSPACE))
-            if (f = g.out_id) {
-                f = [b.id, f].sort(cmp_int).join(",");
-                if (!connect[f]) {
-                    a = open_door(a, b, g);
-                    connect[f] = 1
-                }
-            } else a = open_door(a, b, g)
-    }
-    return a
-}
-]]
-
 local function openRoom(dungeon, room)
+	local connect = {}
+
 	local list = doorSills(dungeon, room)
 	if #list == 0 then return end
 
@@ -893,31 +532,26 @@ local function openRoom(dungeon, room)
         	door["key"] = "open"
         	door["type"] = "Unlocked Door"
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('o'), 24))
-            -- $cell->[$door_r][$door_c] |= (ord('o') << 24);
         elseif door_type == Flags.LOCKED then
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.LOCKED)
         	door["key"] = "lock"
         	door["type"] = "Locked Door"
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('x'), 24))
-            -- $cell->[$door_r][$door_c] |= (ord('x') << 24);
         elseif door_type == Flags.TRAPPED then
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.TRAPPED)
         	door["key"] = "trap"
         	door["type"] = "Trapped Door"
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('t'), 24))
-            -- $cell->[$door_r][$door_c] |= (ord('t') << 24);
         elseif door_type == Flags.SECRET then
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.SECRET)
         	door["key"] = "secret"
         	door["type"] = "Secret Door"
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('s'), 24))
-            -- $cell->[$door_r][$door_c] |= (ord('s') << 24);
         elseif door_type == Flags.PORTC then	        	
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.PORTC)
         	door["key"] = "portc"
         	door["type"] = "Portcullis"
         	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('#'), 24))
-            -- $cell->[$door_r][$door_c] |= (ord('#') << 24);
         end
 
         if out_id ~= nil then door["out_id"] = out_id end
@@ -927,43 +561,6 @@ local function openRoom(dungeon, room)
         ::continue::
 	end
 end
-
---[[
-sub fix_doors {
-    my ($dungeon) = @_;
-    my $cell = $dungeon->{'cell'};
-    my $fixed;
-    
-    my $room; foreach $room (@{ $dungeon->{'room'} }) {
-        my $dir; foreach $dir (sort keys %{ $room->{'door'} }) {
-            my ($door,@shiny); foreach $door (@{ $room->{'door'}{$dir} }) {
-                my $door_r = $door->{'row'};
-                my $door_c = $door->{'col'};
-                my $door_cell = $cell->[$door_r][$door_c];
-                next unless ($door_cell & $OPENSPACE);
-                
-                if ($fixed->[$door_r][$door_c]) {
-                    push(@shiny,$door);
-                } else {
-                    my $out_id; if ($out_id = $door->{'out_id'}) {
-                        my $out_dir = $opposite->{$dir};
-                        push(@{ $dungeon->{'room'}[$out_id]{'door'}{$out_dir} },$door);
-                    }
-                    push(@shiny,$door);
-                    $fixed->[$door_r][$door_c] = 1;
-                }
-            }
-            if (@shiny) {
-                $room->{'door'}{$dir} = \@shiny;
-                push(@{ $dungeon->{'door'} },@shiny);
-            } else {
-                delete $room->{'door'}{$dir};
-            }
-        }
-    }
-    return $dungeon;
-}
-]]
 
 local function fixDoors(dungeon)
 	local cell = dungeon["cell"]
@@ -1013,25 +610,6 @@ local function fixDoors(dungeon)
 	end
 end
 
---[[
-sub check_tunnel {
-    my ($cell,$r,$c,$check) = @_;
-    my $list;
-    
-    if ($list = $check->{'corridor'}) {
-        my $p; foreach $p (@{ $list }) {
-            return 0 unless ($cell->[$r+$p[0][$c+$p[1] == $CORRIDOR);
-        }
-    }
-    if ($list = $check->{'walled'}) {
-        my $p; foreach $p (@{ $list }) {
-            return 0 if ($cell->[$r+$p[0][$c+$p[1] & $OPENSPACE);
-        }
-    }
-    return 1;
-}
-]]
-
 local function checkTunnel(cell, r, c, check)
 	local list = check["corridor"]
 	if list ~= nil then
@@ -1054,20 +632,6 @@ local function checkTunnel(cell, r, c, check)
 	return true
 end
 
---[[
-sub empty_blocks {
-    my ($dungeon) = @_;
-    my $cell = $dungeon->{'cell'};
-    
-    my $r; for ($r = 0; $r <= $dungeon->{'n_rows'}; $r++) {
-        my $c; for ($c = 0; $c <= $dungeon->{'n_cols'}; $c++) {
-            $cell->[$r][$c] = $NOTHING if ($cell->[$r][$c] & $BLOCKED);
-        }
-    }
-    return $dungeon;
-}
-]]
-
 local function emptyBlocks(dungeon)
 	local cell = dungeon["cell"]
 
@@ -1079,31 +643,6 @@ local function emptyBlocks(dungeon)
 		end
 	end
 end
-
---[[
-sub collapse {
-    my ($dungeon,$r,$c,$xc) = @_;
-    my $cell = $dungeon->{'cell'};
-    
-    unless ($cell->[$r][$c] & $OPENSPACE) {
-        return $dungeon;
-    }
-    my $dir; foreach $dir (keys %{ $xc }) {
-        if (&check_tunnel($cell,$r,$c,$xc->{$dir})) {
-            my $p; foreach $p (@{ $xc->{$dir}{'close'} }) {
-                $cell->[$r+$p->[0][$c+$p->[1] = $NOTHING;
-            }
-            if ($p = $xc->{$dir}{'open'}) {
-                $cell->[$r+$p->[0][$c+$p->[1] |= $CORRIDOR;
-            }
-            if ($p = $xc->{$dir}{'recurse'}) {
-                $dungeon = &collapse($dungeon,($r+$p->[0]),($c+$p->[1]),$xc);
-            }
-        }
-    }
-    return $dungeon;
-}
-]]
 
 local function collapse(dungeon, r, c, xc)
 	local cell = dungeon["cell"]
@@ -1128,29 +667,6 @@ local function collapse(dungeon, r, c, xc)
 		end
 	end
 end
-
---[[
-sub collapse_tunnels {
-    my ($dungeon,$p,$xc) = @_;
-    return $dungeon unless ($p);
-    my $all = ($p == 100);
-    my $cell = $dungeon->{'cell'};
-    
-    my $i; for ($i = 0; $i < $dungeon->{'n_i'}; $i++) {
-        my $r = ($i * 2) + 1;
-        my $j; for ($j = 0; $j < $dungeon->{'n_j'}; $j++) {
-            my $c = ($j * 2) + 1;
-            
-            next unless ($cell->[$r][$c] & $OPENSPACE);
-            next if ($cell->[$r][$c] & $STAIRS);
-            next unless ($all || (int(rand(100)) < $p));
-            
-            $dungeon = &collapse($dungeon,$r,$c,$xc);
-        }
-    }
-    return $dungeon;
-}
-]]
 
 local function collapseTunnels(dungeon, p, xc)
 	if p == 0 then return end
@@ -1178,17 +694,6 @@ local function removeDeadends(dungeon, percentage)
 	collapseTunnels(dungeon, percentage, close_end)    
 end
 
---[[
-    my ($dungeon) = @_;
-    
-    if ($dungeon->{'remove_deadends'}) {
-        $dungeon = &remove_deadends($dungeon);
-    }
-    $dungeon = &fix_doors($dungeon);
-    $dungeon = &empty_blocks($dungeon);
-    
-    return $dungeon;
-]]
 local function cleanDungeon(dungeon, remove_deadends)
 	if remove_deadends > 0 then
 		removeDeadends(dungeon, remove_deadends)
@@ -1198,42 +703,11 @@ local function cleanDungeon(dungeon, remove_deadends)
 	emptyBlocks(dungeon)
 end
 
---[[
-    my $id; for ($id = 1; $id <= $dungeon->{'n_rooms'}; $id++) {
-        $dungeon = &open_room($dungeon,$dungeon->{'room'}[$id]);
-    }
-    delete($dungeon->{'connect'});
-    return $dungeon;
-]]
-
 local function openRooms(dungeon)
-	connect = {}
-
 	for id = 1, dungeon["n_rooms"] do
 		openRoom(dungeon, dungeon["room"][id])
 	end
 end
-
---[[
-sub label_rooms {
-    my ($dungeon) = @_;
-    my $cell = $dungeon->{'cell'};
-    
-    my $id; for ($id = 1; $id <= $dungeon->{'n_rooms'}; $id++) {
-        my $room = $dungeon->{'room'}[$id];
-        my $label = "$room->{'id'}";
-        my $len = length($label);
-        my $label_r = int(($room->{'north'} + $room->{'south'}) / 2);
-        my $label_c = int(($room->{'west'} + $room->{'east'} - $len) / 2) + 1;
-        
-        my $c; for ($c = 0; $c < $len; $c++) {
-            my $char = substr($label,$c,1);
-            $cell->[$label_r][$label_c + $c] |= (ord($char) << 24);
-        }
-    }
-    return $dungeon;
-}
-]]
 
 local function labelRooms(dungeon)
 	local cell = dungeon["cell"]
@@ -1253,19 +727,6 @@ local function labelRooms(dungeon)
 	end
 end
 
---[[
-sub tunnel_dirs {
-    my ($dungeon,$last_dir) = @_;
-    my $p = $corridor_layout->{$dungeon->{'corridor_layout'}};
-    my @dirs = &shuffle(@dj_dirs);
-    
-    if ($last_dir && $p) {
-        unshift(@dirs,$last_dir) if (int(rand(100)) < $p);
-    }
-    return @dirs;
-}
-]]
-
 local function tunnelDirs(dungeon, layout, last_dir)
 	local p = corridor_layout[layout]
 
@@ -1282,23 +743,6 @@ local function tunnelDirs(dungeon, layout, last_dir)
 
 	return dirs
 end
-
---[[
-sub delve_tunnel {
-    my ($dungeon,$this_r,$this_c,$next_r,$next_c) = @_;
-    my $cell = $dungeon->{'cell'};
-    my ($r1,$r2) = sort { $a <=> $b } ($this_r,$next_r);
-    my ($c1,$c2) = sort { $a <=> $b } ($this_c,$next_c);
-    
-    my $r; for ($r = $r1; $r <= $r2; $r++) {
-        my $c; for ($c = $c1; $c <= $c2; $c++) {
-            $cell->[$r][$c] &= ~ $ENTRANCE;
-            $cell->[$r][$c] |= $CORRIDOR;
-        }
-    }
-    return 1;
-}
-]]
 
 local function delveTunnel(dungeon, this_r, this_c, next_r, next_c)
 	local cell = dungeon["cell"]
@@ -1320,24 +764,6 @@ local function delveTunnel(dungeon, this_r, this_c, next_r, next_c)
 
 	return true
 end
-
---[[
-sub sound_tunnel {
-    my ($dungeon,$mid_r,$mid_c,$next_r,$next_c) = @_;
-    return 0 if ($next_r < 0 || $next_r > $dungeon->{'n_rows'});
-    return 0 if ($next_c < 0 || $next_c > $dungeon->{'n_cols'});
-    my $cell = $dungeon->{'cell'};
-    my ($r1,$r2) = sort { $a <=> $b } ($mid_r,$next_r);
-    my ($c1,$c2) = sort { $a <=> $b } ($mid_c,$next_c);
-    
-    my $r; for ($r = $r1; $r <= $r2; $r++) {
-        my $c; for ($c = $c1; $c <= $c2; $c++) {
-            return 0 if ($cell->[$r][$c] & $BLOCK_CORR);
-        }
-    }
-    return 1;
-}
-]]
 
 local function soundTunnel(dungeon, mid_r, mid_c, next_r, next_c)
 	if next_r < 0 or next_r > dungeon["n_rows"] then return false end
@@ -1361,24 +787,6 @@ local function soundTunnel(dungeon, mid_r, mid_c, next_r, next_c)
 	return true
 end
 
---[[
-sub open_tunnel {
-    my ($dungeon,$i,$j,$dir) = @_;
-    my $this_r = ($i * 2) + 1;
-    my $this_c = ($j * 2) + 1;
-    my $next_r = (($i + $di->{$dir}) * 2) + 1;
-    my $next_c = (($j + $dj->{$dir}) * 2) + 1;
-    my $mid_r = ($this_r + $next_r) / 2;
-    my $mid_c = ($this_c + $next_c) / 2;
-    
-    if (&sound_tunnel($dungeon,$mid_r,$mid_c,$next_r,$next_c)) {
-        return &delve_tunnel($dungeon,$this_r,$this_c,$next_r,$next_c);
-    } else {
-        return 0;
-    }
-}
-]]
-
 local function openTunnel(dungeon, i, j, dir)
 	local this_r = (i * 2) + 1
 	local this_c = (j * 2) + 1
@@ -1394,23 +802,6 @@ local function openTunnel(dungeon, i, j, dir)
 	end
 end
 
---[[
-sub tunnel {
-    my ($dungeon,$i,$j,$last_dir) = @_;
-    my @dirs = &tunnel_dirs($dungeon,$last_dir);
-    
-    my $dir; foreach $dir (@dirs) {
-        if (&open_tunnel($dungeon,$i,$j,$dir)) {
-            my $next_i = $i + $di->{$dir};
-            my $next_j = $j + $dj->{$dir};
-            
-            $dungeon = &tunnel($dungeon,$next_i,$next_j,$dir);
-        }
-    }
-    return $dungeon;
-}
-]]
-
 local function tunnel(dungeon, layout, i, j, last_dir)
 	local dirs = tunnelDirs(dungeon, layout, last_dir)
 
@@ -1424,23 +815,6 @@ local function tunnel(dungeon, layout, i, j, last_dir)
 	end
 end
 
---[[
-sub corridors {
-    my ($dungeon) = @_;
-    my $cell = $dungeon->{'cell'};
-    
-    my $i; for ($i = 1; $i < $dungeon->{'n_i'}; $i++) {
-        my $r = ($i * 2) + 1;
-        my $j; for ($j = 1; $j < $dungeon->{'n_j'}; $j++) {
-            my $c = ($j * 2) + 1;
-            
-            next if ($cell->[$r][$c] & $CORRIDOR);
-            $dungeon = &tunnel($dungeon,$i,$j);
-        }
-    }
-    return $dungeon;
-}
-]]
 local function corridors(dungeon, layout)
 	local cell = dungeon["cell"]
 
@@ -1457,36 +831,6 @@ local function corridors(dungeon, layout)
 		end
 	end
 end
-
---[[
-sub stair_ends {
-    my ($dungeon) = @_;
-    my $cell = $dungeon->{'cell'};
-    my @list;
-    
-    my $i; ROW: for ($i = 0; $i < $dungeon->{'n_i'}; $i++) {
-        my $r = ($i * 2) + 1;
-        my $j; COL: for ($j = 0; $j < $dungeon->{'n_j'}; $j++) {
-            my $c = ($j * 2) + 1;
-            
-            next unless ($cell->[$r][$c] == $CORRIDOR);
-            next if ($cell->[$r][$c] & $STAIRS);
-            
-            my $dir; foreach $dir (keys %{ $stair_end }) {
-                if (&check_tunnel($cell,$r,$c,$stair_end->{$dir})) {
-                    my $end = { 'row' => $r, 'col' => $c };
-                    my $n = $stair_end->{$dir}{'next'};
-                    $end->{'next_row'} = $end->{'row'} + $n->[0];
-                    $end->{'next_col'} = $end->{'col'} + $n->[1];
-                    
-                    push(@list,$end); next COL;
-                }
-            }
-        }
-    }
-    return @list;
-}
-]]
 
 local function stairEnds(dungeon)
 	local cell = dungeon["cell"]
@@ -1518,37 +862,6 @@ local function stairEnds(dungeon)
 
 	return list
 end
-
---[[
-sub emplace_stairs {
-    my ($dungeon) = @_;
-    my $n = $dungeon->{'add_stairs'};
-    return $dungeon unless ($n > 0);
-    my @list = &stair_ends($dungeon);
-    return $dungeon unless (@list);
-    my $cell = $dungeon->{'cell'};
-    
-    my $i; for ($i = 0; $i < $n; $i++) {
-        my $stair = splice(@list,int(rand(@list)),1);
-        last unless ($stair);
-        my $r = $stair->{'row'};
-        my $c = $stair->{'col'};
-        my $type = ($i < 2) ? $i : int(rand(2));
-        
-        if ($type == 0) {
-            $cell->[$r][$c] |= $STAIR_DN;
-            $cell->[$r][$c] |= (ord('d') << 24);
-            $stair->{'key'} = 'down';
-        } else {
-            $cell->[$r][$c] |= $STAIR_UP;
-            $cell->[$r][$c] |= (ord('u') << 24);
-            $stair->{'key'} = 'up';
-        }
-        push(@{ $dungeon->{'stair'} },$stair);
-    }
-    return $dungeon;
-}
-]]
 
 local function emplaceStairs(dungeon, n)
 	if n <= 0 then return end
@@ -1611,30 +924,13 @@ function Generator.generate(options)
 		print(' ' .. k, v)
 	end
 
-	local mask = options["dungeon_layout"]
-	initCells(dungeon, mask)
-
-	local roomLayout, roomMax = options["room_layout"], options["room_max"]
-	emplaceRooms(dungeon, roomLayout, roomMax)
-
+	initCells(dungeon, options["dungeon_layout"])
+	emplaceRooms(dungeon, options["room_layout"], options["room_max"])
 	openRooms(dungeon)
 	labelRooms(dungeon)
-
-	local layout = options["corridor_layout"]
-	corridors(dungeon, layout)
-
-	local n_stairs = options["add_stairs"]
-	emplaceStairs(dungeon, n_stairs)
-
-	local remove_deadends = options["remove_deadends"]
-	cleanDungeon(dungeon, remove_deadends)
-
-	for k, v in ipairs(dungeon["room"]) do
-		for k2, v2 in pairs(v) do
-			print(k2, v2)
-		end
-		print()
-	end
+	corridors(dungeon, options["corridor_layout"])
+	emplaceStairs(dungeon, options["add_stairs"])
+	cleanDungeon(dungeon, options["remove_deadends"])
 
 	return dungeon
 end

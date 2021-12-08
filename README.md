@@ -20,10 +20,10 @@ making a few small changes and not making use of the map rendering functionality
 
 _*PLEASE NOTE*: [ffi][1] is part of LuaJIT 2.1 which will be part of LÖVE 12 
 (currently in development). Therefore, in order to use DunGen, you will need 
-to download and build LÖVE 12 from the [LÖVE github repo][3]._
+to download and build LÖVE 12 from the [LÖVE github repo][3].
 
 DunGen *might* not work properly on 32-bit architectures as it makes use of 64-bit
-numbers internally.
+numbers internally._
 
 Usage
 =====
@@ -87,8 +87,8 @@ we can do the following:
 
 ```lua
 local v = cell[r][c]
-if bit.band(v, Flags.BLOCKED) ~= 0 then
-	-- this cell is blocked, not a room or corridor
+if bit.band(v, Flags.OPENSPACE) ~= 0 then
+	-- this cell contains a room or corridor
 end
 ```
 

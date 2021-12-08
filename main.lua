@@ -10,7 +10,6 @@ local function generate()
 		--["dungeon_layout"] = "Hexagon",
 		["corridor_layout"] = "Bent",
 		["remove_deadends"] = 100, -- percentage
-
 		--["room_layout"] = "Packed",
 	})
 
