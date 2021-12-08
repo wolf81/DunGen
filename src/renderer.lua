@@ -550,7 +550,7 @@ end
 local function drawLine(image, x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
 
-    love.graphics.line(x1, y1, x2, y2)
+    love.graphics.line(x1 + 0.5, y1 + 0.5, x2 + 0.5, y2 + 0.5)
 
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
@@ -938,7 +938,7 @@ local function baseLayer(a, b)
 
     local data = c:newImageData()
     local image = love.graphics.newImage(data)
-
+    
     love.graphics.setCanvas(ctx)
 
     return image

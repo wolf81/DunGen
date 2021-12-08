@@ -65,21 +65,6 @@ local function fillImage(dungeon, image, canvas)
 	imageGrid(dungeon, image, canvas)
 end
 
---[[
-    var c = new Element("canvas");
-    c.width = b.width;
-    c.height = b.height;
-    var d = c.getContext("2d"),
-        e = b.max_x,
-        g = b.max_y,
-        f = b.palette,
-        h;
-    (h = f.open) ? fill_rect(d, 0, 0, e, g, h): fill_rect(d, 0, 0, e, g, f.white);
-    if (h = f.open_grid) image_grid(a, b, h, d);
-    else if (h = f.grid) image_grid(a, b, h, d);
-    return c
-]]
-
 local function baseLayer(dungeon, image, canvas)
     -- body
 end
