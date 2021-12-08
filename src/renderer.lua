@@ -531,6 +531,14 @@ local color_chain = {
     ["tag"] = "white",
 }
 
+local function setPixel(image, x, y, color)
+    love.graphics.setColor(unpack(color))
+
+    love.graphics.points(x + 0.5, y + 0.5)
+
+    love.graphics.setColor(1.0, 1.0, 1.0)
+end
+
 local function fillRect(image, x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
 
@@ -691,6 +699,26 @@ local function cachePixels(flag)
     -- body
 end
 
+--[[
+function wall_shading(a, b, c, d, e, g) {
+    for (b = b; b <= d; b++) {
+        var f;
+        for (f = c; f <= e; f++)(b + f) % 2 != 0 && set_pixel(a, b, f, g)
+    }
+    return true
+}
+]]
+
+local function wallShading(a, b, c, d, e, g)
+    for b = b, d do
+        for f = c, e do
+            if (b + f) % 2 ~= 0 then
+                setPixel(a, b, f, g)
+            end
+        end
+    end
+end
+
 local function imageWalls(a, b, c)
     local d = b["cell_size"]
     local e = math.max(math.floor(d / 4), 3)
@@ -721,6 +749,42 @@ local function imageWalls(a, b, c)
 
                         if bit.band(a["cell"][f - 1][j], Flags.OPENSPACE) == 0 then
                             drawLine(c, k, h - 1, l, h - 1, g)
+                        end
+                    end
+                else
+                    g = b["wall_shading"]
+                    if g ~= nil then
+                        -- a.cell[f - 1][j - 1] & OPENSPACE || wall_shading(c, k - e, h - e, k - 1, h - 1, g);
+                        if bit.band(a["cell"][f - 1][j - 1], Flags.OPENSPACE) == 0 then
+                            wallShading(c, k - e, h - e, k - 1, h - 1, g)
+                        end
+                        -- a.cell[f - 1][j] & OPENSPACE || wall_shading(c, k, h - e, l, h - 1, g);
+                        if bit.band(a["cell"][f - 1][j], Flags.OPENSPACE) == 0 then
+                            wallShading(c, k, h - e, l, h - 1, g)
+                        end
+                        -- a.cell[f - 1][j + 1] & OPENSPACE || wall_shading(c, l + 1, h - e, l + e, h - 1, g);
+                        if bit.band(a["cell"][f - 1][j + 1], Flags.OPENSPACE) == 0 then
+                            wallShading(c, l + 1, h - e, l + e, h - 1, g)
+                        end
+                        -- a.cell[f][j - 1] & OPENSPACE || wall_shading(c, k - e, h, k - 1, i, g);
+                        if bit.band(a["cell"][f][j - 1], Flags.OPENSPACE) == 0 then
+                            wallShading(c, k - e, h, k - 1, i, g)
+                        end
+                        -- a.cell[f][j + 1] & OPENSPACE || wall_shading(c, l + 1, h, l + e, i, g);
+                        if bit.band(a["cell"][f][j + 1], Flags.OPENSPACE) == 0 then
+                            wallShading(c, l + 1, h, l + e, i, g)
+                        end
+                        -- a.cell[f + 1][j - 1] & OPENSPACE || wall_shading(c, k - e, i + 1, k - 1, i + e, g);
+                        if bit.band(a["cell"][f + 1][j - 1], Flags.OPENSPACE) == 0 then
+                            wallShading(c, k - e, i + 1, k - 1, i + e, g)
+                        end
+                        -- a.cell[f + 1][j] & OPENSPACE || wall_shading(c, k, i + 1, l, i + e, g);
+                        if bit.band(a["cell"][f + 1][j], Flags.OPENSPACE) == 0 then
+                            wallShading(c, k, i + 1, l, i + e, g)
+                        end
+                        -- a.cell[f + 1][j + 1] & OPENSPACE || wall_shading(c, l + 1, i + 1, l + e, i + e, g)
+                        if bit.band(a["cell"][f + 1][j - 1], Flags.OPENSPACE) == 0 then
+                            wallShading(c, l + 1, i + 1, l + e, i + e, g)
                         end
                     end
                 end

@@ -20,7 +20,7 @@ end
 
 local function rendererDefaults()
 	return {
-		["map_style"] = "standard", 	-- standard|classic|graph
+		["map_style"] = "graph", 		-- standard|classic|graph
 		["cell_size"] = 18, 			-- size in pixels		
 		["grid"] = "square" 			-- none|square|hex|vex
 	}
