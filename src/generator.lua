@@ -5,8 +5,6 @@ local bset, bclear, bcheck = BitMask.set, BitMask.clear, BitMask.check
 local mfloor, mrandom, msqrt, pow = math.floor, math.random, math.sqrt, math.pow
 local mmax, mmin, mabs = math.max, math.min, math.abs
 
-Generator = {}
-
 -- directions
 local di = { ["north"] = -1, ["south"] = 1, ["west"] =  0, ["east"] = 0 }
 local dj = { ["north"] =  0, ["south"] = 0, ["west"] = -1, ["east"] = 1 }
@@ -900,7 +898,7 @@ local function emplaceStairs(dungeon, n)
 	end
 end
 
-function Generator.generate(options)
+local function generate(options)
 	love.math.setRandomSeed(options["seed"])
 
 	local dungeon = {}
@@ -939,3 +937,7 @@ function Generator.generate(options)
 
 	return dungeon
 end
+
+return setmetatable({
+	generate = generate,
+}, {})

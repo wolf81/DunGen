@@ -1,6 +1,3 @@
--- LuaJIT 2.1 required
-local ffi = require'ffi'
-
 Flags = {
 	["NOTHING"] = 0LL, 			-- 0x00000000
 	
@@ -26,7 +23,7 @@ Flags = {
 
 Flags["OPENSPACE"] = bit.bor(Flags.ROOM, Flags.CORRIDOR)
 Flags["DOORSPACE"] = bit.bor(Flags.ARCH, Flags.DOOR, Flags.LOCKED, Flags.TRAPPED, Flags.SECRET, Flags.PORTC)
-Flags["ESPACE"] = bit.bor(Flags.ENTRANCE, Flags.DOORSPACE, 4278190080LL) -- why not Flags.LABEL?
+Flags["ESPACE"] = bit.bor(Flags.ENTRANCE, Flags.DOORSPACE, Flags.LABEL)
 Flags["STAIRS"] = bit.bor(Flags.STAIR_DN, Flags.STAIR_UP)
 Flags["BLOCK_ROOM"] = bit.bor(Flags.BLOCKED, Flags.ROOM)
 Flags["BLOCK_CORR"] = bit.bor(Flags.BLOCKED, Flags.PERIMETER, Flags.CORRIDOR)
