@@ -1311,8 +1311,8 @@ local function delveTunnel(dungeon, this_r, this_c, next_r, next_c)
 	table.sort(tbl_c)
 	local c1, c2 = unpack(tbl_c)
 
-	for r = r1, r2, 1 do
-		for c = c1, c2, 1 do
+	for r = r1, r2 do
+		for c = c1, c2 do
 			cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.ENTRANCE))
 			cell[r][c] = bit.bor(cell[r][c], Flags.CORRIDOR)
 		end
@@ -1352,8 +1352,8 @@ local function soundTunnel(dungeon, mid_r, mid_c, next_r, next_c)
 	table.sort(tbl_c)
 	local c1, c2 = unpack(tbl_c)
 
-	for r = r1, r2, 1 do
-		for c = c1, c2, 1 do
+	for r = r1, r2 do
+		for c = c1, c2 do
 			if bit.band(cell[r][c], Flags.BLOCK_CORR) ~= 0 then return false end
 		end
 	end	
