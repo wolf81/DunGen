@@ -1276,7 +1276,7 @@ local function tunnelDirs(dungeon, layout, last_dir)
 
 	if last_dir ~= nil and p ~= nil then
 		if love.math.random(100) < p then
-			table.insert(dirs, last_dir)
+			table.insert(dirs, 1, last_dir)
 		end
 	end
 
