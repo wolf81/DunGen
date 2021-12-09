@@ -537,9 +537,9 @@ local function setPixel(image, x, y, color)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
-local function fillRect(image, x1, y1, x2, y2, color)
+local function fillRect(image, x, y, w, h, color)
     love.graphics.setColor(unpack(color))
-    love.graphics.rectangle('fill', x1, y1, x2 - x1, y2 - y1)
+    love.graphics.rectangle('fill', x, y, w, h)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
@@ -892,11 +892,11 @@ local function imageDoors(a, b, c)
         end
         if ka["arch"] then
             if r then
-                fillRect(c, n - 1, o, n + 1, o + g, i)
-                fillRect(c, n - 1, l - g, n + 1, l, i)
+                fillRect(c, n - 1, o, 2, g, i)
+                fillRect(c, n - 1, l - g, 2, g, i)
             else
-                fillRect(c, q, m - 1, q + g, m + 1, i)
-                fillRect(c, p - g, m - 1, p, m + 1, i)
+                fillRect(c, q, m - 1, g, 2, i)
+                fillRect(c, p - g, m - 1, g, 2, i)
             end
         end
         if ka["door"] then
@@ -938,11 +938,11 @@ local function imageDoors(a, b, c)
         if ka["portc"] then
             if r then
                 for o = o + g + 1, l - g - 1, 2 do
-                    setPixel(c, n + 1, o, j)
+                    setPixel(c, n, o, j)
                 end
             else
                 for o = q + g + 1, p - g - 1, 2 do
-                    setPixel(c, o + 1, m, j)
+                    setPixel(c, o, m, j)
                 end
             end
         end
