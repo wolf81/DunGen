@@ -537,9 +537,9 @@ local function setPixel(image, x, y, color)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
-local function fillRect(image, x, y, w, h, color)
+local function fillRect(image, x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
-    love.graphics.rectangle('fill', x, y, w, h)
+    love.graphics.rectangle('fill', x1 + 0.5, y1 + 0.5, x2 - x1, y2 - y1)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
@@ -552,6 +552,15 @@ end
 local function drawLine(image, x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
     love.graphics.line(x1 + 0.5, y1 + 0.5, x2 + 0.5, y2 + 0.5)
+    love.graphics.setColor(1.0, 1.0, 1.0)
+end
+
+local function drawString(image, text, x, y, font, color)
+    local t = love.graphics.newText(font, text)
+    local w, h = t:getWidth(), t:getHeight()
+
+    love.graphics.setColor(unpack(color))
+    love.graphics.draw(t, x - w / 2, y - h / 2)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
@@ -831,41 +840,6 @@ function image_doors(a, b, c) {
 ]]
 
 local function imageDoors(a, b, c)
-    --[[
-        if (k.wall) r ? draw_line(c, n, o, n, l, i) : draw_line(c, q, m, p, m, i);
-        if (k.arch)
-            if (r) {
-                fill_rect(c, n - 1, o, n + 1, o + g, i);
-                fill_rect(c, n - 1, l - g, n + 1, l, i)
-            } else {
-                fill_rect(c, q, m - 1, q + g, m + 1, i);
-                fill_rect(c,
-                    p - g, m - 1, p, m + 1, i)
-            }
-        if (k.door) r ? stroke_rect(c, n - f, o + g + 1, n + f, l - g - 1, j) : stroke_rect(c, q + g + 1, m - f, p - g - 1, m + f, j);
-        if (k.lock) r ? draw_line(c, n, o + g + 1, n, l - g - 1, j) : draw_line(c, q + g + 1, m, p - g - 1, m, j);
-        if (k.trap) r ? draw_line(c, n - h, m, n + h, m, j) : draw_line(c, n, m - h, n, m + h, j);
-        if (k.secret)
-            if (r) {
-                draw_line(c, n - 1, m - f, n + 2, m - f, j);
-                draw_line(c, n - 2, m - f + 1, n - 2, m - 1, j);
-                draw_line(c, n - 1, m, n + 1, m, j);
-                draw_line(c, n + 2, m + 1, n + 2, m + f - 1, j);
-                draw_line(c, n - 2, m + f, n + 1, m + f, j)
-            } else {
-                draw_line(c, n - f, m - 2, n - f, m + 1, j);
-                draw_line(c, n - f + 1, m + 2, n - 1, m + 2, j);
-                draw_line(c, n, m -
-                    1, n, m + 1, j);
-                draw_line(c, n + 1, m - 2, n + f - 1, m - 2, j);
-                draw_line(c, n + f, m - 1, n + f, m + 2, j)
-            }
-        if (k.portc)
-            if (r)
-                for (o = o + g + 2; o < l - g; o += 2) set_pixel(c, n, o, j);
-            else
-                for (o = q + g + 2; o < p - g; o += 2) set_pixel(c, o, m, j)
-    ]]
     local d, e = a["door"], b["cell_size"]
     local g, f, h = math.floor(e / 6), math.floor(e / 4), math.floor(e / 3)
     local b = b["palette"]
@@ -873,15 +847,15 @@ local function imageDoors(a, b, c)
 
     for _, k in pairs(d) do
         local l = k["row"]
-        local o = l * e
+        local o = l * e - 1
         local p = k["col"]
-        local q = p * e + 1
+        local q = p * e - 1
         local ka = doorAttr(k)
         local r = bit.band(a["cell"][l][p - 1], Flags.OPENSPACE) ~= 0
         local l = o + e
         local p = q + e
         local m = math.floor((o + l) / 2)
-        local n = math.floor((q + p) / 2) + 1
+        local n = math.floor((q + p) / 2)
 
         if ka["wall"] then
             if r then
@@ -892,18 +866,18 @@ local function imageDoors(a, b, c)
         end
         if ka["arch"] then
             if r then
-                fillRect(c, n - 1, o + 1, 2, g, i)
-                fillRect(c, n - 1, l - g, 2, g, i)
+                fillRect(c, n - 1, o, n + 1, o + g, i)
+                fillRect(c, n - 1, l - g, n + 1, l, i)
             else
-                fillRect(c, q, m - 1, g, 2, i)
-                fillRect(c, p - g - 1, m - 1, g, 2, i)
+                fillRect(c, q, m - 1, q + g, m + 1, i)
+                fillRect(c, p - g, m - 1, p, m + 1, i)
             end
         end
         if ka["door"] then
             if r then
-                strokeRect(c, n - f, o + g + 1, n + f, l - g - 1, j)
+                strokeRect(c, n - f, o + g + 1, n + f, l - g, j)
             else
-                strokeRect(c, q + g, m - f, p - g - 2, m + f, j)
+                strokeRect(c, q + g, m - f, p - g - 1, m + f, j)
             end
         end
         if ka["lock"] then
@@ -917,7 +891,7 @@ local function imageDoors(a, b, c)
             if r then
                 drawLine(c, n - h, m, n + h, m, j)
             else
-                drawLine(c, n - 2, m - h, n - 2, m + h, j)
+                drawLine(c, n, m - h, n, m + h, j)
             end
         end
         if ka["secret"] then
@@ -928,11 +902,11 @@ local function imageDoors(a, b, c)
                 drawLine(c, n + 2, m + 1, n + 2, m + f - 1, j)
                 drawLine(c, n - 2, m + f, n + 1, m + f, j)
             else
-                drawLine(c, n - f - 2, m - 2, n - f - 2, m + 1, j);
-                drawLine(c, n - f - 1, m + 2, n - 3, m + 2, j);
-                drawLine(c, n - 2, m - 1, n - 2, m + 1, j);
-                drawLine(c, n - 2, m - 2, n + f - 3, m - 2, j);
-                drawLine(c, n + f - 2, m - 1, n + f - 2, m + 2, j)
+                drawLine(c, n - f, m - 2, n - f, m + 1, j);
+                drawLine(c, n - f + 1, m + 2, n - 1, m + 2, j);
+                drawLine(c, n, m - 1, n, m + 1, j);
+                drawLine(c, n + 1, m - 2, n + f - 1, m - 2, j);
+                drawLine(c, n + f, m - 1, n + f, m + 2, j)
             end
         end
         if ka["portc"] then
@@ -954,6 +928,32 @@ local function wallShading(a, b, c, d, e, g)
         for f = c, e do
             if (b + f) % 2 ~= 0 then
                 setPixel(a, b, f, g)
+            end
+        end
+    end
+end
+
+local function debugMap(a, b)
+    local cell = a["cell"]
+    local dim = b["cell_size"]
+
+    for r = 0, a["n_rows"] do
+        for c = 0, a["n_cols"] do
+            local x1 = c * dim + dim / 4
+            local y1 = r * dim + dim / 4
+            local x2 = x1 + dim / 2
+            local y2 = y1 + dim / 2
+            
+            if bit.band(cell[r][c], Flags.CORRIDOR) ~= 0 then
+                fillRect({}, x1, y1, x2, y2, { 1.0, 0.0, 0.0, 0.25 })
+            end
+
+            if bit.band(cell[r][c], Flags.ROOM) ~= 0 then
+                fillRect({}, x1, y1, x2, y2, { 0.0, 1.0, 0.0, 0.25 })
+            end
+
+            if bit.band(cell[r][c], Flags.DOORSPACE) ~= 0 then
+                fillRect({}, x1, y1, x2, y2, { 0.0, 0.0, 1.0, 0.5 })
             end
         end
     end
@@ -1253,6 +1253,68 @@ local function scaleDungeon(dungeon, options)
 end
 
 --[[
+function image_labels(a, b, c) {
+    var d = b.cell_size,
+        e = Math.floor(d / 2),
+        g = b.palette;
+    b = b.font;
+    g = get_color(g, "label");
+    var f;
+    for (f = 0; f <= a.n_rows; f++) {
+        var h;
+        for (h = 0; h <= a.n_cols; h++)
+            if (a.cell[f][h] & OPENSPACE) {
+                var i = cell_label(a.cell[f][h]);
+                if (i) {
+                    var j = f * d + e + 1,
+                        k = h * d + e;
+                    draw_string(c, i, k, j, b, g)
+                }
+            }
+    }
+    return true
+}
+
+function cell_label(a) {
+    a = a >> 24 & 255;
+    if (a == 0) return false;
+    a = String.fromCharCode(a);
+    if (!/^\w/.test(a)) return false;
+    if (/[hjkl]/.test(a)) return false;
+    return a
+}
+]]
+
+local function cellLabel(a)
+    local a = tonumber(bit.band(bit.rshift(a, 24), 0xFF))
+    if a == 0 then return nil end
+    local char = string.char(a)
+    return tonumber(char)
+end
+
+local function imageLabels(a, b, c)
+    local d = b["cell_size"]
+    local e = math.floor(d / 2)
+    local g = b["palette"]
+
+    local b = b["font"]
+    local g = getColor(g, "label")
+    for f = 0, a["n_rows"] do
+        for h = 0, a["n_cols"] do
+            if bit.band(a["cell"][f][h], Flags.OPENSPACE) ~= 0 then
+                local i = cellLabel(a["cell"][f][h])
+
+                if i ~= nil then
+                    local j = f * d + e
+                    local k = h * d + e
+                    drawString(c, i, k, j, b, g)
+                end
+            end
+        end
+    end
+end
+
+--[[
 function image_dungeon(a) {
     var b = scale_dungeon(a),
         c = new_image(b.width, b.height),
@@ -1280,6 +1342,9 @@ local function render(dungeon, options)
         openCells(dungeon, b, c)
         imageWalls(dungeon, b, c)
         imageDoors(dungeon, b, c)
+        imageLabels(dungeon, b, c)
+
+        --debugMap(dungeon, b)
     end)
 end
 

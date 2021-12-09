@@ -219,8 +219,8 @@ local function soundRoom(dungeon, r1, c1, r2, c2)
 	local cell = dungeon["cell"]
 	local hit = {}
 
-	for r = r1, r2, 1 do
-		for c = c1, c2, 1 do
+	for r = r1, r2 do
+		for c = c1, c2 do
 			if bcheck(cell[r][c], Flags.BLOCKED) ~= 0 then
 				return { ["blocked"] = true }
 			end
@@ -640,8 +640,25 @@ local function emptyBlocks(dungeon)
 
 	for r = 0, dungeon["n_rows"] do
 		for c = 0, dungeon["n_cols"] do
+			-- clear all blocked cells, nothing to see here ...
 			if bcheck(cell[r][c], Flags.BLOCKED) ~= 0 then
 				cell[r][c] = Flags.NOTHING
+			end
+
+			-- inside rooms, remove all corridors
+			if bcheck(cell[r][c], Flags.OPENSPACE) == Flags.OPENSPACE then
+				cell[r][c] = bclear(cell[r][c], Flags.CORRIDOR)
+			end
+
+			-- remove all perimeters around rooms
+			if bcheck(cell[r][c], Flags.PERIMETER) ~= 0 then
+				cell[r][c] = bclear(cell[r][c], Flags.PERIMETER)
+			end
+
+			-- only tag door cells if connected to corridor
+			if (bcheck(cell[r][c], Flags.DOORSPACE) ~= 0 and 
+				bcheck(cell[r][c], Flags.CORRIDOR) == 0) then
+				cell[r][c] = bclear(cell[r][c], Flags.DOORSPACE)
 			end
 		end
 	end

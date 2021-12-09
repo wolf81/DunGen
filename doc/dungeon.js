@@ -1709,8 +1709,7 @@ function image_walls(a, b, c) {
                         a.cell[f + 1][j] & OPENSPACE || draw_line(c, k + 1, i + 1, l, i + 1, g)
                     }
                 } else if (g = b.wall_shading) {
-                    a.cell[f -
-                        1][j - 1] & OPENSPACE || wall_shading(c, k - e, h - e, k - 1, h - 1, g);
+                    a.cell[f - 1][j - 1] & OPENSPACE || wall_shading(c, k - e, h - e, k - 1, h - 1, g);
                     a.cell[f - 1][j] & OPENSPACE || wall_shading(c, k, h - e, l, h - 1, g);
                     a.cell[f - 1][j + 1] & OPENSPACE || wall_shading(c, l + 1, h - e, l + e, h - 1, g);
                     a.cell[f][j - 1] & OPENSPACE || wall_shading(c, k - e, h, k - 1, i, g);
@@ -1720,8 +1719,7 @@ function image_walls(a, b, c) {
                     a.cell[f + 1][j + 1] & OPENSPACE || wall_shading(c, l + 1, i + 1, l + e, i + e, g)
                 }
                 if (g = b.wall) {
-                    a.cell[f - 1][j] & OPENSPACE ||
-                        draw_line(c, k, h, l, h, g);
+                    a.cell[f - 1][j] & OPENSPACE || draw_line(c, k, h, l, h, g);
                     a.cell[f][j - 1] & OPENSPACE || draw_line(c, k, h, k, i, g);
                     a.cell[f][j + 1] & OPENSPACE || draw_line(c, l, h, l, i, g);
                     a.cell[f + 1][j] & OPENSPACE || draw_line(c, k, i, l, i, g)
@@ -1767,8 +1765,7 @@ function image_doors(a, b, c) {
                 fill_rect(c, n - 1, l - g, n + 1, l, i)
             } else {
                 fill_rect(c, q, m - 1, q + g, m + 1, i);
-                fill_rect(c,
-                    p - g, m - 1, p, m + 1, i)
+                fill_rect(c, p - g, m - 1, p, m + 1, i)
             }
         if (k.door) r ? stroke_rect(c, n - f, o + g + 1, n + f, l - g - 1, j) : stroke_rect(c, q + g + 1, m - f, p - g - 1, m + f, j);
         if (k.lock) r ? draw_line(c, n, o + g + 1, n, l - g - 1, j) : draw_line(c, q + g + 1, m, p - g - 1, m, j);
@@ -1783,8 +1780,7 @@ function image_doors(a, b, c) {
             } else {
                 draw_line(c, n - f, m - 2, n - f, m + 1, j);
                 draw_line(c, n - f + 1, m + 2, n - 1, m + 2, j);
-                draw_line(c, n, m -
-                    1, n, m + 1, j);
+                draw_line(c, n, m - 1, n, m + 1, j);
                 draw_line(c, n + 1, m - 2, n + f - 1, m - 2, j);
                 draw_line(c, n + f, m - 1, n + f, m + 2, j)
             }
