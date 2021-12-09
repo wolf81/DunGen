@@ -533,7 +533,7 @@ local color_chain = {
 
 local function setPixel(image, x, y, color)
     love.graphics.setColor(unpack(color))
-    love.graphics.points(x, y)
+    love.graphics.points(x + 0.5, y + 0.5)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
@@ -545,13 +545,13 @@ end
 
 local function strokeRect(image, x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
-    love.graphics.rectangle('line', x1, y1, x2 - x1, y2 - y1)
+    love.graphics.rectangle('line', x1 + 0.5, y1 + 0.5, x2 - x1, y2 - y1)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
 local function drawLine(image, x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
-    love.graphics.line(x1, y1, x2, y2)
+    love.graphics.line(x1 + 0.5, y1 + 0.5, x2 + 0.5, y2 + 0.5)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
@@ -892,18 +892,18 @@ local function imageDoors(a, b, c)
         end
         if ka["arch"] then
             if r then
-                fillRect(c, n - 1, o, 2, g, i)
+                fillRect(c, n - 1, o + 1, 2, g, i)
                 fillRect(c, n - 1, l - g, 2, g, i)
             else
                 fillRect(c, q, m - 1, g, 2, i)
-                fillRect(c, p - g, m - 1, g, 2, i)
+                fillRect(c, p - g - 1, m - 1, g, 2, i)
             end
         end
         if ka["door"] then
             if r then
                 strokeRect(c, n - f, o + g + 1, n + f, l - g - 1, j)
             else
-                strokeRect(c, q + g + 1, m - f, p - g - 1, m + f, j)
+                strokeRect(c, q + g, m - f, p - g - 2, m + f, j)
             end
         end
         if ka["lock"] then
@@ -917,7 +917,7 @@ local function imageDoors(a, b, c)
             if r then
                 drawLine(c, n - h, m, n + h, m, j)
             else
-                drawLine(c, n, m - h, n, m + h, j)
+                drawLine(c, n - 2, m - h, n - 2, m + h, j)
             end
         end
         if ka["secret"] then
@@ -928,11 +928,11 @@ local function imageDoors(a, b, c)
                 drawLine(c, n + 2, m + 1, n + 2, m + f - 1, j)
                 drawLine(c, n - 2, m + f, n + 1, m + f, j)
             else
-                drawLine(c, n - f, m - 2, n - f, m + 1, j);
-                drawLine(c, n - f + 1, m + 2, n - 1, m + 2, j);
-                drawLine(c, n, m - 1, n, m + 1, j);
-                drawLine(c, n + 1, m - 2, n + f - 1, m - 2, j);
-                drawLine(c, n + f, m - 1, n + f, m + 2, j)
+                drawLine(c, n - f - 2, m - 2, n - f - 2, m + 1, j);
+                drawLine(c, n - f - 1, m + 2, n - 3, m + 2, j);
+                drawLine(c, n - 2, m - 1, n - 2, m + 1, j);
+                drawLine(c, n - 2, m - 2, n + f - 3, m - 2, j);
+                drawLine(c, n + f - 2, m - 1, n + f - 2, m + 2, j)
             end
         end
         if ka["portc"] then
@@ -1156,7 +1156,7 @@ local function baseLayer(a, b)
 
     local c = love.graphics.newCanvas(b["width"], b["height"])
     c:renderTo(function()
-        love.graphics.translate(0.5, 0.5)
+        --love.graphics.translate(0.5, 0.5)
 
         local f = b["palette"]
 
