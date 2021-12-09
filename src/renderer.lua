@@ -533,25 +533,25 @@ local color_chain = {
 
 local function setPixel(image, x, y, color)
     love.graphics.setColor(unpack(color))
-
-    love.graphics.points(x + 0.5, y + 0.5)
-
+    love.graphics.points(x, y)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
 local function fillRect(image, x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
-
     love.graphics.rectangle('fill', x1, y1, x2 - x1, y2 - y1)
+    love.graphics.setColor(1.0, 1.0, 1.0)
+end
 
+local function strokeRect(image, x1, y1, x2, y2, color)
+    love.graphics.setColor(unpack(color))
+    love.graphics.rectangle('line', x1, y1, x2 - x1, y2 - y1)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
 local function drawLine(image, x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
-
-    love.graphics.line(x1 + 0.5, y1 + 0.5, x2 + 0.5, y2 + 0.5)
-
+    love.graphics.line(x1, y1, x2, y2)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
@@ -562,7 +562,7 @@ options provided
 local function drawImage(image, sx, sy, swidth, sheight, x, y, width, height)
     -- TODO: seems we don't need width & height params here ...
     local quad = love.graphics.newQuad(sx, sy, swidth, sheight, image)
-    love.graphics.draw(image, quad, x, y)
+    love.graphics.draw(image, quad, x - 0.5, y - 0.5)
 end
 
 --[[
@@ -647,6 +647,25 @@ local function fillImage(a, b, c)
 end
 
 --[[
+function get_color(a, b) {
+    for (; b;) {
+        if (a[b]) return a[b];
+        b = color_chain[b]
+    }
+    return "#000000"
+}
+]]
+
+local function getColor(a, b)
+    while b ~= nil do
+        if a[b] ~= nil then return a[b]
+        else b = color_chain[b] end
+    end
+
+    return a["black"]
+end
+
+--[[
 function image_walls(a, b, c) {
     var d = b.cell_size,
         e = Math.floor(d / 4);
@@ -700,14 +719,235 @@ local function cachePixels(flag)
 end
 
 --[[
-function wall_shading(a, b, c, d, e, g) {
-    for (b = b; b <= d; b++) {
-        var f;
-        for (f = c; f <= e; f++)(b + f) % 2 != 0 && set_pixel(a, b, f, g)
-    }
+function door_attr(a) {
+    var b;
+    if (a.key == "arch") b = {
+        arch: 1
+    };
+    else if (a.key == "open") b = {
+        arch: 1,
+        door: 1
+    };
+    else if (a.key == "lock") b = {
+        arch: 1,
+        door: 1,
+        lock: 1
+    };
+    else if (a.key == "trap") {
+        b = {
+            arch: 1,
+            door: 1,
+            trap: 1
+        };
+        if (/Lock/.test(a.desc)) b.lock = 1
+    } else if (a.key == "secret") b = {
+        wall: 1,
+        arch: 1,
+        secret: 1
+    };
+    else if (a.key == "portc") b = {
+        arch: 1,
+        portc: 1
+    };
+    return b
+}
+]]
+
+local function doorAttr(a)
+    if a["key"] == "arch" then
+        return { ["arch"] = true }
+    elseif a["key"] == "open" then
+        return { ["arch"] = true, ["door"] = true }
+    elseif a["key"] == "lock" then
+        return { ["arch"] = true, ["door"] = true, ["lock"] = true }
+    elseif a["key"] == "trap" then
+        local attr = { ["arch"] = true, ["door"] = true, ["trap"] = true }
+        if a["desc"] == "Lock" then attr["lock"] = true end
+        return attr
+    elseif a["key"] == "secret" then
+        return { ["wall"] = true, ["arch"] = true, ["secret"] = true }
+    elseif a["key"] == "portc" then
+        return { ["arch"] = true, ["portc"] = true }
+    end
+end
+
+--[[
+function image_doors(a, b, c) {
+    var d = a.door,
+        e = b.cell_size,
+        g = Math.floor(e / 6),
+        f = Math.floor(e / 4),
+        h = Math.floor(e / 3);
+    b = b.palette;
+    var i = get_color(b, "wall"),
+        j = get_color(b, "door");
+    d.each(function(k) {
+        var l = k.row,
+            o = l * e,
+            p = k.col,
+            q = p * e;
+        k = door_attr(k);
+        var r = a.cell[l][p - 1] & OPENSPACE;
+        l = o + e;
+        p = q + e;
+        var m = Math.floor((o + l) / 2),
+            n = Math.floor((q + p) / 2);
+        if (k.wall) r ? draw_line(c, n, o, n, l, i) : draw_line(c, q, m, p, m, i);
+        if (k.arch)
+            if (r) {
+                fill_rect(c, n - 1, o, n + 1, o + g, i);
+                fill_rect(c, n - 1, l - g, n + 1, l, i)
+            } else {
+                fill_rect(c, q, m - 1, q + g, m + 1, i);
+                fill_rect(c,
+                    p - g, m - 1, p, m + 1, i)
+            }
+        if (k.door) r ? stroke_rect(c, n - f, o + g + 1, n + f, l - g - 1, j) : stroke_rect(c, q + g + 1, m - f, p - g - 1, m + f, j);
+        if (k.lock) r ? draw_line(c, n, o + g + 1, n, l - g - 1, j) : draw_line(c, q + g + 1, m, p - g - 1, m, j);
+        if (k.trap) r ? draw_line(c, n - h, m, n + h, m, j) : draw_line(c, n, m - h, n, m + h, j);
+        if (k.secret)
+            if (r) {
+                draw_line(c, n - 1, m - f, n + 2, m - f, j);
+                draw_line(c, n - 2, m - f + 1, n - 2, m - 1, j);
+                draw_line(c, n - 1, m, n + 1, m, j);
+                draw_line(c, n + 2, m + 1, n + 2, m + f - 1, j);
+                draw_line(c, n - 2, m + f, n + 1, m + f, j)
+            } else {
+                draw_line(c, n - f, m - 2, n - f, m + 1, j);
+                draw_line(c, n - f + 1, m + 2, n - 1, m + 2, j);
+                draw_line(c, n, m -
+                    1, n, m + 1, j);
+                draw_line(c, n + 1, m - 2, n + f - 1, m - 2, j);
+                draw_line(c, n + f, m - 1, n + f, m + 2, j)
+            }
+        if (k.portc)
+            if (r)
+                for (o = o + g + 2; o < l - g; o += 2) set_pixel(c, n, o, j);
+            else
+                for (o = q + g + 2; o < p - g; o += 2) set_pixel(c, o, m, j)
+    });
     return true
 }
 ]]
+
+local function imageDoors(a, b, c)
+    --[[
+        if (k.wall) r ? draw_line(c, n, o, n, l, i) : draw_line(c, q, m, p, m, i);
+        if (k.arch)
+            if (r) {
+                fill_rect(c, n - 1, o, n + 1, o + g, i);
+                fill_rect(c, n - 1, l - g, n + 1, l, i)
+            } else {
+                fill_rect(c, q, m - 1, q + g, m + 1, i);
+                fill_rect(c,
+                    p - g, m - 1, p, m + 1, i)
+            }
+        if (k.door) r ? stroke_rect(c, n - f, o + g + 1, n + f, l - g - 1, j) : stroke_rect(c, q + g + 1, m - f, p - g - 1, m + f, j);
+        if (k.lock) r ? draw_line(c, n, o + g + 1, n, l - g - 1, j) : draw_line(c, q + g + 1, m, p - g - 1, m, j);
+        if (k.trap) r ? draw_line(c, n - h, m, n + h, m, j) : draw_line(c, n, m - h, n, m + h, j);
+        if (k.secret)
+            if (r) {
+                draw_line(c, n - 1, m - f, n + 2, m - f, j);
+                draw_line(c, n - 2, m - f + 1, n - 2, m - 1, j);
+                draw_line(c, n - 1, m, n + 1, m, j);
+                draw_line(c, n + 2, m + 1, n + 2, m + f - 1, j);
+                draw_line(c, n - 2, m + f, n + 1, m + f, j)
+            } else {
+                draw_line(c, n - f, m - 2, n - f, m + 1, j);
+                draw_line(c, n - f + 1, m + 2, n - 1, m + 2, j);
+                draw_line(c, n, m -
+                    1, n, m + 1, j);
+                draw_line(c, n + 1, m - 2, n + f - 1, m - 2, j);
+                draw_line(c, n + f, m - 1, n + f, m + 2, j)
+            }
+        if (k.portc)
+            if (r)
+                for (o = o + g + 2; o < l - g; o += 2) set_pixel(c, n, o, j);
+            else
+                for (o = q + g + 2; o < p - g; o += 2) set_pixel(c, o, m, j)
+    ]]
+    local d, e = a["door"], b["cell_size"]
+    local g, f, h = math.floor(e / 6), math.floor(e / 4), math.floor(e / 3)
+    local b = b["palette"]
+    local i, j = getColor(b, "wall"), getColor(b, "door")
+
+    for _, k in pairs(d) do
+        local l = k["row"]
+        local o = l * e
+        local p = k["col"]
+        local q = p * e + 1
+        local ka = doorAttr(k)
+        local r = bit.band(a["cell"][l][p - 1], Flags.OPENSPACE) ~= 0
+        local l = o + e
+        local p = q + e
+        local m = math.floor((o + l) / 2)
+        local n = math.floor((q + p) / 2) + 1
+
+        if ka["wall"] then
+            if r then
+                drawLine(c, n, o, n, l, i)
+            else
+                drawLine(c, q, m, p, m, i)
+            end
+        end
+        if ka["arch"] then
+            if r then
+                fillRect(c, n - 1, o, n + 1, o + g, i)
+                fillRect(c, n - 1, l - g, n + 1, l, i)
+            else
+                fillRect(c, q, m - 1, q + g, m + 1, i)
+                fillRect(c, p - g, m - 1, p, m + 1, i)
+            end
+        end
+        if ka["door"] then
+            if r then
+                strokeRect(c, n - f, o + g + 1, n + f, l - g - 1, j)
+            else
+                strokeRect(c, q + g + 1, m - f, p - g - 1, m + f, j)
+            end
+        end
+        if ka["lock"] then
+            if r then
+                drawLine(c, n, o + g + 1, n, l - g - 1, j)
+           else
+                drawLine(c, q + g + 1, m, p - g - 1, m, j)
+            end
+        end
+        if ka["trap"] then            
+            if r then
+                drawLine(c, n - h, m, n + h, m, j)
+            else
+                drawLine(c, n, m - h, n, m + h, j)
+            end
+        end
+        if ka["secret"] then
+            if r then
+                drawLine(c, n - 1, m - f, n + 2, m - f, j)
+                drawLine(c, n - 2, m - f + 1, n - 2, m - 1, j)
+                drawLine(c, n - 1, m, n + 1, m, j)
+                drawLine(c, n + 2, m + 1, n + 2, m + f - 1, j)
+                drawLine(c, n - 2, m + f, n + 1, m + f, j)
+            else
+                drawLine(c, n - f, m - 2, n - f, m + 1, j);
+                drawLine(c, n - f + 1, m + 2, n - 1, m + 2, j);
+                drawLine(c, n, m - 1, n, m + 1, j);
+                drawLine(c, n + 1, m - 2, n + f - 1, m - 2, j);
+                drawLine(c, n + f, m - 1, n + f, m + 2, j)
+            end
+        end
+        if ka["portc"] then
+            if r then
+                for o = o + g + 1, l - g - 1, 2 do
+                    setPixel(c, n + 1, o, j)
+                end
+            else
+                for o = q + g + 1, p - g - 1, 2 do
+                    setPixel(c, o + 1, m, j)
+                end
+            end
+        end
+    end
+end
 
 local function wallShading(a, b, c, d, e, g)
     for b = b, d do
@@ -829,7 +1069,7 @@ function open_cells(a, b, c) {
 
 local function openCells(a, b, c)
     local d = b["cell_size"]
-    b = b["base_layer"]
+    local b = b["base_layer"]
     for e = 0, a["n_rows"] do
         local g = e * d
 
@@ -916,6 +1156,8 @@ local function baseLayer(a, b)
 
     local c = love.graphics.newCanvas(b["width"], b["height"])
     c:renderTo(function()
+        love.graphics.translate(0.5, 0.5)
+
         local f = b["palette"]
 
         local h = f["open"] 
@@ -938,7 +1180,7 @@ local function baseLayer(a, b)
 
     local data = c:newImageData()
     local image = love.graphics.newImage(data)
-    
+
     love.graphics.setCanvas(ctx)
 
     return image
@@ -1032,14 +1274,13 @@ local function render(dungeon, options)
     local b = scaleDungeon(dungeon, options)
 
     return newImage(b["width"], b["height"], function(c)
-        b["palette"] = getPalette(b)
-        
-        d = baseLayer(dungeon, b, c)
-        b["base_layer"] = d
+        b["palette"] = getPalette(b)        
+        b["base_layer"] = baseLayer(dungeon, b, c)
 
         fillImage(dungeon, b, c)  
         openCells(dungeon, b, c)
         imageWalls(dungeon, b, c)
+        imageDoors(dungeon, b, c)
     end)
 end
 
