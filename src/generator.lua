@@ -305,7 +305,7 @@ local function emplaceRoom(dungeon, proto)
 	for r = r1, r2 do
 		for c = c1, c2 do
 			if bcheck(cell[r][c], Flags.ENTRANCE) ~= 0 then
-				cell[r][c] = bset(cell[r][c], bit.bnot(Flags.ESPACE))
+				cell[r][c] = bclear(cell[r][c], bit.bnot(Flags.ESPACE))
 			elseif bcheck(cell[r][c], Flags.PERIMETER) ~= 0 then
 				cell[r][c] = bclear(cell[r][c], Flags.PERIMETER)
 			end
@@ -336,7 +336,7 @@ local function emplaceRoom(dungeon, proto)
 			cell[r][c1 - 1] = bset(cell[r][c1 - 1], Flags.PERIMETER)
 		end
 		if bcheck(cell[r][c1 + 1], Flags.ROOM_ENTRANCE) == 0 then
-			cell[r][c1 + 1] = bset(cell[r][c1 + 1], Flags.PERIMETER)
+			cell[r][c2 + 1] = bset(cell[r][c2 + 1], Flags.PERIMETER)
 		end
 	end
 

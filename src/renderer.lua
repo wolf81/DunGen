@@ -981,7 +981,6 @@ local function imageWalls(a, b, c)
                     if bit.band(a["cell"][f - 1][j], Flags.OPENSPACE) == 0 then
                         drawLine(c, k, h - 1, l, h - 1, g)
                     end
-                    g = b["bevel_se"]
                     if g ~= nil then
                         if bit.band(a["cell"][f][j + 1], Flags.OPENSPACE) == 0 then
                             drawLine(c, k - 1, h, k - 1, i, g)
