@@ -13,7 +13,10 @@ local function generate()
 		--["room_layout"] = "Packed",
 	})
 
-	texture = DunGen.render(dungeon, { ["cell_size"] = 14, })
+	texture = DunGen.render(dungeon, { 
+		["cell_size"] = 14, 
+		["grid"] = "square",
+	})
 end
 
 function love.load(args)
