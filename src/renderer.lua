@@ -635,7 +635,9 @@ local function render(dungeon, options)
         imageLabels(dungeon, config)
         imageStairs(dungeon, config)
 
-        --debugMap(dungeon, config)
+        if options["debug"] == true then
+            debugMap(dungeon, config)
+        end
     end)
 end
 

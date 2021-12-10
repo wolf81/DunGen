@@ -22,7 +22,8 @@ local function rendererDefaults()
 	return {
 		["map_style"] = "standard", 	-- standard|classic|graph
 		["cell_size"] = 20, 			-- size in pixels		
-		["grid"] = "square" 			-- none|square|hex|vex
+		["grid"] = "square", 			-- none|square|hex|vex
+		["debug"] = false,
 	}
 end
 
