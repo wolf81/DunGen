@@ -7,9 +7,7 @@ local function generatorDefaults()
 	return {
 		["seed"] = love.timer.getTime(),
 		["dungeon_size"] = "medium",
-		["n_rows"] = 39, 				-- must be an odd number
-		["n_cols"] = 39, 				-- must be an odd number
-		["dungeon_layout"] = 'None',
+		["dungeon_layout"] = "square",
 		["room_min"] = 3, 				-- minimum room size
 		["room_max"] = 9, 				-- maximum room size
 		["room_layout"] = 'Scattered', 	-- Packed, Scattered

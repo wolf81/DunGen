@@ -7,15 +7,15 @@ local texture = nil
 local function generate()
 	local dungeon = DunGen.generate({ 
 		--['seed'] = 0.32, 
-		--["dungeon_layout"] = "Hexagon",
-		["dungeon_size"] = "tiny",
+		["dungeon_layout"] = "square",
+		["dungeon_size"] = "medium",
 		["corridor_layout"] = "Bent",
 		["remove_deadends"] = 100, -- percentage
 		--["room_layout"] = "Packed",
 	})
 
 	texture = DunGen.render(dungeon, { 
-		["cell_size"] = 14, 
+		["cell_size"] = 12, 
 		["grid"] = "square",
 	})
 end

@@ -2,7 +2,7 @@ require 'src/flags'
 BitMask = require 'src/bitmask'
 
 local bset, bclear, bcheck = BitMask.set, BitMask.clear, BitMask.check
-local mfloor, mrandom, msqrt, pow = math.floor, math.random, math.sqrt, math.pow
+local mfloor, mrandom, msqrt, mpow = math.floor, math.random, math.sqrt, math.pow
 local mmax, mmin, mabs = math.max, math.min, math.abs
 
 -- directions
@@ -86,37 +86,61 @@ local dungeon_size = {
 	for layouts and aspect ratios
 --]]
 local dungeon_layout = {
-	["Box"] = { 
-		[0] = 
-			{ [0] = 1, 1, 1 }, 
-			{ [0] = 1, 1, 1 },
-			{ [0] = 1, 1, 1 },
+	["square"] = {
+		["aspect"] = 1.0,
 	},
-	["Cross"] = { 
-		[0] = 
-			{ [0] = 0, 1, 0 }, 
-			{ [0] = 1, 1, 1 },
-			{ [0] = 0, 1, 0 },
+	["rectangle"] = {
+		["aspect"] = 1.5,		
 	},
-	["Keep"] = {
-		[0] =
-			{ [0] = 1, 1, 0, 0, 1, 1 },
-			{ [0] = 1, 1, 1, 1, 1, 1 },
-			{ [0] = 0, 1, 1, 1, 1, 0 },
-			{ [0] = 0, 1, 1, 1, 1, 0 },
-			{ [0] = 1, 1, 1, 1, 1, 1 },
-			{ [0] = 1, 1, 0, 0, 1, 1 },
+	["box"] = { 
+		["mask"] = {
+			[0] = 
+				{ [0] = 1, 1, 1 }, 
+				{ [0] = 1, 0, 1 },
+				{ [0] = 1, 1, 1 },			
+		},
+		["aspect"] = 1.0,
 	},
-	["Dagger"] = {
-		[0] = 
-			{ [0] = 0, 1, 0 }, 
-			{ [0] = 1, 1, 1 },
-			{ [0] = 0, 1, 0 },
-			{ [0] = 0, 1, 0 },
+	["cross"] = { 
+		["mask"] = {
+			[0] = 
+				{ [0] = 0, 1, 0 }, 
+				{ [0] = 1, 1, 1 },
+				{ [0] = 0, 1, 0 },			
+		},
+		["aspect"] = 1.0,
 	},
-	["Round"] = {},
-	["Saltire"] = {},
-	["Hexagon"] = {}
+	["keep"] = {
+		["mask"] = {
+			[0] =
+				{ [0] = 1, 1, 0, 0, 1, 1 },
+				{ [0] = 1, 1, 1, 1, 1, 1 },
+				{ [0] = 0, 1, 1, 1, 1, 0 },
+				{ [0] = 0, 1, 1, 1, 1, 0 },
+				{ [0] = 1, 1, 1, 1, 1, 1 },
+				{ [0] = 1, 1, 0, 0, 1, 1 },			
+		},
+		["aspect"] = 1.0,
+	},
+	["dagger"] = {
+		["mask"] = {
+			[0] = 
+				{ [0] = 0, 1, 0 }, 
+				{ [0] = 1, 1, 1 },
+				{ [0] = 0, 1, 0 },
+				{ [0] = 0, 1, 0 },			
+		}, 
+		["aspect"] = 1.0,
+	},
+	["round"] = {
+		["aspect"] = 1.0,	
+	},
+	["saltire"] = {
+		["aspect"] = 1.0,		
+	},
+	["hexagon"] = {
+		["aspect"] = 1.0,		
+	}
 }
 
 local corridor_layout = {
@@ -206,7 +230,7 @@ local function roundMask(dungeon)
 	end
 end
 
-local function initCells(dungeon, mask)
+local function initCells(dungeon, layout)
 	dungeon["cell"] = {}
 
 	for r = 0, dungeon["n_rows"] do
@@ -216,14 +240,15 @@ local function initCells(dungeon, mask)
 		end
 	end
 
-	if mask == "Round" then
+	if layout == "round" then
 		roundMask(dungeon)
-	elseif mask == "Saltire" then
+	elseif layout == "saltire" then
 		saltireMask(dungeon)
-	elseif mask == "Hexagon" then
+	elseif layout == "hexagon" then
 		hexagonMask(dungeon)
-	elseif dungeon_layout[mask] ~= nil then
-		maskCells(dungeon, dungeon_layout[mask])		
+	elseif dungeon_layout[layout] ~= nil then
+		local mask = dungeon_layout[layout]["mask"]
+		maskCells(dungeon, mask or { [0] = { [0] = 1 }})
 	end
 end
 
@@ -741,6 +766,20 @@ local function openRooms(dungeon)
 	end
 end
 
+--[[
+    var b;
+    for (b = 1; b <= a.n_rooms; b++) {
+        var c = a.room[b],
+            d = c.id.toString(),
+            e = d.length,
+            g = Math.floor((c.north + c.south) / 2);
+        c = Math.floor((c.west + c.east - e) / 2) + 1;
+        var f;
+        for (f = 0; f < e; f++) a.cell[g][c + f] |= d.charCodeAt(f) << 24
+    }
+    return a
+]]
+
 local function labelRooms(dungeon)
 	local cell = dungeon["cell"]
 
@@ -752,7 +791,7 @@ local function labelRooms(dungeon)
 		local label_c = mfloor((room["west"] + room["east"] - len) / 2) + 1
 
 		for c = 0, len - 1 do
-			local char = string.sub(label, c, 1)
+			local char = string.sub(label, c + 1)
 			local mask = bit.lshift(string.byte(char), 24)
 			cell[label_r][label_c + c] = bset(cell[label_r][label_c + c], mask)
 		end
@@ -930,11 +969,14 @@ end
 local function generate(options)
 	love.math.setRandomSeed(options["seed"])
 
+	print(options["dungeon_layout"])
+
 	local dungeon_size = dungeon_size[options["dungeon_size"]]
-	print(s)
-	--local n_i = mfloor(s * e / b)
-	--local n_j = Math.floor(d * e / b);
-    local n_i, n_j = dungeon_size, dungeon_size
+	local dungeon_layout = dungeon_layout[options["dungeon_layout"]]
+	
+	local aspect = dungeon_layout["aspect"]
+    local n_i, n_j = dungeon_size, mfloor(dungeon_size * aspect)
+    if n_i % 2 == 0 then n_i = n_i - 1 end
 
 	local dungeon = {}
 
@@ -948,9 +990,6 @@ local function generate(options)
 	dungeon["room"] = {}
 	dungeon["door"] = {}
 	dungeon["stair"] = {}
-
-	-- TODO: perhaps ugly to copy
-	dungeon["cell_size"] = options["cell_size"]
 
 	local max = options["room_max"]
 	local min = options["room_min"]
