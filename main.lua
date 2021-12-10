@@ -7,7 +7,7 @@ local texture = nil
 local function generate()
 	local dungeon = DunGen.generate({ 
 		--['seed'] = 0.32, 
-		["dungeon_layout"] = "dagger",
+		--["dungeon_layout"] = "square",
 		["dungeon_size"] = "medium",
 		["corridor_layout"] = "Bent",
 		["remove_deadends"] = 100, -- percentage
@@ -22,6 +22,8 @@ end
 
 function love.load(args)
 	love.window.setTitle('DunGen')
+	
+	_ = love.window.setMode(1024, 720)
 
 	generate()
 end
