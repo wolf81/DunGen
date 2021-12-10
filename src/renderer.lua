@@ -76,19 +76,21 @@ local function drawImage(image, sx, sy, swidth, sheight, x, y)
     love.graphics.draw(image, quad, x - 0.5, y - 0.5)
 end
 
-local function squareGrid(b, color)
-    local a = b["cell_size"]
-    for e = 0, b["max_x"], a do
-        drawLine(e, 0, e, b["max_y"], color)
+local function squareGrid(config, color)
+    local dim = config["cell_size"]
+
+    for x = 0, config["max_x"], dim do
+        drawLine(x, 0, x, config["max_y"], color)
     end
 
-    for e = 0, b["max_y"], a do
-        drawLine(0, e, b["max_x"], e, color)
+    for y = 0, config["max_y"], dim do
+        drawLine(0, y, config["max_x"], y, color)
     end
 end
 
-local function imageGrid(a, b, color)
-    local grid = a["grid"]
+local function imageGrid(dungeon, config, color)
+    -- TODO: grid style should not be stored in dungeon, but in config instead
+    local grid = dungeon["grid"]
 
     if grid ~= "none" then
         if grid == "hex" then
@@ -96,31 +98,22 @@ local function imageGrid(a, b, color)
         elseif grid == "vex" then
             error("not implemented")
         else
-            squareGrid(b, color)
+            squareGrid(config, color)
         end 
     end
 end
 
-local function fillImage(a, b, c)
-    local d = b["max_x"]
-    local e = b["max_y"]
-    local g = b["palette"]
+local function fillImage(dungeon, config)
+    local palette = config["palette"]
 
-    local f = g["fill"]
-    if f ~= nil then
-        fillRect(0, 0, d, e, f)
-    else
-        fillRect(0, 0, d, e, g["black"])
-    end
-
-    local f = g["fill_grid"]
-    if f ~= nil then
-        imageGrid(a, b, f)
-    else
-        f = g["grid"]
-        if f ~= nil then
-            imageGrid(a, b, f)
-        end
+    -- set background color if defined or use black background
+    local bg_color = palette["fill"] or palette["black"]
+    fillRect(0, 0, config["max_x"], config["max_y"], bg_color)
+    
+    -- draw grid if a grid color is defined
+    local grid_color = palette["fill_grid"] or palette["grid"]
+    if grid_color ~= nil then
+        imageGrid(dungeon, config, grid_color)
     end
 end
 
@@ -133,7 +126,7 @@ local function getColor(color_table, key)
     return color_table["black"]
 end
 
-local function doorAttr(door)
+local function getDoorAttributes(door)
     if door["key"] == "arch" then
         return { ["arch"] = true }
     elseif door["key"] == "open" then
@@ -151,91 +144,92 @@ local function doorAttr(door)
     end
 end
 
-local function imageDoors(a, b, c)
-    local doors, e = a["door"], b["cell_size"]
-    local g, f, h = math.floor(e / 6), math.floor(e / 4), math.floor(e / 3)
-    local b = b["palette"]
-    local i, j = getColor(b, "wall"), getColor(b, "door")
+local function imageDoors(dungeon, config)
+    local doors, dim = dungeon["door"], config["cell_size"]
+    local g, f, h = math.floor(dim / 6), math.floor(dim / 4), math.floor(dim / 3)
+    local palette = config["palette"]
+    local wall_color = getColor(palette, "wall")
+    local door_color = getColor(palette, "door")
 
-    for _, k in pairs(doors) do
-        local l = k["row"]
-        local o = l * e - 1
-        local p = k["col"]
-        local q = p * e - 1
-        local ka = doorAttr(k)
-        local r = bit.band(a["cell"][l][p - 1], Flags.OPENSPACE) ~= 0
-        local l = o + e
-        local p = q + e
-        local m = math.floor((o + l) / 2)
-        local n = math.floor((q + p) / 2)
+    for _, door in pairs(doors) do
+        local row = door["row"]
+        local y1 = row * dim - 1
+        local col = door["col"]
+        local x1 = col * dim - 1
+        local attr = getDoorAttributes(door)
+        local rotate = bit.band(dungeon["cell"][row][col - 1], Flags.OPENSPACE) ~= 0
+        local y2 = y1 + dim
+        local x2 = x1 + dim
+        local dy = math.floor((y1 + y2) / 2)
+        local dx = math.floor((x1 + x2) / 2)
 
-        if ka["wall"] then
-            if r then
-                drawLine(n, o, n, l, i)
+        if attr["wall"] then
+            if rotate then
+                drawLine(dx, y1, dx, y2, wall_color)
             else
-                drawLine(q, m, p, m, i)
+                drawLine(x1, dy, x2, dy, wall_color)
             end
         end
-        if ka["arch"] then
-            if r then
-                fillRect(n - 1, o, n + 1, o + g, i)
-                fillRect(n - 1, l - g, n + 1, l, i)
+        if attr["arch"] then
+            if rotate then
+                fillRect(dx - 1, y1, dx + 1, y1 + g, wall_color)
+                fillRect(dx - 1, y2 - g, dx + 1, y2, wall_color)
             else
-                fillRect(q, m - 1, q + g, m + 1, i)
-                fillRect(p - g, m - 1, p, m + 1, i)
+                fillRect(x1, dy - 1, x1 + g, dy + 1, wall_color)
+                fillRect(x2 - g, dy - 1, x2, dy + 1, wall_color)
             end
         end
-        if ka["door"] then
-            if r then
-                strokeRect(n - f, o + g + 1, n + f, l - g, j)
+        if attr["door"] then
+            if rotate then
+                strokeRect(dx - f, y1 + g + 1, dx + f, y2 - g, door_color)
             else
-                strokeRect(q + g, m - f, p - g - 1, m + f, j)
+                strokeRect(x1 + g, dy - f, x2 - g - 1, dy + f, door_color)
             end
         end
-        if ka["lock"] then
-            if r then
-                drawLine(n, o + g + 1, n, l - g - 1, j)
+        if attr["lock"] then
+            if rotate then
+                drawLine(dx, y1 + g + 1, dx, y2 - g - 1, door_color)
            else
-                drawLine(q + g + 1, m, p - g - 1, m, j)
+                drawLine(x1 + g + 1, dy, x2 - g - 1, dy, door_color)
             end
         end
-        if ka["trap"] then            
-            if r then
-                drawLine(n - h, m, n + h, m, j)
+        if attr["trap"] then            
+            if rotate then
+                drawLine(dx - h, dy, dx + h, dy, door_color)
             else
-                drawLine(n, m - h, n, m + h, j)
+                drawLine(dx, dy - h, dx, dy + h, door_color)
             end
         end
-        if ka["secret"] then
-            if r then
-                drawLine(n - 1, m - f, n + 2, m - f, j)
-                drawLine(n - 2, m - f + 1, n - 2, m - 1, j)
-                drawLine(n - 1, m, n + 1, m, j)
-                drawLine(n + 2, m + 1, n + 2, m + f - 1, j)
-                drawLine(n - 2, m + f, n + 1, m + f, j)
+        if attr["secret"] then
+            if rotate then
+                drawLine(dx - 1, dy - f, dx + 2, dy - f, door_color)
+                drawLine(dx - 2, dy - f + 1, dx - 2, dy - 1, door_color)
+                drawLine(dx - 1, dy, dx + 1, dy, door_color)
+                drawLine(dx + 2, dy + 1, dx + 2, dy + f - 1, door_color)
+                drawLine(dx - 2, dy + f, dx + 1, dy + f, door_color)
             else
-                drawLine(n - f, m - 2, n - f, m + 1, j);
-                drawLine(n - f + 1, m + 2, n - 1, m + 2, j);
-                drawLine(n, m - 1, n, m + 1, j);
-                drawLine(n + 1, m - 2, n + f - 1, m - 2, j);
-                drawLine(n + f, m - 1, n + f, m + 2, j)
+                drawLine(dx - f, dy - 2, dx - f, dy + 1, door_color);
+                drawLine(dx - f + 1, dy + 2, dx - 1, dy + 2, door_color);
+                drawLine(dx, dy - 1, dx, dy + 1, door_color);
+                drawLine(dx + 1, dy - 2, dx + f - 1, dy - 2, door_color);
+                drawLine(dx + f, dy - 1, dx + f, dy + 2, door_color)
             end
         end
-        if ka["portc"] then
-            if r then
-                for o = o + g + 1, l - g - 1, 2 do
-                    setPixel(n, o, j)
+        if attr["portc"] then
+            if rotate then
+                for y = y1 + g + 1, y2 - g - 1, 2 do
+                    setPixel(dx, y, door_color)
                 end
             else
-                for o = q + g + 1, p - g - 1, 2 do
-                    setPixel(o, m, j)
+                for x = x1 + g + 1, x2 - g - 1, 2 do
+                    setPixel(x, dy, door_color)
                 end
             end
         end
     end
 end
 
-local function wallShading(a, x1, y1, x2, y2, color)
+local function wallShading(x1, y1, x2, y2, color)
     for x = x1, x2 do
         for y = y1, y2 do
             if (x + y) % 2 ~= 0 then
@@ -245,78 +239,78 @@ local function wallShading(a, x1, y1, x2, y2, color)
     end
 end
 
-local function imageWalls(a, b, c)
-    local d = b["cell_size"]
-    local e = math.max(math.floor(d / 4), 3)
-    local b = b["palette"]
+local function imageWalls(dungeon, config)
+    local dim = config["cell_size"]
+    local e = math.max(math.floor(dim / 4), 3)
+    local palette = config["palette"]
     
-    for f = 0, a["n_rows"] do
-        local h = f * d
-        local i = h + d
-        for j = 0, a["n_cols"] do
-            if bit.band(a["cell"][f][j], Flags.OPENSPACE) ~= 0 then
-                local k = j * d
-                local l = k + d
-                local g = b["bevel_nw"]
-                if g ~= nil then
-                    if bit.band(a["cell"][f][j - 1], Flags.OPENSPACE) == 0 then
-                        drawLine(k - 1, h, k - 1, i, g)
+    for r = 0, dungeon["n_rows"] do
+        local y1 = r * dim
+        local y2 = y1 + dim
+        for c = 0, dungeon["n_cols"] do
+            if bit.band(dungeon["cell"][r][c], Flags.OPENSPACE) ~= 0 then
+                local x1 = c * dim
+                local x2 = x1 + dim
+                local bevel_color = palette["bevel_nw"]
+                if bevel_color ~= nil then
+                    if bit.band(dungeon["cell"][r][c - 1], Flags.OPENSPACE) == 0 then
+                        drawLine(x1 - 1, y1, x1 - 1, y2, bevel_color)
                     end
-                    if bit.band(a["cell"][f - 1][j], Flags.OPENSPACE) == 0 then
-                        drawLine(k, h - 1, l, h - 1, g)
+                    if bit.band(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
+                        drawLine(x1, y1 - 1, x2, y1 - 1, bevel_color)
                     end
                     if g ~= nil then
-                        if bit.band(a["cell"][f][j + 1], Flags.OPENSPACE) == 0 then
-                            drawLine(k - 1, h, k - 1, i, g)
+                        if bit.band(dungeon["cell"][r][c + 1], Flags.OPENSPACE) == 0 then
+                            drawLine(x1 - 1, y1, x1 - 1, y2, bevel_color)
                         end
 
-                        if bit.band(a["cell"][f - 1][j], Flags.OPENSPACE) == 0 then
-                            drawLine(k, h - 1, l, h - 1, g)
+                        if bit.band(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
+                            drawLine(x1, y1 - 1, x2, y1 - 1, bevel_color)
                         end
                     end
                 else
-                    g = b["wall_shading"]
-                    if g ~= nil then
-                        if bit.band(a["cell"][f - 1][j - 1], Flags.OPENSPACE) == 0 then
-                            wallShading(c, k - e, h - e, k - 1, h - 1, g)
+                    local shade_color = palette["wall_shading"]
+                    if shade_color ~= nil then
+                        if bit.band(dungeon["cell"][r - 1][c - 1], Flags.OPENSPACE) == 0 then
+                            wallShading(x1 - e, y1 - e, x1 - 1, y1 - 1, shade_color)
                         end
-                        if bit.band(a["cell"][f - 1][j], Flags.OPENSPACE) == 0 then
-                            wallShading(c, k, h - e, l, h - 1, g)
+                        if bit.band(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
+                            wallShading(x1, y1 - e, x2, y1 - 1, shade_color)
                         end
-                        if bit.band(a["cell"][f - 1][j + 1], Flags.OPENSPACE) == 0 then
-                            wallShading(c, l + 1, h - e, l + e, h - 1, g)
+                        if bit.band(dungeon["cell"][r - 1][c + 1], Flags.OPENSPACE) == 0 then
+                            wallShading(x2 + 1, y1 - e, x2 + e, y1 - 1, shade_color)
                         end
-                        if bit.band(a["cell"][f][j - 1], Flags.OPENSPACE) == 0 then
-                            wallShading(c, k - e, h, k - 1, i, g)
+                        if bit.band(dungeon["cell"][r][c - 1], Flags.OPENSPACE) == 0 then
+                            wallShading(x1 - e, y1, x1 - 1, y2, shade_color)
                         end
-                        if bit.band(a["cell"][f][j + 1], Flags.OPENSPACE) == 0 then
-                            wallShading(c, l + 1, h, l + e, i, g)
+                        if bit.band(dungeon["cell"][r][c + 1], Flags.OPENSPACE) == 0 then
+                            wallShading(x2 + 1, y1, x2 + e, y2, shade_color)
                         end
-                        if bit.band(a["cell"][f + 1][j - 1], Flags.OPENSPACE) == 0 then
-                            wallShading(c, k - e, i + 1, k - 1, i + e, g)
+                        if bit.band(dungeon["cell"][r + 1][c - 1], Flags.OPENSPACE) == 0 then
+                            wallShading(x1 - e, y2 + 1, x1 - 1, y2 + e, shade_color)
                         end
-                        if bit.band(a["cell"][f + 1][j], Flags.OPENSPACE) == 0 then
-                            wallShading(c, k, i + 1, l, i + e, g)
+                        if bit.band(dungeon["cell"][r + 1][c], Flags.OPENSPACE) == 0 then
+                            wallShading(x1, y2 + 1, x2, y2 + e, shade_color)
                         end
-                        if bit.band(a["cell"][f + 1][j - 1], Flags.OPENSPACE) == 0 then
-                            wallShading(c, l + 1, i + 1, l + e, i + e, g)
+                        if bit.band(dungeon["cell"][r + 1][c - 1], Flags.OPENSPACE) == 0 then
+                            wallShading(x2 + 1, y2 + 1, x2 + e, y2 + e, shade_color)
                         end
                     end
                 end
 
-                g = b["wall"]
-                if g ~= nil then
-                    if bit.band(a["cell"][f - 1][j], Flags.OPENSPACE) == 0 then
-                        drawLine(k, h, l, h, g)
+                local wall_color = palette["wall"]
+                if wall_color ~= nil then
+                    if bit.band(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
+                        drawLine(x1, y1, x2, y1, wall_color)
                     end
-                    if bit.band(a["cell"][f][j - 1], Flags.OPENSPACE) == 0 then
-                        drawLine(k, h, k, i, g)
+                    if bit.band(dungeon["cell"][r][c - 1], Flags.OPENSPACE) == 0 then
+                        drawLine(x1, y1, x1, y2, wall_color)
                     end
-                    if bit.band(a["cell"][f][j + 1], Flags.OPENSPACE) == 0 then
-                        drawLine(l, h, l, i, g)
+                    if bit.band(dungeon["cell"][r][c + 1], Flags.OPENSPACE) == 0 then
+                        drawLine(x2, y1, x2, y2, wall_color)
                     end
-                    if bit.band(a["cell"][f + 1][j], Flags.OPENSPACE) == 0 then
-                        drawLine(k, i, l, i, g)
+                    if bit.band(dungeon["cell"][r + 1][c], Flags.OPENSPACE) == 0 then
+                        drawLine(x1, y2, x2, y2, wall_color)
                     end
                 end
             end        
@@ -324,16 +318,16 @@ local function imageWalls(a, b, c)
     end
 end
 
-local function openCells(a, b, c)
-    local d = b["cell_size"]
-    local b = b["base_layer"]
-    for e = 0, a["n_rows"] do
-        local g = e * d
+local function openCells(dungeon, config)
+    local dim = config["cell_size"]
+    local base_layer = config["base_layer"]
+    for r = 0, dungeon["n_rows"] do
+        local y = r * dim
 
-        for f = 0, a["n_cols"] do
-            if bit.band(a["cell"][e][f], Flags.OPENSPACE) ~= 0 then
-                local h = f * d
-                drawImage(b, h, g, d, d, h, g, d, d)
+        for c = 0, dungeon["n_cols"] do
+            if bit.band(dungeon["cell"][r][c], Flags.OPENSPACE) ~= 0 then
+                local x = c * dim
+                drawImage(base_layer, x, y, dim, dim, x, y)
             end
         end
 
@@ -390,34 +384,25 @@ function vex_grid(a, b, c, d) {
 }
 --]]
 
-local function baseLayer(a, b)
+local function baseLayer(dungeon, config)
     local ctx = love.graphics.getCanvas()
 
-    local c = love.graphics.newCanvas(b["width"], b["height"])
-    c:renderTo(function()
-        --love.graphics.translate(0.5, 0.5)
+    local canvas = love.graphics.newCanvas(config["width"], config["height"])
+    canvas:renderTo(function()
+        local palette = config["palette"]
 
-        local f = b["palette"]
+        -- set background color if defined or use white background
+        local bg_color = palette["open"] or palette["white"]
+        fillRect(0, 0, config["max_x"], config["max_y"], bg_color)
 
-        local h = f["open"] 
-        if h ~= nil then
-            fillRect(0, 0, b["max_x"], b["max_y"], h)
-        else
-            fillRect(0, 0, b["max_x"], b["max_y"], f["white"])
-        end
-
-        h = f["open_grid"]
-        if h ~= nil then
-            imageGrid(a, b, h)
-        else
-            h = f["grid"]
-            if h ~= nil then
-                imageGrid(a, b, h)
-            end
+        -- if grid color is defined, draw grid
+        local grid_color = palette["open_grid"] or palette["grid"]
+        if grid_color ~= nil then
+            imageGrid(dungeon, config, grid_color)
         end
     end)
 
-    local data = c:newImageData()
+    local data = canvas:newImageData()
     local image = love.graphics.newImage(data)
 
     love.graphics.setCanvas(ctx)
@@ -425,171 +410,172 @@ local function baseLayer(a, b)
     return image
 end
 
-local function getPalette(a)
-    local b = a["palette"] ~= nil and a["palette"] or palette[a["map_style"]]
+local function getPalette(config)
+    local palette = (config["palette"] ~= nil 
+        and config["palette"] 
+        or palette[config["map_style"]])
 
-    local c = b["colors"]
-    for key, _ in pairs(c) do
-        b[key] = c[key]
+    local colors = palette["colors"]
+    for key, _ in pairs(colors) do
+        palette[key] = colors[key]
     end
 
-    b["black"] = b["black"] or { 0.0, 0.0, 0.0 }
-    b["white"] = b["white"] or { 1.0, 1.0, 1.0 }
+    palette["black"] = palette["black"] or { 0.0, 0.0, 0.0 }
+    palette["white"] = palette["white"] or { 1.0, 1.0, 1.0 }
 
-    return b
+    return palette
 end
 
 local function scaleDungeon(dungeon, options)
-    local b = {
+    local config = {
         ["map_style"] = options["map_style"],
         ["grid"] = options["grid"],
+        ["cell_size"] = options["cell_size"]
     }
-    b["cell_size"] = options["cell_size"]
-    b["width"] = (dungeon["n_cols"] + 1) * b["cell_size"] + 1
-    b["height"] = (dungeon["n_rows"] + 1) * b["cell_size"] + 1
-    b["max_x"] = b["width"] - 1
-    b["max_y"] = b["height"] - 1
-    local fontSize = b["cell_size"] * 0.75
-    b["font"] = love.graphics.newFont(fontSize)
+    config["width"] = (dungeon["n_cols"] + 1) * config["cell_size"] + 1
+    config["height"] = (dungeon["n_rows"] + 1) * config["cell_size"] + 1
+    config["max_x"] = config["width"] - 1
+    config["max_y"] = config["height"] - 1
+    local fontSize = config["cell_size"] * 0.75
+    config["font"] = love.graphics.newFont(fontSize)
 
-    return b
+    return config
 end
 
-local function cellLabel(a)
-    local a = tonumber(bit.band(bit.rshift(a, 24), 0xFF))
-    if a == 0 then return nil end
-    local char = string.char(a)
-    return tonumber(char)
+local function cellLabel(cell)
+    local value = tonumber(bit.band(bit.rshift(cell, 24), 0xFF))
+    if value == 0 then return nil end
+    local label = string.char(value)
+    return tonumber(label)
 end
 
-local function imageLabels(a, b, c)
-    local d = b["cell_size"]
-    local e = math.floor(d / 2)
-    local g = b["palette"]
+local function imageLabels(dungeon, config)
+    local dim = config["cell_size"]
+    local d = math.floor(dim / 2)
+    local palette = config["palette"]
 
-    local b = b["font"]
-    local g = getColor(g, "label")
-    for f = 0, a["n_rows"] do
-        for h = 0, a["n_cols"] do
-            if bit.band(a["cell"][f][h], Flags.OPENSPACE) ~= 0 then
-                local i = cellLabel(a["cell"][f][h])
+    local font = config["font"]
+    local color = getColor(palette, "label")
+    for r = 0, dungeon["n_rows"] do
+        for c = 0, dungeon["n_cols"] do
+            if bit.band(dungeon["cell"][r][c], Flags.OPENSPACE) ~= 0 then
+                local label = cellLabel(dungeon["cell"][r][c])
 
-                if i ~= nil then
-                    local j = f * d + e
-                    local k = h * d + e
-                    drawString(i, k, j, b, g)
+                if label ~= nil then
+                    local y = r * dim + d
+                    local x = c * dim + d
+                    drawString(label, x, y, font, color)
                 end
             end
         end
     end
 end
 
-local function treadList(a, b, c)
-    local d = {}
-    if b > a then
-        local a = a * c["cell"]
-        table.insert(d, a)
-        b = (b + 1) * c["cell"]
-        for a = a, b - 1, c["tread"] do
-            table.insert(d, a)
+local function treadList(row, next_row, scaled)
+    local tread_list = {}
+
+    if next_row > row then
+        local y1 = row * scaled["cell"]
+        table.insert(tread_list, y1)
+
+        local y2 = (next_row + 1) * scaled["cell"] - 1
+        for y = y1, y2, scaled["tread"] do
+            table.insert(tread_list, y)
         end
-    elseif b < a then
-        local a = (a + 1) * c["cell"]
-        table.insert(d, a)
-        b = b * c["cell"]
-        for a = a, b + 1, -(c["tread"]) do
-            table.insert(d, a)
+    elseif next_row < row then
+        local x1 = (row + 1) * scaled["cell"]
+        table.insert(tread_list, x1)
+
+        local x2 = next_row * scaled["cell"] + 1
+        for x = x1, x2, -(scaled["tread"]) do
+            table.insert(tread_list, x)
         end    
     end
 
-    return d
+    return tread_list
 end
 
-local function scaleStairs(a)
-    a = {
-        ["cell"] = a,
-        ["len"] = a * 2,
-        ["side"] = math.floor(a / 2),
-        ["tread"] = math.floor(a / 20) + 2,
+local function scaleStairs(cell_size)
+    local scaled = {
+        ["cell"] = cell_size,
+        ["len"] = cell_size * 2,
+        ["side"] = math.floor(cell_size / 2),
+        ["tread"] = math.floor(cell_size / 20) + 2,
         ["down"] = {},
     }
-    for b = 0, a["len"] - 1, a["tread"] do
-        a["down"][b] = math.floor(b / a["len"] * a["side"])
+    for i = 0, scaled["len"] - 1, scaled["tread"] do
+        scaled["down"][i] = math.floor(i / scaled["len"] * scaled["side"])
     end
-    return a
+    return scaled
 end
 
-local function stairDim(a, b)
-    local r = nil
+local function stairDim(stair, scaled)
+    local stair_dim = nil
 
-    if a["next_row"] ~= a["row"] then
-        local c = math.floor((a["col"] + 0.5) * b["cell"]) - 1
-        local a = treadList(a["row"], a["next_row"], b)
-        local d = table.remove(a, 1)
-        r = {
-            ["xc"] = c,
-            ["y1"] = d,
-            ["list"] = a
+    if stair["next_row"] ~= stair["row"] then
+        local tread_list = treadList(stair["row"], stair["next_row"], scaled)
+        stair_dim = {
+            ["xc"] = math.floor((stair["col"] + 0.5) * scaled["cell"]) - 1,
+            ["y1"] = table.remove(tread_list, 1),
+            ["list"] = tread_list
         }
     else
-        local c = math.floor((a["row"] + 0.5) * b["cell"])
-        local a = treadList(a["col"], a["next_col"], b)
-        local d = table.remove(a, 1)
-        r = {
-            ["yc"] = c,
-            ["x1"] = d,
-            ["list"] = a,
+        local tread_list = treadList(stair["col"], stair["next_col"], scaled)
+        stair_dim = {
+            ["yc"] = math.floor((stair["row"] + 0.5) * scaled["cell"]),
+            ["x1"] = table.remove(tread_list, 1),
+            ["list"] = tread_list,
         }
     end
 
-    r["side"] = b["side"]
-    r["down"] = b["down"]
-    return r
+    stair_dim["side"] = scaled["side"]
+    stair_dim["down"] = scaled["down"]
+    return stair_dim
 end
 
-local function imageAscend(a, b, c)
-    if a["xc"] ~= nil then
-        local d = a["xc"] - a["side"]
-        local e = a["xc"] + a["side"]
-        for _, h in ipairs(a["list"]) do
-            drawLine(d, h, e, h, b)
+local function imageAscend(stair_dim, color)
+    if stair_dim["xc"] ~= nil then
+        local x1 = stair_dim["xc"] - stair_dim["side"]
+        local x2 = stair_dim["xc"] + stair_dim["side"]
+        for _, h in ipairs(stair_dim["list"]) do
+            drawLine(x1, h, x2, h, color)
         end
     else
-        local g = a["yc"] - a["side"]
-        local f = a["yc"] + a["side"]
-        for _, h in ipairs(a["list"]) do
-            drawLine(h, g, h, f, b)
+        local y1 = stair_dim["yc"] - stair_dim["side"]
+        local y2 = stair_dim["yc"] + stair_dim["side"]
+        for _, h in ipairs(stair_dim["list"]) do
+            drawLine(h, y1, h, y2, color)
         end        
     end
 end
 
-local function imageDescend(a, b, c)
-    if a["xc"] ~= nil then
-        local d = a["xc"]
-        for _, g in ipairs(a["list"]) do
-            local f = a["down"][math.abs(g - a["y1"])]
-            drawLine(d - f, g, d + f, g, b)
+local function imageDescend(stair_dim, color)
+    if stair_dim["xc"] ~= nil then
+        local x = stair_dim["xc"]
+        for _, y in ipairs(stair_dim["list"]) do
+            local dx = stair_dim["down"][math.abs(y - stair_dim["y1"])]
+            drawLine(x - dx, y, x + dx, y, color)
         end
     else
-        local e = a["yc"]
-        for _, g in ipairs(a["list"]) do
-            local f = a["down"][math.abs(g - a["x1"])]
-            drawLine(g, e - f, g, e + f, b)
+        local y = stair_dim["yc"]
+        for _, x in ipairs(stair_dim["list"]) do
+            local dy = stair_dim["down"][math.abs(x - stair_dim["x1"])]
+            drawLine(x, y - dy, x, y + dy, color)
         end
     end
 end
 
-local function imageStairs(a, b, c)
-    local a = a["stair"]
-    local d = scaleStairs(b["cell_size"])
-    local b = b["palette"]
-    local e = getColor(b, "stair")
-    for _, g in ipairs(a) do
-        local f = stairDim(g, d)
-        if g["key"] == "up" then 
-            imageAscend(f, e, c)
+local function imageStairs(dungeon, config)
+    local stairs = dungeon["stair"]
+    local scaled = scaleStairs(config["cell_size"])
+    local palette = config["palette"]
+    local color = getColor(palette, "stair")
+    for _, stair in ipairs(stairs) do
+        local stair_dim = stairDim(stair, scaled)
+        if stair["key"] == "up" then 
+            imageAscend(stair_dim, color)
         else
-            imageDescend(f, e, c)
+            imageDescend(stair_dim, color)
         end
     end
 end
@@ -631,20 +617,20 @@ local function debugMap(dungeon, config)
 end
 
 local function render(dungeon, options)
-    local b = scaleDungeon(dungeon, options)
+    local config = scaleDungeon(dungeon, options)
 
-    return newImage(b["width"], b["height"], function(c)
-        b["palette"] = getPalette(b)        
-        b["base_layer"] = baseLayer(dungeon, b, c)
+    return newImage(config["width"], config["height"], function(c)
+        config["palette"] = getPalette(config)        
+        config["base_layer"] = baseLayer(dungeon, config)
 
-        fillImage(dungeon, b, c)  
-        openCells(dungeon, b, c)
-        imageWalls(dungeon, b, c)
-        imageDoors(dungeon, b, c)
-        imageLabels(dungeon, b, c)
-        imageStairs(dungeon, b, c)
+        fillImage(dungeon, config)  
+        openCells(dungeon, config)
+        imageWalls(dungeon, config)
+        imageDoors(dungeon, config)
+        imageLabels(dungeon, config)
+        imageStairs(dungeon, config)
 
-        --debugMap(dungeon, b)
+        --debugMap(dungeon, config)
     end)
 end
 
