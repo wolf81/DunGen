@@ -90,7 +90,7 @@ local dungeon_layout = {
 		["aspect"] = 1.0,
 	},
 	["rectangle"] = {
-		["aspect"] = 1.5,		
+		["aspect"] = 1.3,		
 	},
 	["box"] = { 
 		["mask"] = {
@@ -125,12 +125,11 @@ local dungeon_layout = {
 	["dagger"] = {
 		["mask"] = {
 			[0] = 
-				{ [0] = 0, 1, 0 }, 
-				{ [0] = 1, 1, 1 },
-				{ [0] = 0, 1, 0 },
-				{ [0] = 0, 1, 0 },			
+				{ [0] = 0, 1, 0, 0 }, 
+				{ [0] = 1, 1, 1, 1 },
+				{ [0] = 0, 1, 0, 0 },
 		}, 
-		["aspect"] = 1.0,
+		["aspect"] = 1.3,
 	},
 	["round"] = {
 		["aspect"] = 1.0,	
@@ -139,7 +138,7 @@ local dungeon_layout = {
 		["aspect"] = 1.0,		
 	},
 	["hexagon"] = {
-		["aspect"] = 1.0,		
+		["aspect"] = 0.9,		
 	}
 }
 
