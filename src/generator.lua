@@ -66,6 +66,18 @@ local close_end = {
     },
 };
 
+local dungeon_size = {
+	["fine"] 		= 11,
+	["dimin"] 		= 13,
+	["tiny"] 		= 17,
+	["small"] 		= 21,
+	["medium"] 		= 27,
+	["large"] 		= 35,
+	["huge"] 		= 43,
+	["gargant"] 	= 55,
+	["colossal"] 	= 71,
+}
+
 --[[ TODO: 
 	* Improve implementation, all layout names should be public
 	or perhaps just forward layout tables instead, so users 
@@ -918,12 +930,18 @@ end
 local function generate(options)
 	love.math.setRandomSeed(options["seed"])
 
+	local dungeon_size = dungeon_size[options["dungeon_size"]]
+	print(s)
+	--local n_i = mfloor(s * e / b)
+	--local n_j = Math.floor(d * e / b);
+    local n_i, n_j = dungeon_size, dungeon_size
+
 	local dungeon = {}
 
-	dungeon["n_i"] = mfloor(options["n_rows"] / 2)
-	dungeon["n_j"] = mfloor(options["n_cols"] / 2)
-	dungeon["n_rows"] = dungeon["n_i"] * 2
-	dungeon["n_cols"] = dungeon["n_j"] * 2
+	dungeon["n_i"] = n_i
+	dungeon["n_j"] = n_j
+	dungeon["n_rows"] = n_i * 2
+	dungeon["n_cols"] = n_j * 2
 	dungeon["max_row"] = dungeon["n_rows"] - 1
 	dungeon["max_col"] = dungeon["n_cols"] - 1
 	dungeon["n_rooms"] = 0

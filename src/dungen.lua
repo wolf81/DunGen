@@ -6,6 +6,7 @@ local Generator = require 'src/generator'
 local function generatorDefaults()
 	return {
 		["seed"] = love.timer.getTime(),
+		["dungeon_size"] = "medium",
 		["n_rows"] = 39, 				-- must be an odd number
 		["n_cols"] = 39, 				-- must be an odd number
 		["dungeon_layout"] = 'None',
