@@ -8,19 +8,19 @@ local function generatorDefaults()
 		["seed"] = love.timer.getTime(),
 		["dungeon_size"] = "medium",
 		["dungeon_layout"] = "square",
-		["room_min"] = 3, 				-- minimum room size
-		["room_max"] = 9, 				-- maximum room size
-		["room_layout"] = 'Scattered', 	-- Packed, Scattered
+		["doors"] = "standard",
+		["room_size"] = "medium",
+		["room_layout"] = "scattered", 	-- sparse|scattered|dense
 		["corridor_layout"] = "Bent",
-		["remove_deadends"] = 50, 		-- percentage
-		["add_stairs"] = 2, 			-- number of stairs
+		["remove_deadends"] = 50, 		-- percentage 0-100
+		["add_stairs"] = 2, 			-- stair count
 	}
 end
 
 local function rendererDefaults()
 	return {
 		["map_style"] = "standard", 	-- standard|classic|graph
-		["cell_size"] = 20, 			-- size in pixels		
+		["cell_size"] = 20, 			-- pixels
 		["grid"] = "square", 			-- none|square|hex|vex
 		["debug"] = false,
 	}

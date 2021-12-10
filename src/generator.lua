@@ -142,6 +142,29 @@ local dungeon_layout = {
 	}
 }
 
+local room_size = {
+	["small"] 		= { ["size"] = 2, ["radix"] = 2, ["huge"] = false },
+	["medium"] 		= { ["size"] = 2, ["radix"] = 5, ["huge"] = false },
+	["large"] 		= { ["size"] = 5, ["radix"] = 2, ["huge"] = false },
+	["huge"] 		= { ["size"] = 5, ["radix"] = 5, ["huge"] = true  },
+	["gargant"] 	= { ["size"] = 8, ["radix"] = 5, ["huge"] = true  },
+	["colossal"] 	= { ["size"] = 8, ["radix"] = 8, ["huge"] = true  },
+}
+
+local room_layout = {
+	["sparse"] 		= { ["complex"] = false }, 
+	["scattered"] 	= { ["complex"] = true }, 
+	["dense"] 		= { ["complex"] = false },
+}
+
+local doors = {
+	["none"] 		= {},
+	["basic"] 		= {},
+	["secure"] 		= {},
+	["standard"] 	= {},
+	["deathtrap"] 	= {},
+}
+
 local corridor_layout = {
 	["Labyrinth"] 	= 0,
 	["Bent"] 		= 50,
@@ -229,7 +252,7 @@ local function roundMask(dungeon)
 	end
 end
 
-local function initCells(dungeon, layout)
+local function initCells(dungeon)
 	dungeon["cell"] = {}
 
 	for r = 0, dungeon["n_rows"] do
@@ -239,6 +262,7 @@ local function initCells(dungeon, layout)
 		end
 	end
 
+	local layout = dungeon["dungeon_layout"]
 	if layout == "round" then
 		roundMask(dungeon)
 	elseif layout == "saltire" then
@@ -272,164 +296,209 @@ local function soundRoom(dungeon, r1, c1, r2, c2)
 	return hit
 end
 
-local function setRoom(dungeon, proto)
-	local base = dungeon["room_base"]
-	local radix = dungeon["room_radix"]
-
-	if proto["height"] == nil then
-		if proto["i"] ~= nil then
-			local a = dungeon["n_i"] - base - proto["i"]
-			a = mmath.max(a, 0)
-			local r = mmin(a, radix)
-			proto["height"] = mfloor(mrandom(r) + base)
-		else			
-			proto["height"] = mfloor(mrandom(radix)) + base
-		end
-	end
-
-	if proto["width"] == nil then
-		if proto["j"] ~= nil then
-			local a = mmax(dungeon["n_j"] - base - proto["j"], 0)
-			local r = mmin(a, radix)
-			proto["width"] = mfloor(mrandom(r) + base)
+local function setRoom(a, b)
+	b["size"] = b["size"] or a["room_size"]
+	local c = room_size[b["size"]]
+	local d = c["size"] or 2
+	local c = c["radix"] or 5
+	if b["height"] == nil then
+		if b["i"] ~= nil then
+			local e = mmax(a["n_i"] - d - b["i"], 0)
+			e = mmin(e, c)
+			b["height"] = mrandom(e) + d
 		else
-			proto["width"] = mfloor(mrandom(radix)) + base
+			b["height"] = mrandom(c) + d
 		end
 	end
-
-	if proto["i"] == nil then
-		proto["i"] = mfloor(mrandom(dungeon["n_i"] - proto["height"]))
+	if b["width"] == nil then
+		if b["j"] ~= nil then
+			local e = mmax(a["n_j"] - d - b["j"], 0)
+			b['width'] = mrandom(e) + d
+		else
+			b['width'] = mrandom(c) + d
+		end
+	end
+	if b["i"] == nil then
+		b["i"] = mrandom(a["n_i"] - b["height"])
+	end
+	if b["j"] == nil then
+		b["j"] = mrandom(a["n_j"] - b["width"])
 	end
 
-	if proto["j"] == nil then
-		proto["j"] = mfloor(mrandom(dungeon["n_j"] - proto["width"]))
-	end
+	return b
 end
 
-local function emplaceRoom(dungeon, proto)
-	if dungeon["n_rooms"] == 999 then return end
+local function emplaceRoom(a, b)
+	local a = a
+	if a["n_rooms"] == 999 then return end
 
-	local cell = dungeon["cell"]
-	local proto = proto or {}
+	local c = b or {}
+	local c = setRoom(a, c)
+	local b = c["i"] * 2 + 1
+	local d = c["j"] * 2 + 1
+	local e = (c["i"] + c["height"]) * 2 - 1
+	local g = (c["j"] + c["width"]) * 2 - 1
+	if b < 1 or e > a["max_row"] then return end
+	if d < 1 or g > a["max_col"] then return end
+	local f = soundRoom(a, b, d, e, g)
+	if f["blocked"] then return end
 
-	setRoom(dungeon, proto)
-
-	local r1 = proto["i"] * 2 + 1
-	local c1 = proto["j"] * 2 + 1
-	local r2 = (proto["i"] + proto["height"]) * 2 - 1
-	local c2 = (proto["j"] + proto["width"]) * 2 - 1
-
-	if r1 < 1 or r2 > dungeon["max_row"] then return end
-	if c1 < 1 or c2 > dungeon["max_col"] then return end
-
-	local hit = soundRoom(dungeon, r1, c1, r2, c2)
-
-	if hit["blocked"] == true then return end
-
-	local hit_list = getKeys(hit)
-	local room_id = nil
-
-	if #hit_list == 0 then
-		room_id = dungeon["n_rooms"] + 1
-		dungeon["n_rooms"] = room_id
+	local f = getKeys(f)
+	local h = #f
+	if h == 0 then
+		f = a["n_rooms"] + 1
+		a["n_rooms"] = f
+	elseif h == 1 then
+		if a["complex_rooms"] then
+			f = f[1] -- or 1?
+			if f ~= c["complex_id"] then return end
+		else
+			return
+		end
 	else
 		return
 	end
 
-	dungeon["last_room_id"] = room_id
-	
-	for r = r1, r2 do
-		for c = c1, c2 do
-			if bcheck(cell[r][c], Flags.ENTRANCE) ~= 0 then
-				cell[r][c] = bclear(cell[r][c], bit.bnot(Flags.ESPACE))
-			elseif bcheck(cell[r][c], Flags.PERIMETER) ~= 0 then
-				cell[r][c] = bclear(cell[r][c], Flags.PERIMETER)
-			end
-			cell[r][c] = bset(cell[r][c], Flags.ROOM, bit.lshift(room_id, 6))
+	for h = b, e do
+		for i = d, g do
+			if bcheck(a["cell"][h][i], Flags.ENTRANCE) ~= 0 then
+				bclear(a["cell"][h][i], Flags.ESPACE)
+			elseif bcheck(a["cell"][h][i], Flags.PERIMETER) then
+				bclear(a["cell"][h][i], Flags.PERIMETER)
+			end			
+			a["cell"][h][i] = bset(a["cell"][h][i], Flags.ROOM, bit.lshift(f, 6))
 		end
 	end
 
-	local height = ((r2 - r1) + 1) * 10
-	local width = ((c2 - c1) + 1) * 10
-
-	local room_data = {
-		["id"] = room_id, 
-		["row"] = r1, ["col"] = c1,
-		["north"] = r1, ["south"] = r2, ["west"] = c1, ["east"] = c2,
-		["height"] = height, ["width"] = width, 
-		["area"] = height * width,
+	local h = (e - b + 1) * 10
+	local i = (g - d + 1) * 10
+	local c = {
+		["id"] = f,
+		["size"] = c["size"],
+		["row"] = b,
+		["col"] = d,
+		["north"] = b,
+		["south"] = e,
+		["west"] = d,
+		["east"] = g,
+		["height"] = h,
+		["width"] = i,
 		["door"] = {
 			["north"] = {},
-			["east"] = {},
-			["west"] = {},
 			["south"] = {},
-		},
+			["west"] = {},
+			["east"] = {},
+		}
 	}
-	dungeon["room"][room_id] = room_data
-
-	for r = r1 - 1, r2 + 1 do
-		if bcheck(cell[r][c1 - 1], Flags.ROOM_ENTRANCE) == 0 then
-			cell[r][c1 - 1] = bset(cell[r][c1 - 1], Flags.PERIMETER)
+	local h = a["room"][f]
+	if h ~= nil then
+		if h["complex"] ~= nil then 
+			table.insert(h["complex"], c)
+		else
+			complex = {
+				["complex"] = { h, c }
+			}
+			a["room"][f] = complex
 		end
-		if bcheck(cell[r][c1 + 1], Flags.ROOM_ENTRANCE) == 0 then
-			cell[r][c2 + 1] = bset(cell[r][c2 + 1], Flags.PERIMETER)
-		end
+	else
+		a["room"][f] = c		
 	end
 
-	for c = c1 - 1, c2 + 1 do
-		if bcheck(cell[r1 - 1][c], Flags.ROOM_ENTRANCE) == 0 then
-			cell[r1 - 1][c] = bset(cell[r1 - 1][c], Flags.PERIMETER)
+	for h = b - 1, e + 1 do
+		if bcheck(a["cell"][h][d - 1], Flags.ROOM_ENTRANCE) == 0 then
+			a["cell"][h][d - 1] = bset(a["cell"][h][d - 1], Flags.PERIMETER)
 		end
-		if bcheck(cell[r2 + 1][c], Flags.ROOM_ENTRANCE) == 0 then
-			cell[r2 + 1][c] = bset(cell[r2 + 1][c], Flags.PERIMETER)
-		end		
+		if bcheck(a["cell"][h][g + 1], Flags.ROOM_ENTRANCE) == 0 then
+			a["cell"][h][g + 1] = bset(a["cell"][h][g + 1], Flags.PERIMETER)
+		end
+	end
+	for i = d - 1, g + 1 do
+		if bcheck(a["cell"][b - 1][i], Flags.ROOM_ENTRANCE) == 0 then
+			a["cell"][b - 1][i] = bset(a["cell"][b - 1][i], Flags.PERIMETER)
+		end
+		if bcheck(a["cell"][e + 1][i], Flags.ROOM_ENTRANCE) == 0 then
+			a["cell"][e + 1][i] = bset(a["cell"][e + 1][i], Flags.PERIMETER)
+		end
 	end
 end
 
-local function allocRooms(dungeon, room_max)
-	local dungeon_area = dungeon["n_cols"] * dungeon["n_rows"]
-	local room_area = room_max * room_max
-	local n_rooms = mfloor(dungeon_area / room_area)
+local function allocRooms(a, b)
+	local a = a
+	local c = b or a["room_size"]
+	local b = a["n_cols"] * a["n_rows"]
+	local d = room_size[c]
+	local c = d["size"] or 2
+	local d = d["radix"] or 5
+	local c = c + d + 1
+	local c = c * c
+	local b = mfloor(b / c) * 2
+	
+	if (a["room_layout"] == "sparse") then b = mfloor(b / 13) end
 
-	return n_rooms
+	return b
 end
 
-local function packRooms(dungeon)
-	local cell = dungeon["cell"]
-
-	for i = 0, dungeon["n_i"] - 1 do
-		local r = i * 2 + 1
-		for j = 0, dungeon["n_j"] - 1 do
-			local c = j * 2 + 1
-
-			local has_room = bcheck(cell[r][c], Flags.ROOM) ~= 0
-			local is_ignore = (i == 0 or j == 0) and mrandom(0, 1) == 1
-
-			if not has_room and not is_ignore then
-				local proto = { 
-					["i"] = i, 
-					["j"] = j 
-				}
-				emplaceRoom(dungeon, proto)
+local function denseRooms(a)
+	for b = 0, a["n_i"] - 1 do
+		local c = b * 2 + 1
+		for d = 0, a["n_j"] - 1 do
+			local e = d * 2 + 1
+			if bcheck(a["cell"][c][e], Flags.ROOM) == 0 then
+				if not((b == 0 or c == 0) and mrandom(2) > 0) then
+					local g = {
+						["i"] = b,
+						["j"] = d,
+					}
+					emplaceRoom(a, g)
+					if (a["huge_rooms"]) then
+						if bcheck(a["cell"][c][e], Flags.ROOM) == 0 then
+							g = {
+								["i"] = b,
+								["j"] = d,
+								["size"] = 'medium'
+							}
+							emplaceRoom(a, g)
+						end
+					end
+				end
 			end
 		end
 	end
 end
 
-local function scatterRooms(dungeon, room_max)
-	local nRooms = allocRooms(dungeon, room_max)
+local function scatterRooms(dungeon)
+	local b = allocRooms(dungeon)
 
-	for i = 0, nRooms - 1 do
+	for c = 0, b - 1 do
 		emplaceRoom(dungeon)
+
+		if dungeon["huge_rooms"] then
+			b = allocRooms(dungeon, "medium")
+
+			for c = 0, b - 1 do
+				local d = {
+					["size"] = "medium"
+				}
+				emplaceRoom(a, d)
+			end
+		end
 	end
 end
 
-local function emplaceRooms(dungeon, roomLayout, room_max)
-	if roomLayout == 'Packed' then
-		packRooms(dungeon, room_max)
-	else 
-		scatterRooms(dungeon, room_max)
-	end	
+local function emplaceRooms(dungeon)
+	local is_huge = room_size[dungeon["room_size"]]["huge"]
+	local is_complex = room_layout[dungeon["room_layout"]]["complex"]
+
+	dungeon["huge_rooms"] = is_huge
+	dungeon["complex_rooms"] = is_complex
+	dungeon["n_rooms"] = 0
+	dungeon["rooms"] = {}
+
+	if dungeon["room_layout"] == "dense" then
+		denseRooms(dungeon)
+	else
+		scatterRooms(dungeon)
+	end
 end
 
 local function allocOpens(dungeon, room)
@@ -456,8 +525,9 @@ local function checkSill(cell, room, sill_r, sill_c, dir)
 
 	if bcheck(out_cell, Flags.ROOM) ~= 0 then
 		out_id = bit.rshift(bit.band(out_cell, Flags.ROOM_ID), 6)
-		if out_id == room["id"] then return end
 	end
+
+	if out_id == room["id"] then return end
 
 	return {
 		["sill_r"] = sill_r,
@@ -504,9 +574,71 @@ local function doorSills(dungeon, room)
 	return shuffle(list)
 end
 
-local function openRoom(dungeon, room)
-	local connect = {}
+local function openDoor(dungeon, room, sill)
+	local cell = dungeon["cell"]
 
+	local door_r = sill["door_r"]
+	local door_c = sill["door_c"]
+
+	local open_r = sill["sill_r"]
+	local open_c = sill["sill_c"]
+	local open_dir = sill["dir"]
+
+	local out_id = sill["out_id"]
+
+    for x = 0, 2 do
+    	local r = open_r + di[open_dir] * x
+    	local c = open_c + dj[open_dir] * x
+
+    	cell[r][c] = bclear(cell[r][c], Flags.PERIMETER)
+    	cell[r][c] = bset(cell[r][c], Flags.ENTRANCE)
+    end
+
+    local door_type = getDoorType()
+    local door = {
+    	["row"] = door_r,
+    	["col"] = door_c,
+    }
+
+    if door_type == Flags.ARCH then
+    	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.ARCH)
+    	door["key"] = "arch"
+    	door["type"] = "Archway"
+    elseif door_type == Flags.DOOR then
+    	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.DOOR)
+    	door["key"] = "open"
+    	door["type"] = "Unlocked Door"
+    	cell[door_r][door_c] = bset(cell[door_r][door_c], bit.lshift(string.byte('o'), 24))
+    elseif door_type == Flags.LOCKED then
+    	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.LOCKED)
+    	door["key"] = "lock"
+    	door["type"] = "Locked Door"
+    	cell[door_r][door_c] = bset(cell[door_r][door_c], bit.lshift(string.byte('x'), 24))
+    elseif door_type == Flags.TRAPPED then
+    	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.TRAPPED)
+    	door["key"] = "trap"
+    	door["type"] = "Trapped Door"
+    	cell[door_r][door_c] = bset(cell[door_r][door_c], bit.lshift(string.byte('t'), 24))
+    elseif door_type == Flags.SECRET then
+    	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.SECRET)
+    	door["key"] = "secret"
+    	door["type"] = "Secret Door"
+    	cell[door_r][door_c] = bset(cell[door_r][door_c], bit.lshift(string.byte('s'), 24))
+    elseif door_type == Flags.PORTC then	        	
+    	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.PORTC)
+    	door["key"] = "portc"
+    	door["type"] = "Portcullis"
+    	cell[door_r][door_c] = bset(cell[door_r][door_c], bit.lshift(string.byte('#'), 24))
+    end
+
+    if out_id ~= nil then door["out_id"] = out_id end
+
+    table.insert(room["door"][open_dir], door)	
+end
+
+local connect = {}
+
+local function openRoom(dungeon, room)
 	local list = doorSills(dungeon, room)
 	if #list == 0 then return end
 
@@ -522,82 +654,20 @@ local function openRoom(dungeon, room)
 		local door_c = sill["door_c"]
 		local door_cell = cell[door_r][door_c]
 
-		if bcheck(door_cell, Flags.DOORSPACE) ~= 0 then 
-			goto continue
+		if bcheck(door_cell, Flags.DOORSPACE) == 0 then
+			local out_id = sill["out_id"]
+			if out_id ~= nil then
+				local room_ids = { room["id"], out_id } 			
+				table.sort(room_ids)
+				local id = table.concat(room_ids, ',')
+				if not connect[id] then
+					openDoor(dungeon, room, sill)
+					connect[id] = true 
+				end
+			else
+				openDoor(dungeon, room, sill)
+			end
 		end
-
-		local out_id = sill["out_id"]
-		if out_id ~= nil then
-			local room_ids = { room["id"], out_id } 			
-			table.sort(room_ids, function(id1, id2) return id1 < id2 end)
-			local id = table.concat(room_ids, ',')
-			
-			--[[
-				TODO: seems Donjon's JavaScript and Perl implementations differ 
-				here - the Perl implementation restarts the loop on setting 
-				connection and the JavaScript implementation continues the loop.
-				I follow the JavaScript implementation here, otherwise I feel 1
-				door is always 'missing'.
-			--]]
-			if not connect[id] then connect[id] = true end
-
-			goto continue
-		end
-
-		local open_r = sill["sill_r"]
-		local open_c = sill["sill_c"]
-		local open_dir = sill["dir"]
-	
-        for x = 0, 2 do
-        	local r = open_r + di[open_dir] * x
-        	local c = open_c + dj[open_dir] * x
-
-        	cell[r][c] = bclear(cell[r][c], Flags.PERIMETER)
-        	cell[r][c] = bset(cell[r][c], Flags.ENTRANCE)
-        end
-
-        local door_type = getDoorType()
-        local door = {
-        	["row"] = door_r,
-        	["col"] = door_c,
-        }
-
-        if door_type == Flags.ARCH then
-        	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.ARCH)
-        	door["key"] = "arch"
-        	door["type"] = "Archway"
-        elseif door_type == Flags.DOOR then
-        	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.DOOR)
-        	door["key"] = "open"
-        	door["type"] = "Unlocked Door"
-        	cell[door_r][door_c] = bset(cell[door_r][door_c], bit.lshift(string.byte('o'), 24))
-        elseif door_type == Flags.LOCKED then
-        	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.LOCKED)
-        	door["key"] = "lock"
-        	door["type"] = "Locked Door"
-        	cell[door_r][door_c] = bset(cell[door_r][door_c], bit.lshift(string.byte('x'), 24))
-        elseif door_type == Flags.TRAPPED then
-        	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.TRAPPED)
-        	door["key"] = "trap"
-        	door["type"] = "Trapped Door"
-        	cell[door_r][door_c] = bset(cell[door_r][door_c], bit.lshift(string.byte('t'), 24))
-        elseif door_type == Flags.SECRET then
-        	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.SECRET)
-        	door["key"] = "secret"
-        	door["type"] = "Secret Door"
-        	cell[door_r][door_c] = bset(cell[door_r][door_c], bit.lshift(string.byte('s'), 24))
-        elseif door_type == Flags.PORTC then	        	
-        	cell[door_r][door_c] = bset(cell[door_r][door_c], Flags.PORTC)
-        	door["key"] = "portc"
-        	door["type"] = "Portcullis"
-        	cell[door_r][door_c] = bset(cell[door_r][door_c], bit.lshift(string.byte('#'), 24))
-        end
-
-        if out_id ~= nil then door["out_id"] = out_id end
-
-        table.insert(room["door"][open_dir], door)
-
-        ::continue::
 	end
 end
 
@@ -760,6 +830,8 @@ local function cleanDungeon(dungeon, remove_deadends)
 end
 
 local function openRooms(dungeon)
+	connect = {}
+
 	for id = 1, dungeon["n_rooms"] do
 		openRoom(dungeon, dungeon["room"][id])
 	end
@@ -970,14 +1042,17 @@ local function generate(options)
 
 	print(options["dungeon_layout"])
 
+	local dungeon = {}
+
+    for k, v in pairs(options) do
+    	dungeon[k] = v
+    end
+
 	local dungeon_size = dungeon_size[options["dungeon_size"]]
-	local dungeon_layout = dungeon_layout[options["dungeon_layout"]]
-	
+	local dungeon_layout = dungeon_layout[options["dungeon_layout"]]	
 	local aspect = dungeon_layout["aspect"]
     local n_i, n_j = dungeon_size, mfloor(dungeon_size * aspect)
     if n_i % 2 == 0 then n_i = n_i - 1 end
-
-	local dungeon = {}
 
 	dungeon["n_i"] = n_i
 	dungeon["n_j"] = n_j
@@ -990,23 +1065,20 @@ local function generate(options)
 	dungeon["door"] = {}
 	dungeon["stair"] = {}
 
-	local max = options["room_max"]
-	local min = options["room_min"]
-	dungeon["room_base"] = mfloor((min + 1) / 2)
-	dungeon["room_radix"] = mfloor((max - min) / 2 + 1)
+	print('[!]', options["room_layout"])
 
-	print('\ndungeon config:')
-	for k, v in pairs(dungeon) do
-		print(' ' .. k, v)
-	end
-
-	initCells(dungeon, options["dungeon_layout"])
-	emplaceRooms(dungeon, options["room_layout"], options["room_max"])
+	initCells(dungeon)
+	emplaceRooms(dungeon)
 	openRooms(dungeon)
 	labelRooms(dungeon)
 	corridors(dungeon, options["corridor_layout"])
 	emplaceStairs(dungeon, options["add_stairs"])
 	cleanDungeon(dungeon, options["remove_deadends"])
+
+	print('\ndungeon config:')
+	for k, v in pairs(dungeon) do
+		print(' ' .. k, v)
+	end
 
 	return dungeon
 end
