@@ -705,11 +705,11 @@ local function removeDeadends(dungeon, percentage)
 	collapseTunnels(dungeon, percentage, close_end)    
 end
 
-local function cleanDungeon(dungeon, remove_deadends)
-	local percentage = Config["remove_deadends"][remove_deadends]
+local function cleanDungeon(dungeon)	
+	local p = Config["remove_deadends"][dungeon["remove_deadends"]]
 
-	if percentage > 0 then
-		removeDeadends(dungeon, percentage)
+	if p > 0 then
+		removeDeadends(dungeon, p)
 	end
 
 	fixDoors(dungeon)
@@ -756,13 +756,12 @@ local function labelRooms(dungeon)
 	end
 end
 
-local function tunnelDirs(dungeon, layout, last_dir)
-	local p = Config.corridor_layout[layout]
-
+local function tunnelDirs(dungeon, last_dir)
 	-- TODO: what does it matter if we use sorted table dj_dirs while
 	-- afterwards shuffling as in original code?
 	local keys = getKeys(dj)
 	local dirs = shuffle(keys)
+	local p = dungeon["straight_pct"]
 
 	if last_dir ~= nil and p ~= nil then
 		if mrandom(100) < p then
@@ -831,21 +830,23 @@ local function openTunnel(dungeon, i, j, dir)
 	end
 end
 
-local function tunnel(dungeon, layout, i, j, last_dir)
-	local dirs = tunnelDirs(dungeon, layout, last_dir)
+local function tunnel(dungeon, i, j, last_dir)
+	local dirs = tunnelDirs(dungeon, last_dir)
 
 	for _, dir in ipairs(dirs) do
 		if openTunnel(dungeon, i, j, dir) then
 			local next_i = i + di[dir]
 			local next_j = j + dj[dir]
 
-			tunnel(dungeon, layout, next_i, next_j, dir)
+			tunnel(dungeon, next_i, next_j, dir)
 		end
 	end
 end
 
-local function corridors(dungeon, layout)
+local function corridors(dungeon)
 	local cell = dungeon["cell"]
+
+	dungeon["straight_pct"] = Config.corridor_layout[dungeon["corridor_layout"]]
 
 	for i = 1, dungeon["n_i"] - 1 do
 		local r = i * 2 + 1
@@ -854,7 +855,7 @@ local function corridors(dungeon, layout)
 
 			if bcheck(cell[r][c], Flags.CORRIDOR) ~= 0 then goto continue end
 
-			tunnel(dungeon, layout, i, j, last_dir)
+			tunnel(dungeon, i, j, last_dir)
 
 			::continue::
 		end
@@ -914,9 +915,10 @@ local function emplaceStairs(dungeon)
 
 		local r = stair["row"]
 		local c = stair["col"]
-		local s_type = i < 2 and i or mrandom(2)
+		local s_type = i < 2 and (i + 1) or mrandom(2)
+		print(i, s_type)
 
-		if s_type == 0 then
+		if s_type == 1 then
 			cell[r][c] = bset(cell[r][c], Flags.STAIR_DN)
 			cell[r][c] = bset(cell[r][c], bit.lshift(string.byte("d"), 24))
 			stair["key"] = "down"
@@ -939,9 +941,9 @@ local function generate(options)
 	emplaceRooms(dungeon)
 	openRooms(dungeon)
 	labelRooms(dungeon)
-	corridors(dungeon, options["corridor_layout"])
-	emplaceStairs(dungeon, options["add_stairs"])
-	cleanDungeon(dungeon, options["remove_deadends"])
+	corridors(dungeon)
+	emplaceStairs(dungeon)
+	cleanDungeon(dungeon)
 
 	print('\ndungeon config:')
 	for k, v in pairs(dungeon) do
