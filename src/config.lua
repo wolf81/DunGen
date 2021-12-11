@@ -83,11 +83,31 @@ local room_layout = {
 }
 
 local doors = {
-	["none"] 		= {},
-	["basic"] 		= {},
-	["secure"] 		= {},
-	["standard"] 	= {},
-	["deathtrap"] 	= {},
+	["none"] = {
+		{ 15, Flags.ARCH },
+	},
+	["basic"] = {
+		{ 15, Flags.ARCH },
+		{ 60, Flags.DOOR },
+	},
+	["secure"] = {
+		{ 15, Flags.ARCH },
+		{ 60, Flags.DOOR },
+		{ 75, Flags.LOCKED },		
+	},
+	["standard"] = {
+		{ 15, Flags.ARCH },
+		{ 60, Flags.DOOR },
+		{ 75, Flags.LOCKED },
+		{ 90, Flags.TRAPPED },
+		{ 100, Flags.SECRET },
+		{ 110, Flags.PORTC },
+	},
+	["deathtrap"] = {
+		{ 15, Flags.ARCH },
+		{ 30, Flags.TRAPPED },
+		{ 40, Flags.SECRET },
+	},
 }
 
 local corridor_layout = {
