@@ -1,5 +1,8 @@
 require 'src/flags'
-BitMask = require 'src/bitmask'
+
+local Config = require 'src/config'
+local BitMask = require 'src/bitmask'
+local Dungeon = require 'src/dungeon'
 
 local bset, bclear, bcheck = BitMask.set, BitMask.clear, BitMask.check
 local mfloor, mrandom, msqrt, mpow = math.floor, math.random, math.sqrt, math.pow
@@ -41,7 +44,7 @@ local stair_end = {
         ["stair"]		= {0,0},
         ["next"]		= {0,-1},
     },
-};
+}
 
 local close_end = {
     ["north"] = {
@@ -64,111 +67,6 @@ local close_end = {
         ["close"]		= {{0,0}},
         ["recurse"]		= {0,1},
     },
-};
-
-local dungeon_size = {
-	["fine"] 		= 11,
-	["dimin"] 		= 13,
-	["tiny"] 		= 17,
-	["small"] 		= 21,
-	["medium"] 		= 27,
-	["large"] 		= 35,
-	["huge"] 		= 43,
-	["gargant"] 	= 55,
-	["colossal"] 	= 71,
-}
-
---[[ TODO: 
-	* Improve implementation, all layout names should be public
-	or perhaps just forward layout tables instead, so users 
-	can provide custom layouts
-	* Donjon's JavaScript implementation adds additional options 
-	for layouts and aspect ratios
---]]
-local dungeon_layout = {
-	["square"] = {
-		["aspect"] = 1.0,
-	},
-	["rectangle"] = {
-		["aspect"] = 1.3,		
-	},
-	["box"] = { 
-		["mask"] = {
-			[0] = 
-				{ [0] = 1, 1, 1 }, 
-				{ [0] = 1, 0, 1 },
-				{ [0] = 1, 1, 1 },			
-		},
-		["aspect"] = 1.0,
-	},
-	["cross"] = { 
-		["mask"] = {
-			[0] = 
-				{ [0] = 0, 1, 0 }, 
-				{ [0] = 1, 1, 1 },
-				{ [0] = 0, 1, 0 },			
-		},
-		["aspect"] = 1.0,
-	},
-	["keep"] = {
-		["mask"] = {
-			[0] =
-				{ [0] = 1, 1, 0, 0, 1, 1 },
-				{ [0] = 1, 1, 1, 1, 1, 1 },
-				{ [0] = 0, 1, 1, 1, 1, 0 },
-				{ [0] = 0, 1, 1, 1, 1, 0 },
-				{ [0] = 1, 1, 1, 1, 1, 1 },
-				{ [0] = 1, 1, 0, 0, 1, 1 },			
-		},
-		["aspect"] = 1.0,
-	},
-	["dagger"] = {
-		["mask"] = {
-			[0] = 
-				{ [0] = 0, 1, 0, 0 }, 
-				{ [0] = 1, 1, 1, 1 },
-				{ [0] = 0, 1, 0, 0 },
-		}, 
-		["aspect"] = 1.3,
-	},
-	["round"] = {
-		["aspect"] = 1.0,	
-	},
-	["saltire"] = {
-		["aspect"] = 1.0,		
-	},
-	["hexagon"] = {
-		["aspect"] = 0.9,		
-	}
-}
-
-local room_size = {
-	["small"] 		= { ["size"] = 2, ["radix"] = 2, ["huge"] = false },
-	["medium"] 		= { ["size"] = 2, ["radix"] = 5, ["huge"] = false },
-	["large"] 		= { ["size"] = 5, ["radix"] = 2, ["huge"] = false },
-	["huge"] 		= { ["size"] = 5, ["radix"] = 5, ["huge"] = true  },
-	["gargant"] 	= { ["size"] = 8, ["radix"] = 5, ["huge"] = true  },
-	["colossal"] 	= { ["size"] = 8, ["radix"] = 8, ["huge"] = true  },
-}
-
-local room_layout = {
-	["sparse"] 		= { ["complex"] = false }, 
-	["scattered"] 	= { ["complex"] = true }, 
-	["dense"] 		= { ["complex"] = false },
-}
-
-local doors = {
-	["none"] 		= {},
-	["basic"] 		= {},
-	["secure"] 		= {},
-	["standard"] 	= {},
-	["deathtrap"] 	= {},
-}
-
-local corridor_layout = {
-	["Labyrinth"] 	= 0,
-	["Bent"] 		= 50,
-	["Straight"] 	= 100,	
 }
 
 local function getDoorType()
@@ -269,8 +167,8 @@ local function initCells(dungeon)
 		saltireMask(dungeon)
 	elseif layout == "hexagon" then
 		hexagonMask(dungeon)
-	elseif dungeon_layout[layout] ~= nil then
-		local mask = dungeon_layout[layout]["mask"]
+	elseif Config.dungeon_layout[layout] ~= nil then
+		local mask = Config.dungeon_layout[layout]["mask"]
 		maskCells(dungeon, mask or { [0] = { [0] = 1 }})
 	end
 end
@@ -298,7 +196,7 @@ end
 
 local function setRoom(a, b)
 	b["size"] = b["size"] or a["room_size"]
-	local c = room_size[b["size"]]
+	local c = Config.room_size[b["size"]]
 	local d = c["size"] or 2
 	local c = c["radix"] or 5
 	if b["height"] == nil then
@@ -426,7 +324,7 @@ local function allocRooms(a, b)
 	local a = a
 	local c = b or a["room_size"]
 	local b = a["n_cols"] * a["n_rows"]
-	local d = room_size[c]
+	local d = Config.room_size[c]
 	local c = d["size"] or 2
 	local d = d["radix"] or 5
 	local c = c + d + 1
@@ -486,8 +384,8 @@ local function scatterRooms(dungeon)
 end
 
 local function emplaceRooms(dungeon)
-	local is_huge = room_size[dungeon["room_size"]]["huge"]
-	local is_complex = room_layout[dungeon["room_layout"]]["complex"]
+	local is_huge = Config.room_size[dungeon["room_size"]]["huge"]
+	local is_complex = Config.room_layout[dungeon["room_layout"]]["complex"]
 
 	dungeon["huge_rooms"] = is_huge
 	dungeon["complex_rooms"] = is_complex
@@ -870,7 +768,7 @@ local function labelRooms(dungeon)
 end
 
 local function tunnelDirs(dungeon, layout, last_dir)
-	local p = corridor_layout[layout]
+	local p = Config.corridor_layout[layout]
 
 	-- TODO: what does it matter if we use sorted table dj_dirs while
 	-- afterwards shuffling as in original code?
@@ -1040,32 +938,7 @@ end
 local function generate(options)
 	love.math.setRandomSeed(options["seed"])
 
-	print(options["dungeon_layout"])
-
-	local dungeon = {}
-
-    for k, v in pairs(options) do
-    	dungeon[k] = v
-    end
-
-	local dungeon_size = dungeon_size[options["dungeon_size"]]
-	local dungeon_layout = dungeon_layout[options["dungeon_layout"]]	
-	local aspect = dungeon_layout["aspect"]
-    local n_i, n_j = dungeon_size, mfloor(dungeon_size * aspect)
-    if n_i % 2 == 0 then n_i = n_i - 1 end
-
-	dungeon["n_i"] = n_i
-	dungeon["n_j"] = n_j
-	dungeon["n_rows"] = n_i * 2
-	dungeon["n_cols"] = n_j * 2
-	dungeon["max_row"] = dungeon["n_rows"] - 1
-	dungeon["max_col"] = dungeon["n_cols"] - 1
-	dungeon["n_rooms"] = 0
-	dungeon["room"] = {}
-	dungeon["door"] = {}
-	dungeon["stair"] = {}
-
-	print('[!]', options["room_layout"])
+	local dungeon = Dungeon(options)
 
 	initCells(dungeon)
 	emplaceRooms(dungeon)
