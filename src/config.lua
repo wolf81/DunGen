@@ -113,11 +113,18 @@ local corridor_layout = {
 	["Straight"] 	= 100,	
 }
 
+local remove_deadends = {
+	["none"] 		= 0,
+	["some"] 		= 50,
+	["all"] 		= 100,
+}
+
 return setmetatable({
 	dungeon_layout = dungeon_layout,
 	dungeon_size = dungeon_size,
 	room_layout = room_layout,
 	room_size = room_size,
 	corridor_layout = corridor_layout,
+	remove_deadends = remove_deadends,
 	doors = doors,
 }, {})

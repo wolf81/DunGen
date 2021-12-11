@@ -69,31 +69,35 @@ local close_end = {
     },
 }
 
-local function getDoorType(dungeon)
-	local doorTypes = Config.doors[dungeon["doors"]]
-	local max = doorTypes[#doorTypes][1]
+local function getDoorType()
+	local i = mfloor(mrandom(110))
 
-	local value = mfloor(mrandom(max))
-	local door = Flags.ARCH
-
-	for _, doorType in ipairs(doorTypes) do
-		if doorType[1] >= value then break end
-		door = doorType[2]
+	if i < 15 then
+		return Flags.ARCH
+	elseif i < 60 then
+		return Flags.DOOR
+	elseif i < 75 then
+		return Flags.LOCKED
+	elseif i < 90 then
+		return Flags.TRAPPED
+	elseif i < 100 then
+		return Flags.SECRET
+	else
+		return Flags.PORTC
 	end
-
-	return door
 end
 
 local function maskCells(dungeon, mask)
 	local r_x = #mask * 1.0 / (dungeon["n_rows"])
-	local c_x = #mask[1] * 1.0 / (dungeon["n_cols"])
+	local c_x = #mask[0] * 1.0 / (dungeon["n_cols"])
 	local cell = dungeon["cell"]
 
-	for r = 0, dungeon["n_rows"] - 1 do
-		for c = 0, dungeon["n_cols"] - 1 do
-			local y = mfloor(r * r_x + 1.0)
-			local x = mfloor(c * c_x + 1.0)
-			cell[r][c] = (mask[y][x] == 1 and Flags.NOTHING or Flags.BLOCKED)
+	for r = 0, dungeon["n_rows"] do
+		for c = 0, dungeon["n_cols"] do
+			cell[r][c] = (
+				mask[mfloor(r * r_x + 0.5)][mfloor(c * c_x + 0.5)] == 1 
+				and Flags.NOTHING 
+				or Flags.BLOCKED)
 		end
 	end
 end
@@ -156,7 +160,7 @@ local function applyLayout(dungeon)
 		hexagonMask(dungeon)
 	elseif Config.dungeon_layout[layout] ~= nil then
 		local mask = Config.dungeon_layout[layout]["mask"]
-		maskCells(dungeon, mask or {{ 1 }})
+		maskCells(dungeon, mask or { [0] = { [0] = 1 }})
 	end
 end
 
@@ -479,7 +483,7 @@ local function openDoor(dungeon, room, sill)
     	cell[r][c] = bset(cell[r][c], Flags.ENTRANCE)
     end
 
-    local door_type = getDoorType(dungeon)
+    local door_type = getDoorType()
     local door = {
     	["row"] = door_r,
     	["col"] = door_c,
@@ -706,8 +710,10 @@ local function removeDeadends(dungeon, percentage)
 end
 
 local function cleanDungeon(dungeon, remove_deadends)
-	if remove_deadends > 0 then
-		removeDeadends(dungeon, remove_deadends)
+	local percentage = Config["remove_deadends"][remove_deadends]
+
+	if percentage > 0 then
+		removeDeadends(dungeon, percentage)
 	end
 
 	fixDoors(dungeon)

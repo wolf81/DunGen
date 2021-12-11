@@ -12,7 +12,7 @@ local function generatorDefaults()
 		["room_size"] = "medium",
 		["room_layout"] = "scattered", 	-- sparse|scattered|dense
 		["corridor_layout"] = "Bent",
-		["remove_deadends"] = 50, 		-- percentage 0-100
+		["remove_deadends"] = "some",	-- percentage 0-100
 		["add_stairs"] = 2, 			-- stair count
 	}
 end
