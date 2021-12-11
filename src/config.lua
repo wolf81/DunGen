@@ -108,9 +108,9 @@ local doors = {
 }
 
 local corridor_layout = {
-	["Labyrinth"] 	= 0,
-	["Bent"] 		= 50,
-	["Straight"] 	= 100,	
+	["labyrinth"] 	= 0,
+	["errant"] 		= 50,
+	["straight"] 	= 90,	
 }
 
 local remove_deadends = {

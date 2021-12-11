@@ -6,23 +6,36 @@ local Generator = require 'src/generator'
 local function generatorDefaults()
 	return {
 		["seed"] = love.timer.getTime(),
-		["dungeon_size"] = "medium",
-		["dungeon_layout"] = "square",
-		["doors"] = "standard",
-		["room_size"] = "medium",
-		["room_layout"] = "scattered", 	-- sparse|scattered|dense
-		["corridor_layout"] = "Bent",
-		["remove_deadends"] = "some",	-- none|some|all
-		["add_stairs"] = "yes", 		-- stair count
+		--^ number
+		["dungeon_size"] 		= "medium",
+		--^ fine|dimin|tiny|small|medium|large|huge|gargant|colossal
+		["dungeon_layout"] 		= "square",
+		--^ square|rectangle|box|cross|dagger|saltire|keep|hexagon|round
+		["doors"] 				= "none",
+		--^ none|basic|secure|standard|deathtrap
+		["room_size"] 			= "medium",
+		--^ small|medium|large|huge|gargant|colossal
+		["room_layout"] 		= "scattered", 	
+		--^ sparse|scattered|dense
+		["corridor_layout"] 	= "errant",	
+		--^ labyrinth|errant|straight
+		["remove_deadends"] 	= "some",	
+		--^ none|some|all
+		["add_stairs"] 			= "yes", 		
+		--^ no|yes|many
 	}
 end
 
 local function rendererDefaults()
 	return {
-		["map_style"] = "standard", 	-- standard|classic|graph
-		["cell_size"] = 20, 			-- pixels
-		["grid"] = "square", 			-- none|square|hex|vex
-		["debug"] = false,
+		["map_style"] 			= "standard", 	
+		--^ standard|classic|graph
+		["cell_size"] 			= 20, 			
+		--^ number (pixels)
+		["grid"] 				= "square", 			
+		--^ none|square|hex|vex
+		["debug"] 				= false,
+		--^ true|false
 	}
 end
 
