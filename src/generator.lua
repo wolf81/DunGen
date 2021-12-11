@@ -86,15 +86,14 @@ end
 
 local function maskCells(dungeon, mask)
 	local r_x = #mask * 1.0 / (dungeon["n_rows"])
-	local c_x = #mask[0] * 1.0 / (dungeon["n_cols"])
+	local c_x = #mask[1] * 1.0 / (dungeon["n_cols"])
 	local cell = dungeon["cell"]
 
-	for r = 0, dungeon["n_rows"] do
-		for c = 0, dungeon["n_cols"] do
-			cell[r][c] = (
-				mask[mfloor(r * r_x + 0.5)][mfloor(c * c_x + 0.5)] == 1 
-				and Flags.NOTHING 
-				or Flags.BLOCKED)
+	for r = 0, dungeon["n_rows"] - 1 do
+		for c = 0, dungeon["n_cols"] - 1 do
+			local y = mfloor(r * r_x + 1.0)
+			local x = mfloor(c * c_x + 1.0)
+			cell[r][c] = (mask[y][x] == 1 and Flags.NOTHING or Flags.BLOCKED)
 		end
 	end
 end
@@ -157,7 +156,7 @@ local function applyLayout(dungeon)
 		hexagonMask(dungeon)
 	elseif Config.dungeon_layout[layout] ~= nil then
 		local mask = Config.dungeon_layout[layout]["mask"]
-		maskCells(dungeon, mask or { [0] = { [0] = 1 }})
+		maskCells(dungeon, mask or {{ 1 }})
 	end
 end
 
