@@ -30,6 +30,14 @@ function Dungeon:new(options)
 	this["room"] = {}
 	this["door"] = {}
 	this["stair"] = {}
+	this["cell"] = {}
+
+	for r = 0, this["n_rows"] do
+		this["cell"][r] = {}
+		for c = 0, this["n_cols"] do
+			this["cell"][r][c] = Flags.NOTHING
+		end
+	end
 
 	return setmetatable(this, Dungeon)
 end

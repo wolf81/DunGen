@@ -150,16 +150,7 @@ local function roundMask(dungeon)
 	end
 end
 
-local function initCells(dungeon)
-	dungeon["cell"] = {}
-
-	for r = 0, dungeon["n_rows"] do
-		dungeon["cell"][r] = {}
-		for c = 0, dungeon["n_cols"] do
-			dungeon["cell"][r][c] = Flags.NOTHING
-		end
-	end
-
+local function applyLayout(dungeon)
 	local layout = dungeon["dungeon_layout"]
 	if layout == "round" then
 		roundMask(dungeon)
@@ -940,7 +931,7 @@ local function generate(options)
 
 	local dungeon = Dungeon(options)
 
-	initCells(dungeon)
+	applyLayout(dungeon)
 	emplaceRooms(dungeon)
 	openRooms(dungeon)
 	labelRooms(dungeon)
