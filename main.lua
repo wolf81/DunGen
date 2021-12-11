@@ -8,6 +8,7 @@ local function generate()
 	local dungeon = DunGen.generate({ 
 		--['seed'] = 0.32, 
 		["dungeon_layout"] = "rectangle",
+		--["doors"] = "basic",
 		--["room_layout"] = "sparse",
 		--["dungeon_size"] = "medium",
 		--["corridor_layout"] = "Bent",

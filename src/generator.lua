@@ -69,22 +69,19 @@ local close_end = {
     },
 }
 
-local function getDoorType()
-	local i = mfloor(mrandom(110))
+local function getDoorType(dungeon)
+	local doorTypes = Config.doors[dungeon["doors"]]
+	local max = doorTypes[#doorTypes][1]
 
-	if i < 15 then
-		return Flags.ARCH
-	elseif i < 60 then
-		return Flags.DOOR
-	elseif i < 75 then
-		return Flags.LOCKED
-	elseif i < 90 then
-		return Flags.TRAPPED
-	elseif i < 100 then
-		return Flags.SECRET
-	else
-		return Flags.PORTC
+	local value = mfloor(mrandom(max))
+	local door = Flags.ARCH
+
+	for _, doorType in ipairs(doorTypes) do
+		if doorType[1] >= value then break end
+		door = doorType[2]
 	end
+
+	return door
 end
 
 local function maskCells(dungeon, mask)
@@ -483,7 +480,7 @@ local function openDoor(dungeon, room, sill)
     	cell[r][c] = bset(cell[r][c], Flags.ENTRANCE)
     end
 
-    local door_type = getDoorType()
+    local door_type = getDoorType(dungeon)
     local door = {
     	["row"] = door_r,
     	["col"] = door_c,
