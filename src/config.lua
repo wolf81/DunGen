@@ -119,6 +119,12 @@ local remove_deadends = {
 	["all"] 		= 100,
 }
 
+local add_stairs = {
+	["no"] 			= 0,
+	["yes"] 		= 2,
+	["many"] 		= math.huge,
+}
+
 return setmetatable({
 	dungeon_layout = dungeon_layout,
 	dungeon_size = dungeon_size,
@@ -126,5 +132,6 @@ return setmetatable({
 	room_size = room_size,
 	corridor_layout = corridor_layout,
 	remove_deadends = remove_deadends,
+	add_stairs = add_stairs,
 	doors = doors,
 }, {})

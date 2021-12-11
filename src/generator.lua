@@ -6,7 +6,7 @@ local Dungeon = require 'src/dungeon'
 
 local bset, bclear, bcheck = BitMask.set, BitMask.clear, BitMask.check
 local mfloor, mrandom, msqrt, mpow = math.floor, math.random, math.sqrt, math.pow
-local mmax, mmin, mabs = math.max, math.min, math.abs
+local mmax, mmin, mabs, mhuge = math.max, math.min, math.abs, math.huge
 
 -- directions
 local di = { ["north"] = -1, ["south"] = 1, ["west"] =  0, ["east"] = 0 }
@@ -896,11 +896,17 @@ local function stairEnds(dungeon)
 	return list
 end
 
-local function emplaceStairs(dungeon, n)
-	if n <= 0 then return end
+local function emplaceStairs(dungeon)
+	local n = Config.add_stairs[dungeon["add_stairs"]]
+
+	if n == 0 then return end
+
+	if n == mhuge then
+		n = dungeon["n_cols"] * dungeon["n_rows"]
+		n = 2 + mrandom(n / 1e3)
+	end
 
 	local list = stairEnds(dungeon)
-
 	local cell = dungeon["cell"]
 
 	shuffle(list)
