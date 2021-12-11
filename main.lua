@@ -8,18 +8,19 @@ local function generate()
 	local dungeon = DunGen.generate({ 
 		--['seed'] = 0.32, 
 		["dungeon_layout"] = "keep",
-		--["add_stairs"] = "yes",
+		["add_stairs"] = "yes",
 		--["doors"] = "basic",
-		["room_layout"] = "sparse",
+		--["room_layout"] = "sparse",
 		["dungeon_size"] = "medium",
 		["room_size"] = "small",
 		["corridor_layout"] = "straight",
-		--["remove_deadends"] = "none",
+		["remove_deadends"] = "all",
 	})
 
 	texture = DunGen.render(dungeon, { 
 		["cell_size"] = 12, 
 		["grid"] = "square",
+		--["debug"] = true,
 	})
 end
 

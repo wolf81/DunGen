@@ -11,7 +11,7 @@ local function generatorDefaults()
 		--^ fine|dimin|tiny|small|medium|large|huge|gargant|colossal
 		["dungeon_layout"] 		= "square",
 		--^ square|rectangle|box|cross|dagger|saltire|keep|hexagon|round
-		["doors"] 				= "none",
+		["doors"] 				= "standard",
 		--^ none|basic|secure|standard|deathtrap
 		["room_size"] 			= "medium",
 		--^ small|medium|large|huge|gargant|colossal

@@ -46,6 +46,65 @@ local stair_end = {
     },
 }
 
+local close_arcs = {
+	["north-west"] = {
+        ["corridor"] 	= {{0,0},{-1,0},{-2,0},{-2,-1},{-2,-2},{-1,-2},{0,-2}},
+        ["walled"] 		= {{-1,1},{-2,1},{-3,1},{-3,0},{-3,-1},{-3,-2},{-3,-3},{-2,-3},{-1,-3},{0,-1},{-1,-1}},
+        ["close"] 		= {{-1,0},{-2,0},{-2,-1},{-2,-2},{-1,-2}},
+        ["open"] 		= {0,-1},
+        ["recurse"] 	= {2,0},
+    },
+    ["north-east"] = {
+        ["corridor"] 	= {{0,0},{-1,0},{-2,0},{-2,1},{-2,2},{-1,2},{0,2}},
+        ["walled"] 		= {{-1,-1},{-2,-1},{-3,-1},{-3,0},{-3,1},{-3,2},{-3,3},{-2,3},{-1,3},{0,1},{-1,1}},
+        ["close"] 		= {{-1,0},{-2,0},{-2,1},{-2,2},{-1,2}},
+        ["open"] 		= {0,1},
+        ["recurse"] 	= {2,0},
+    },
+    ["south-west"] = {
+        ["corridor"] 	= {{0,0},{1,0},{2,0},{2,-1},{2,-2},{1,-2},{0,-2}},
+        ["walled"] 		= {{1,1},{2,1},{3,1},{3,0},{3,-1},{3,-2},{3,-3},{2,-3},{1,-3},{0,-1},{1,-1}},
+        ["close"] 		= {{1,0},{2,0},{2,-1},{2,-2},{1,-2}},
+        ["open"] 		= {0,-1},
+        ["recurse"] 	= {-2,0}
+    },
+    ["south-east"] = {
+        ["corridor"] 	= {{0,0},{1,0},{2,0},{2,1},{2,2},{1,2},{0,2}},
+        ["walled"] 		= {{1,-1},{2,-1},{3,-1},{3,0},{3,1},{3,2},{3,3},{2,3},{1,3},{0,1},{1,1}},
+        ["close"] 		= {{1,0},{2,0},{2,1},{2,2},{1,2}},
+        ["open"] 		= {0,1},
+        ["recurse"] 	= {-2,0},
+    },
+    ["west-north"] = {
+        ["corridor"] 	= {{0,0},{0,-1},{0,-2},{-1,-2},{-2,-2},{-2,-1},{-2,0}},
+        ["walled"] 		= {{1,-1},{1,-2},{1,-3},{0,-3},{-1,-3},{-2,-3},{-3,-3},{-3,-2},{-3,-1},{-1,0},{-1,-1}},
+        ["close"] 		= {{0,-1},{0,-2},{-1,-2},{-2,-2},{-2,-1}},
+        ["open"] 		= {-1,0},
+        ["recurse"] 	= {0,2},
+    },
+    ["west-south"] = {
+        ["corridor"] 	= {{0,0},{0,-1},{0,-2},{1,-2},{2,-2},{2,-1},{2,0}},
+        ["walled"] 		= {{-1,-1},{-1,-2},{-1,-3},{0,-3},{1,-3},{2,-3},{3,-3},{3,-2},{3,-1},{1,0},{1,-1}},
+        ["close"] 		= {{0,-1},{0,-2},{1,-2},{2,-2},{2,-1}},
+        ["open"] 		= {1,0},
+        ["recurse"] 	= {0,2},
+    },
+    ["east-north"] = {
+        ["corridor"] 	= {{0,0},{0,1},{0,2},{-1,2},{-2,2},{-2,1},{-2,0}},
+        ["walled"] 		= {{1,1},{1,2},{1,3},{0,3},{-1,3},{-2,3},{-3,3},{-3,2},{-3,1},{-1,0},{-1,1}},
+        ["close"] 		= {{0,1},{0,2},{-1,2},{-2,2},{-2,1}},
+        ["open"] 		= {-1,0},
+        ["recurse"] 	= {0,-2},
+    },
+    ["east-south"] = {
+        ["corridor"] 	= {{0,0},{0,1},{0,2},{1,2},{2,2},{2,1},{2,0}},
+        ["walled"] 		= {{-1,1},{-1,2},{-1,3},{0,3},{1,3},{2,3},{3,3},{3,2},{3,1},{1,0},{1,1}},
+        ["close"] 		= {{0,1},{0,2},{1,2},{2,2},{2,1}},
+        ["open"] 		= {1,0},
+        ["recurse"] 	= {0,-2},
+    }
+}
+
 local close_end = {
     ["north"] = {
         ["walled"]		= {{0,-1},{1,-1},{1,0},{1,1},{0,1}},
@@ -248,7 +307,7 @@ local function emplaceRoom(a, b)
 		for i = d, g do
 			if bcheck(a["cell"][h][i], Flags.ENTRANCE) ~= 0 then
 				bclear(a["cell"][h][i], Flags.ESPACE)
-			elseif bcheck(a["cell"][h][i], Flags.PERIMETER) then
+			elseif bcheck(a["cell"][h][i], Flags.PERIMETER) ~= 0 then
 				bclear(a["cell"][h][i], Flags.PERIMETER)
 			end			
 			a["cell"][h][i] = bset(a["cell"][h][i], Flags.ROOM, bit.lshift(f, 6))
@@ -406,11 +465,7 @@ local function checkSill(cell, room, sill_r, sill_c, dir)
 	local out_cell = cell[out_r][out_c]
 	if bcheck(out_cell, Flags.BLOCKED) ~= 0 then return end
 
-	local out_id = nil
-
-	if bcheck(out_cell, Flags.ROOM) ~= 0 then
-		out_id = bit.rshift(bit.band(out_cell, Flags.ROOM_ID), 6)
-	end
+	local out_id = tonumber(bit.rshift(bit.band(out_cell, Flags.ROOM_ID), 6))
 
 	if out_id == room["id"] then return end
 
@@ -420,7 +475,7 @@ local function checkSill(cell, room, sill_r, sill_c, dir)
 		["dir"] = dir,
 		["door_r"] = door_r,
 		["door_c"] = door_c,
-		["out_id"] = tonumber(out_id),
+		["out_id"] = out_id,
 	}
 end
 
@@ -679,10 +734,10 @@ local function collapse(dungeon, r, c, xc)
 	end
 end
 
-local function collapseTunnels(dungeon, p, xc)
-	if p == 0 then return end
+local function collapseTunnels(dungeon, percentage, xc)
+	if percentage == 0 then return end
 
-	local all = p == 100
+	local all = percentage == 100
 	local cell = dungeon["cell"]
 
 	for i = 0, dungeon["n_i"] - 1 do
@@ -692,7 +747,7 @@ local function collapseTunnels(dungeon, p, xc)
 
 			if bcheck(cell[r][c], Flags.OPENSPACE) == 0 then goto continue end
 			if bcheck(cell[r][c], Flags.STAIRS) ~= 0 then goto continue end
-			if all or mrandom(100) < p then
+			if all or mrandom(100) < percentage then
 				collapse(dungeon, r, c, xc)
 			end
 
@@ -702,14 +757,34 @@ local function collapseTunnels(dungeon, p, xc)
 end
 
 local function removeDeadends(dungeon, percentage)
+	dungeon["remove_pct"] = percentage
+
 	collapseTunnels(dungeon, percentage, close_end)    
 end
 
-local function cleanDungeon(dungeon)	
-	local p = Config["remove_deadends"][dungeon["remove_deadends"]]
+local function closeArcs(dungeon)
+	collapseTunnels(dungeon, dungeon["close_arcs"], close_arcs)
+end
 
-	if p > 0 then
-		removeDeadends(dungeon, p)
+local function cleanDungeon(dungeon)	
+	local percentage = Config["remove_deadends"][dungeon["remove_deadends"]]
+
+	if percentage > 0 then
+		removeDeadends(dungeon, percentage)
+
+		--[[
+		-- TODO: seems buggy with stair rendering - also not sure what this adds
+
+		if dungeon["corridor_layout"] == "errant" then
+			dungeon["close_arcs"] = dungeon["remove_pct"]
+		elseif dungeon["corridor_layout"] == "straight" then
+			dungeon["close_arcs"] = dungeon["remove_pct"]
+		end
+	end
+
+	if dungeon["close_arcs"] ~= nil then
+		closeArcs(dungeon)
+		--]]
 	end
 
 	fixDoors(dungeon)
@@ -876,7 +951,7 @@ local function stairEnds(dungeon)
 
 			for _, dir in ipairs(getKeys(stair_end)) do
 				if checkTunnel(cell, r, c, stair_end[dir]) then
-					local s_end = { ["row"] = r, ["col"] = c }
+					local s_end = { ["row"] = r, ["col"] = c, ["dir"] = dir }
 					local n = stair_end[dir]["next"]
 					s_end["next_row"] = s_end["row"] + n[1]
 					s_end["next_col"] = s_end["col"] + n[2]
@@ -913,10 +988,9 @@ local function emplaceStairs(dungeon)
 
 		local stair = table.remove(list)
 
-		local r = stair["row"]
-		local c = stair["col"]
+		local r, next_r = stair["row"], stair["next_row"]
+		local c, next_c = stair["col"], stair["next_col"]
 		local s_type = i < 2 and (i + 1) or mrandom(2)
-		print(i, s_type)
 
 		if s_type == 1 then
 			cell[r][c] = bset(cell[r][c], Flags.STAIR_DN)
@@ -945,10 +1019,12 @@ local function generate(options)
 	emplaceStairs(dungeon)
 	cleanDungeon(dungeon)
 
-	print('\ndungeon config:')
+	--[[
+	print('\ndungeon:')
 	for k, v in pairs(dungeon) do
 		print(' ' .. k, v)
 	end
+	--]]
 
 	return dungeon
 end
