@@ -7,6 +7,7 @@ io.stdout:setvbuf('no') -- show debug output live in SublimeText console
 local DunGen = require 'src/dungen'
 
 local texture, info_texts, pointer_texts = nil, {}, {}
+local window_w, window_h = 1024, 720
 local dungeon = nil
 
 local renderOptions = {
@@ -22,7 +23,7 @@ end
 
 local function generate()
 	local dungeonOptions = {
-		["dungeon_size"] = "medium", --getRandomKey(Config.dungeon_size),
+		["dungeon_size"] = getRandomKey(Config.dungeon_size),
 		["dungeon_layout"] = getRandomKey(Config.dungeon_layout),
 		["doors"] = getRandomKey(Config.doors),
 		["room_size"] = getRandomKey(Config.room_size),
@@ -33,6 +34,9 @@ local function generate()
 	}
 
 	dungeon = DunGen.generate(dungeonOptions)
+
+	local cell_h = math.max(window_h / (dungeon["n_rows"] + 1), 5)
+	renderOptions["cell_size"] = cell_h
 
 	texture = DunGen.render(dungeon, renderOptions)
 
@@ -53,8 +57,6 @@ end
 
 function love.draw()
 	love.graphics.draw(texture)
-
-	local window_w, window_h = love.graphics.getDimensions()
 
 	for i, text in ipairs(info_texts) do
 		local text_w = text:getWidth()

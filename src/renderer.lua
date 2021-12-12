@@ -555,17 +555,22 @@ local function imageAscend(stair_dim, color)
 end
 
 local function imageDescend(stair_dim, color)
+            for k,v in pairs(stair_dim) do
+                print(k, v)
+            end
     if stair_dim["xc"] ~= nil then
         local x = stair_dim["xc"]
         for _, y in ipairs(stair_dim["list"]) do
-            local dx = stair_dim["down"][mabs(y - stair_dim["y1"])]
-            drawLine(x - dx, y, x + dx, y, color)
+            local i = mabs(y - stair_dim["y1"])
+            local dx = stair_dim["down"][i]
+            if dx ~= nil then drawLine(x - dx, y, x + dx, y, color) end
         end
     else
         local y = stair_dim["yc"]
         for _, x in ipairs(stair_dim["list"]) do
-            local dy = stair_dim["down"][mabs(x - stair_dim["x1"])]
-            drawLine(x, y - dy, x, y + dy, color)
+            local i = mabs(x - stair_dim["x1"])
+            local dy = stair_dim["down"][i]
+            if dy ~= nil then drawLine(x, y - dy, x, y + dy, color) end
         end
     end
 end
