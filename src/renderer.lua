@@ -597,21 +597,21 @@ local function debugMap(dungeon, config)
 
     for r = 0, dungeon["n_rows"] do
         for c = 0, dungeon["n_cols"] do
-            local x1 = c * dim + dim / 4
-            local y1 = r * dim + dim / 4
-            local x2 = x1 + dim / 2
-            local y2 = y1 + dim / 2
+            local x1 = c * dim - 1
+            local y1 = r * dim - 1
+            local x2 = x1 + dim - 1
+            local y2 = y1 + dim - 1
             
             if bcheck(cell[r][c], Flags.CORRIDOR) ~= 0 then
-                fillRect(x1, y1, x2, y2, { 1.0, 0.0, 0.0, 0.25 })
+                fillRect(x1, y1, x2, y2, { 1.0, 0.0, 0.0, 0.2 })
             end
 
             if bcheck(cell[r][c], Flags.ROOM) ~= 0 then
-                fillRect(x1, y1, x2, y2, { 0.0, 1.0, 0.0, 0.25 })
+                fillRect(x1, y1, x2, y2, { 0.0, 1.0, 0.0, 0.2 })
             end
 
             if bcheck(cell[r][c], Flags.DOORSPACE) ~= 0 then
-                fillRect(x1, y1, x2, y2, { 0.0, 0.0, 1.0, 0.5 })
+                fillRect(x1, y1, x2, y2, { 0.0, 1.0, 1.0, 0.5 })
             end
 
             if bcheck(cell[r][c], Flags.STAIRS) ~= 0 then

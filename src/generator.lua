@@ -273,7 +273,6 @@ local function setRoom(a, b)
 end
 
 local function emplaceRoom(a, b)
-	local a = a
 	if a["n_rooms"] == 999 then return end
 
 	local c = b or {}
@@ -423,7 +422,7 @@ local function scatterRooms(dungeon)
 				local d = {
 					["size"] = "medium"
 				}
-				emplaceRoom(a, d)
+				emplaceRoom(dungeon, d)
 			end
 		end
 	end
@@ -585,7 +584,7 @@ local function openRoom(dungeon, room)
 	local n_opens = allocOpens(dungeon, room)
 	local cell = dungeon["cell"]
 
-	for i = 0, n_opens do
+	for i = 0, n_opens + 1 do
 		if #list == 0 then break end
 
 		local idx = mrandom(#list)

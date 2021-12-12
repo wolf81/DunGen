@@ -42,6 +42,14 @@ function Dungeon:new(options)
 	return setmetatable(this, Dungeon)
 end
 
+function Dungeon:getCell(r, c)
+	if r >= 0 and r <= self["max_row"] and c >= 0 and c <= self["max_col"] then
+		return self["cell"][r][c]
+	end
+
+	return Flags.NOTHING
+end
+
 return setmetatable(Dungeon, {
-	__call = Dungeon.new
+	__call = Dungeon.new,
 })
