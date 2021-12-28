@@ -12,8 +12,7 @@ local dungeon = nil
 
 local renderOptions = {
 	["cell_size"] = 12,
-	["grid"] = square,
-	--["debug"] = true,
+	["debug"] = true,
 }
 
 local function getRandomKey(config_tbl)
