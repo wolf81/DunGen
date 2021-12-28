@@ -4,7 +4,7 @@ local BinTree = require 'src/utils/bin_tree'
 local Room = require 'src/utils/room'
 local Dungeon = require 'src/dungeon'
 
-local MIN_RATIO = 0.45
+local MIN_RATIO = 0.3
 
 local function random_split(container)
 	local r1, r2 = nil, nil
@@ -54,8 +54,8 @@ end
 
 local function split(container, iter)
 	local root = BinTree(container)
-	
-	if iter ~= 0 then
+
+	if iter > 0 then
 		local r1, r2 = random_split(container)
 		root:setChildren(
 			split(r1, iter - 1), 
@@ -77,11 +77,15 @@ local function connect_rooms(dungeon, tree)
 
 	if x1 ~= x2 then
 		for x = x1, x2 do
-			dungeon["cell"][x][y1] = Flags.CORRIDOR
+			if dungeon["cell"][x][y1] ~= Flags.ROOM then
+				dungeon["cell"][x][y1] = Flags.CORRIDOR
+			end
 		end		
 	elseif y1 ~= y2 then
 		for y = y1, y2 do
-			dungeon["cell"][x1][y] = Flags.CORRIDOR
+			if dungeon["cell"][x1][y] ~= Flags.ROOM then
+				dungeon["cell"][x1][y] = Flags.CORRIDOR
+			end
 		end
 	end
 
@@ -91,7 +95,7 @@ end
 
 local function generate(w, h)
 	local main_container = Container(0, 0, w, h)
-	local container_tree = split(main_container, 4)
+	local container_tree = split(main_container, 5)
 
 	local rooms = {}
 	for _, leaf in ipairs(container_tree:leafs()) do

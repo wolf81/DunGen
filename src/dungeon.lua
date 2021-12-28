@@ -14,8 +14,8 @@ function Dungeon:new(w, h, rooms)
 	end
 
 	for _, room in ipairs(rooms) do
-		for x = room.x, room.x + room.w do
-			for y = room.y, room.y + room.h do
+		for x = room.x, room.x + room.w - 1 do
+			for y = room.y, room.y + room.h - 1 do
 				cell[x][y] = Flags.ROOM
 			end
 		end

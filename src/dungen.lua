@@ -50,7 +50,7 @@ local function generate(options)
 	end
 	--]]
 
-	return GeneratorBSP.generate(50, 50)
+	return GeneratorBSP.generate(100, 100)
 end
 
 local function render(dungeon, options)
