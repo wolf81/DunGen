@@ -1,6 +1,10 @@
 local Point = require 'src/utils/point'
 local Container = require 'src/utils/container'
 local BinTree = require 'src/utils/bin_tree'
+local Room = require 'src/utils/room'
+local Dungeon = require 'src/dungeon'
+
+local MIN_RATIO = 0.45
 
 local function random_split(container)
 	local r1, r2 = nil, nil
@@ -18,6 +22,12 @@ local function random_split(container)
 			container.w - r1.w, 
 			container.h
 		)
+
+		local r1_w_ratio = r1.w / r1.h
+		local r2_w_ratio = r2.w / r2.h
+		if r1_w_ratio < MIN_RATIO or r2_w_ratio < MIN_RATIO then
+			return random_split(container)
+		end
 	else
 		r1 = Container(
 			container.x, 
@@ -31,6 +41,12 @@ local function random_split(container)
 			container.w, 
 			container.h - r1.h
 		)
+
+		local r1_h_ratio = r1.h / r1.w
+		local r2_h_ratio = r2.h / r2.w
+		if r1_h_ratio < MIN_RATIO or r2_h_ratio < MIN_RATIO then
+			return random_split(container)		
+		end
 	end
 
 	return r1, r2
@@ -41,20 +57,52 @@ local function split(container, iter)
 	
 	if iter ~= 0 then
 		local r1, r2 = random_split(container)
-		root.lchild = split(r1, iter - 1)
-		root.rchild = split(r2, iter - 1)
+		root:setChildren(
+			split(r1, iter - 1), 
+			split(r2, iter - 1)
+		)
 	end
 
 	return root
 end
 
-local function generate(width, height)
-	print('generate bsp')
+local function connect_rooms(dungeon, tree)
+	local lchild, rchild = tree:children()
+	if rchild == nil or rchild == nil then
+		return
+	end	
 
-	local main_container = Container(0, 0, width, height)
+	local x1, x2 = lchild._leaf.center.x, rchild._leaf.center.x
+	local y1, y2 = lchild._leaf.center.y, rchild._leaf.center.y
 
+	if x1 ~= x2 then
+		for x = x1, x2 do
+			dungeon["cell"][x][y1] = Flags.CORRIDOR
+		end		
+	elseif y1 ~= y2 then
+		for y = y1, y2 do
+			dungeon["cell"][x1][y] = Flags.CORRIDOR
+		end
+	end
+
+	connect_rooms(dungeon, lchild)
+	connect_rooms(dungeon, rchild)
+end
+
+local function generate(w, h)
+	local main_container = Container(0, 0, w, h)
 	local container_tree = split(main_container, 4)
-	print(container_tree)
+
+	local rooms = {}
+	for _, leaf in ipairs(container_tree:leafs()) do
+		rooms[#rooms + 1] = Room(leaf)
+	end
+
+	local dungeon = Dungeon(w, h, rooms)
+
+	connect_rooms(dungeon, container_tree)
+
+	return dungeon
 end
 
 return setmetatable({

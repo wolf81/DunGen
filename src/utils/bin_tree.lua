@@ -1,3 +1,5 @@
+require 'src/utils/table'
+
 local BinTree = {}
 BinTree.__index = BinTree
 
@@ -9,12 +11,17 @@ function BinTree:new(leaf, lchild, rchild)
 	}, BinTree)
 end
 
-function BinTree:getLeafs()
+function BinTree:leafs()
+	local leafs = leafs or {}
+
 	if self._lchild == nil and self._rchild == nil then 
-		return { self._leaf }
+		leafs[#leafs + 1] = self._leaf
 	else
-		return { self._lchild:getLeafs(), self._rchild:getLeafs() }
+		concat(leafs, self._lchild:leafs())
+		concat(leafs, self._rchild:leafs())
 	end
+
+	return leafs
 end
 
 function BinTree:getLevel(level, queue)
@@ -33,6 +40,15 @@ function BinTree:getLevel(level, queue)
 	end
 
 	return queue
+end
+
+function BinTree:setChildren(lchild, rchild)
+	self._lchild = lchild
+	self._rchild = rchild
+end
+
+function BinTree:children()
+	return self._lchild, self._rchild
 end
 
 return setmetatable(BinTree, {

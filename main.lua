@@ -34,7 +34,7 @@ local function generate()
 
 	dungeon = DunGen.generate(dungeonOptions)
 
-	local cell_h = math.max(window_h / (dungeon["n_rows"] + 1), 5)
+	local cell_h = math.max(window_h / (dungeon["w"] + 1), 5)
 	renderOptions["cell_size"] = cell_h
 
 	texture = DunGen.render(dungeon, renderOptions)

@@ -9,7 +9,7 @@ function Container:new(x, y, w, h)
 		y = y,
 		w = w,
 		h = h,
-		center = Point(x + w / 2, y + h / 2),
+		center = Point(x + math.floor(w / 2), y + math.floor(h / 2)),
 	}, Container)
 end
 

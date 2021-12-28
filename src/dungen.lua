@@ -29,7 +29,7 @@ end
 
 local function rendererDefaults()
 	return {
-		["map_style"] 			= "standard", 	
+		["map_style"] 			= "classic", 	
 		--^ standard|classic|graph
 		["cell_size"] 			= 20, 			
 		--^ number (pixels)
@@ -50,7 +50,7 @@ local function generate(options)
 	end
 	--]]
 
-	return GeneratorBSP.generate(30, 30)
+	return GeneratorBSP.generate(50, 50)
 end
 
 local function render(dungeon, options)

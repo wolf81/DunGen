@@ -3,34 +3,6 @@ local BitMask = require 'src/bitmask'
 local mfloor, mmax, mabs = math.floor, math.max, math.abs
 local bcheck = BitMask.check
 
-local palette = {
-    ["standard"] = {
-        ["colors"] = {
-            ["fill"] = { 0.0, 0.0, 0.0 },
-            ["open"] = { 1.0, 1.0, 1.0 },
-            ["open_grid"] = { 0.8, 0.8, 0.8 },
-        },
-    },   
-}
-
-local color_chain = {
-    ["door"] = "fill",
-    ["label"] = "fill",
-    ["stair"] = "wall",
-    ["wall"] = "fill",
-    ["fill"] = "black",
-    ["tag"] = "white",
-}
-
-local function getColor(color_table, key)
-    while key ~= nil do
-        if color_table[key] ~= nil then return color_table[key]
-        else key = color_chain[key] end
-    end
-
-    return color_table["black"]
-end
-
 local function fillRect(x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
     love.graphics.rectangle('fill', x1 + 0.5, y1 + 0.5, x2 - x1, y2 - y1)
@@ -88,11 +60,11 @@ local function fillImage(dungeon, config)
     local palette = config["palette"]
 
     -- set background color if defined or use black background
-    local bg_color = palette["fill"] or palette["black"]
+    local bg_color = { 0.0, 0.0, 0.0 }
     fillRect(0, 0, config["max_x"], config["max_y"], bg_color)
     
     -- draw grid if a grid color is defined
-    local grid_color = palette["fill_grid"] or palette["grid"]
+    local grid_color = { 0.6, 0.6, 0.6 }
     if grid_color ~= nil then
         imageGrid(dungeon, config, grid_color)
     end
@@ -101,10 +73,10 @@ end
 local function openCells(dungeon, config)
     local dim = config["cell_size"]
     local base_layer = config["base_layer"]
-    for r = 0, dungeon["n_rows"] do
+    for r = 0, dungeon["h"] do
         local y = r * dim
 
-        for c = 0, dungeon["n_cols"] do
+        for c = 0, dungeon["w"] do
             if bcheck(dungeon["cell"][r][c], Flags.OPENSPACE) ~= 0 then
                 local x = c * dim
                 drawImage(base_layer, x, y, dim, dim, x, y)
@@ -119,14 +91,12 @@ local function baseLayer(dungeon, config)
 
     local canvas = love.graphics.newCanvas(config["width"], config["height"])
     canvas:renderTo(function()
-        local palette = config["palette"]
-
         -- set background color if defined or use white background
-        local bg_color = palette["open"] or palette["white"]
+        local bg_color = { 1.0, 1.0, 1.0 }
         fillRect(0, 0, config["max_x"], config["max_y"], bg_color)
 
         -- if grid color is defined, draw grid
-        local grid_color = palette["open_grid"] or palette["grid"]
+        local grid_color = { 0.6, 0.6, 0.6 }
         if grid_color ~= nil then
             imageGrid(dungeon, config, grid_color)
         end
@@ -140,30 +110,14 @@ local function baseLayer(dungeon, config)
     return image
 end
 
-local function getPalette(config)
-    local palette = (config["palette"] ~= nil 
-        and config["palette"] 
-        or palette[config["map_style"]])
-
-    local colors = palette["colors"]
-    for key, _ in pairs(colors) do
-        palette[key] = colors[key]
-    end
-
-    palette["black"] = palette["black"] or { 0.0, 0.0, 0.0 }
-    palette["white"] = palette["white"] or { 1.0, 1.0, 1.0 }
-
-    return palette
-end
-
 local function scaleDungeon(dungeon, options)
     local config = {
         ["map_style"] = options["map_style"],
         ["grid"] = options["grid"],
         ["cell_size"] = options["cell_size"]
     }
-    config["width"] = (dungeon["n_cols"] + 1) * config["cell_size"]
-    config["height"] = (dungeon["n_rows"] + 1) * config["cell_size"]
+    config["width"] = (dungeon["w"] + 1) * config["cell_size"]
+    config["height"] = (dungeon["h"] + 1) * config["cell_size"]
     config["max_x"] = config["width"] - 1
     config["max_y"] = config["height"] - 1
     local fontSize = config["cell_size"] * 0.75
@@ -182,8 +136,8 @@ local function debugMap(dungeon, config)
     local cell = dungeon["cell"]
     local dim = config["cell_size"]
 
-    for r = 0, dungeon["n_rows"] do
-        for c = 0, dungeon["n_cols"] do
+    for r = 0, dungeon["h"] do
+        for c = 0, dungeon["w"] do
             local x1 = c * dim - 1
             local y1 = r * dim - 1
             local x2 = x1 + dim - 1
@@ -212,7 +166,6 @@ local function render(dungeon, options)
     local config = scaleDungeon(dungeon, options)
 
     return newImage(config["width"], config["height"], function(c)
-        config["palette"] = getPalette(config)        
         config["base_layer"] = baseLayer(dungeon, config)
 
         fillImage(dungeon, config)  
