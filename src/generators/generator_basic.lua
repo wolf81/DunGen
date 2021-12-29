@@ -16,7 +16,7 @@ local function generate_corridor(room1, room2)
 
 	local points = {}
 
-	if dir == 0 then
+	if dir == 0 then		
 		local step = mid > x1 and 1 or -1
 		for x = x1, mid, step do
 			points[#points + 1] = Point(x, y1)
@@ -43,7 +43,7 @@ local function generate_corridor(room1, room2)
 		end
 
 		step = y2 > mid and 1 or -1
-		for y = mid, y2 do
+		for y = mid, y2, step do
 			points[#points + 1] = Point(x2, y)
 		end
 	end
@@ -53,6 +53,8 @@ end
 
 local function connect_rooms(rooms)
 	local corridors = {}
+
+	rooms = shuffle(rooms)
 
 	for i = 1, #rooms - 1 do
 		local room1 = rooms[i]

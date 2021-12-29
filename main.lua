@@ -22,10 +22,10 @@ end
 
 local function generate()
 	local dungeonOptions = {
-		["dungeon_size"] = getRandomKey(Config.dungeon_size),
+		["dungeon_size"] = "tiny", -- getRandomKey(Config.dungeon_size),
 		["dungeon_layout"] = getRandomKey(Config.dungeon_layout),
 		["doors"] = getRandomKey(Config.doors),
-		["room_size"] = getRandomKey(Config.room_size),
+		["room_size"] = "small", -- getRandomKey(Config.room_size),
 		["room_layout"] = getRandomKey(Config.room_layout),
 		["corridor_layout"] = getRandomKey(Config.corridor_layout),
 		["remove_deadends"] = getRandomKey(Config.remove_deadends),
