@@ -5,7 +5,7 @@ local Room = require 'src/utils/room'
 local Dungeon = require 'src/dungeon'
 local Config = require 'src/config'
 
-local MIN_RATIO = 0.35
+local MIN_RATIO = 0.25
 
 local function random_split(container)
 	local r1, r2 = nil, nil

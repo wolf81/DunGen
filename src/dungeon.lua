@@ -3,33 +3,29 @@ require 'src/config'
 local Dungeon = {}
 Dungeon.__index = Dungeon
 
-function Dungeon:new(w, h, rooms)
-	local cell = {}
+function Dungeon:new(w, h)
+	local cells = {}
 
-	for x = 0, w do
-		cell[x] = {}
-		for y = 0, h do
-			cell[x][y] = Flags.NOTHING
-		end
-	end
-
-	for _, room in ipairs(rooms) do
-		for x = room.x, room.x + room.w - 1 do
-			for y = room.y, room.y + room.h - 1 do
-				cell[x][y] = Flags.ROOM
-			end
+	for y = 0, h do
+		cells[y] = {}
+		for x = 0, w do
+			cells[y][x] = Flags.NOTHING
 		end
 	end
 
 	return setmetatable({
 		w = w,
 		h = h,
-		cell = cell,
+		_cells = cells,
 	}, Dungeon)
 end
 
-function Dungeon:getCell(r, c)
-	return self["cell"][r][c]
+function Dungeon:set_cell(x, y, value)
+	self._cells[y][x] = value
+end
+
+function Dungeon:cell(x, y)
+	return self._cells[y][x]
 end
 
 return setmetatable(Dungeon, {

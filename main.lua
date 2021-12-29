@@ -79,15 +79,20 @@ function love.keypressed(key, code)
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
-	local r = math.floor(y / renderOptions["cell_size"])
-	local c = math.floor(x / renderOptions["cell_size"])
+	local y = math.floor(y / renderOptions["cell_size"])
+	local x = math.floor(x / renderOptions["cell_size"])
 	local font = love.graphics.getFont()
-	local cell = tonumber(dungeon:getCell(r, c))
+	local cell = tonumber(dungeon:cell(x, y))
 
 	pointer_texts = {}
 
 	if cell ~= nil then
 		pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, string.format("val: 0x%x", cell))
-		pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, "pos: "..r..","..c)
+		pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, "pos: "..x..","..y)
+
+		local roomId = tonumber(bit.rshift(bit.band(cell, Flags.ROOM_ID), 6))
+		if roomId ~= 0 then
+			pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, "room: "..roomId)
+		end
 	end
 end

@@ -77,7 +77,7 @@ local function openCells(dungeon, config)
         local y = r * dim
 
         for c = 0, dungeon["w"] do
-            if bcheck(dungeon["cell"][r][c], Flags.OPENSPACE) ~= 0 then
+            if bcheck(dungeon:cell(c, r), Flags.OPENSPACE) ~= 0 then
                 local x = c * dim
                 drawImage(base_layer, x, y, dim, dim, x, y)
             end
@@ -133,7 +133,6 @@ local function newImage(width, height, f)
 end
 
 local function debugMap(dungeon, config)
-    local cell = dungeon["cell"]
     local dim = config["cell_size"]
 
     for r = 0, dungeon["h"] do
@@ -143,19 +142,19 @@ local function debugMap(dungeon, config)
             local x2 = x1 + dim - 1
             local y2 = y1 + dim - 1
             
-            if bcheck(cell[r][c], Flags.CORRIDOR) ~= 0 then
+            if bcheck(dungeon:cell(c, r), Flags.CORRIDOR) ~= 0 then
                 fillRect(x1, y1, x2, y2, { 1.0, 0.0, 0.0, 0.2 })
             end
 
-            if bcheck(cell[r][c], Flags.ROOM) ~= 0 then
+            if bcheck(dungeon:cell(c, r), Flags.ROOM) ~= 0 then
                 fillRect(x1, y1, x2, y2, { 0.0, 1.0, 0.0, 0.2 })
             end
 
-            if bcheck(cell[r][c], Flags.DOORSPACE) ~= 0 then
+            if bcheck(dungeon:cell(c, r), Flags.DOORSPACE) ~= 0 then
                 fillRect(x1, y1, x2, y2, { 0.0, 1.0, 1.0, 0.5 })
             end
 
-            if bcheck(cell[r][c], Flags.STAIRS) ~= 0 then
+            if bcheck(dungeon:cell(c, r), Flags.STAIRS) ~= 0 then
                 fillRect(x1, y1, x2, y2, { 1.0, 0.0, 1.0, 0.8 })
             end
         end

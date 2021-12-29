@@ -2,7 +2,7 @@ require 'src/utils'
 
 local Renderer = require 'src/renderer'
 --local Generator = require 'src/generator'
-local GeneratorBSP = require 'src/generators/generator_bsp'
+local Generator = require 'src/generators/generator_basic'
 
 local function generatorDefaults()
 	return {
@@ -50,7 +50,7 @@ local function generate(options)
 	end
 	--]]
 
-	return GeneratorBSP.generate(options)
+	return Generator.generate(options)
 end
 
 local function render(dungeon, options)
