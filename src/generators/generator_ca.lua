@@ -1,4 +1,5 @@
-local function generate()
+
+local function generate(options)
 	print('generate ca')
 end
 

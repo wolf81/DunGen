@@ -2,15 +2,15 @@ require "src/flags"
 
 -- the size of the dungeon in cells
 local dungeon_size = {
-	["fine"] 		= 11,
-	["dimin"] 		= 13,
-	["tiny"] 		= 17,
-	["small"] 		= 21,
-	["medium"] 		= 27,
-	["large"] 		= 35,
-	["huge"] 		= 43,
-	["gargant"] 	= 55,
-	["colossal"] 	= 71,
+	["fine"] 		= 15,
+	["dimin"] 		= 30,
+	["tiny"] 		= 45,
+	["small"] 		= 60,
+	["medium"] 		= 75,
+	["large"] 		= 90,
+	["huge"] 		= 105,
+	["gargant"] 	= 120,
+	["colossal"] 	= 135,
 }
 
 local dungeon_layout = {
@@ -67,12 +67,12 @@ local dungeon_layout = {
 }
 
 local room_size = {
-	["small"] 		= { ["size"] = 2, ["radix"] = 2, ["huge"] = false },
-	["medium"] 		= { ["size"] = 2, ["radix"] = 5, ["huge"] = false },
-	["large"] 		= { ["size"] = 5, ["radix"] = 2, ["huge"] = false },
-	["huge"] 		= { ["size"] = 5, ["radix"] = 5, ["huge"] = true  },
-	["gargant"] 	= { ["size"] = 8, ["radix"] = 5, ["huge"] = true  },
-	["colossal"] 	= { ["size"] = 8, ["radix"] = 8, ["huge"] = true  },
+	["small"] 		= { ["size"] = 2, ["radix"] = 2 },
+	["medium"] 		= { ["size"] = 2, ["radix"] = 5 },
+	["large"] 		= { ["size"] = 5, ["radix"] = 2 },
+	["huge"] 		= { ["size"] = 5, ["radix"] = 5 },
+	["gargant"] 	= { ["size"] = 8, ["radix"] = 5 },
+	["colossal"] 	= { ["size"] = 8, ["radix"] = 8 },
 }
 
 local room_layout = {

@@ -3,8 +3,9 @@ local Container = require 'src/utils/container'
 local BinTree = require 'src/utils/bin_tree'
 local Room = require 'src/utils/room'
 local Dungeon = require 'src/dungeon'
+local Config = require 'src/config'
 
-local MIN_RATIO = 0.3
+local MIN_RATIO = 0.35
 
 local function random_split(container)
 	local r1, r2 = nil, nil
@@ -93,16 +94,39 @@ local function connect_rooms(dungeon, tree)
 	connect_rooms(dungeon, rchild)
 end
 
-local function generate(w, h)
-	local main_container = Container(0, 0, w, h)
-	local container_tree = split(main_container, 5)
+local function calc_room_size(dungeon_size, room_size)
+	local size = room_size["size"]
+	local radix = room_size["radix"]
+	local max_room_size = math.floor(dungeon_size / 4)
+	local room_size = math.min(max_room_size, size + radix)
+	local n = dungeon_size
+	local steps = 1
+
+	while room_size < dungeon_size do
+		room_size = room_size * 2
+		steps = steps + 1
+	end
+
+	return steps
+end
+
+local function generate(options)
+	local dungeon_size = Config.dungeon_size[options["dungeon_size"]]
+	local room_size = calc_room_size(
+		dungeon_size,
+		Config.room_size[options["room_size"]]
+	)
+	local levels = 5 -- math.floor(dungeon_size / room_size)
+
+	local main_container = Container(0, 0, dungeon_size, dungeon_size)
+	local container_tree = split(main_container, room_size)
 
 	local rooms = {}
 	for _, leaf in ipairs(container_tree:leafs()) do
 		rooms[#rooms + 1] = Room(leaf)
 	end
 
-	local dungeon = Dungeon(w, h, rooms)
+	local dungeon = Dungeon(dungeon_size, dungeon_size, rooms)
 
 	connect_rooms(dungeon, container_tree)
 

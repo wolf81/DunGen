@@ -86,6 +86,8 @@ function love.mousemoved(x, y, dx, dy, istouch)
 
 	pointer_texts = {}
 
-	pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, string.format("val: 0x%x", cell))
-	pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, "pos: "..r..","..c)
+	if cell ~= nil then
+		pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, string.format("val: 0x%x", cell))
+		pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, "pos: "..r..","..c)
+	end
 end
