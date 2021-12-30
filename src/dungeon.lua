@@ -19,8 +19,8 @@ function Dungeon:new(options)
 	end
 
 	return setmetatable({
-		_i = i,
-		_j = j,
+		n_i = i,
+		n_j = j,
 		rows = rows,
 		cols = cols,
 		_cells = cells,

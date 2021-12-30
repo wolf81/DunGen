@@ -9,9 +9,9 @@ function Point:new(x, y)
 end
 
 function Point:__tostring()
-	local s = "Point {\n"
+	local s = "Point { "
 	for k, v in pairs(self) do
-		s = s .. "\t" .. k .. ": " .. tostring(v) .. ",\n"
+		s = s .. "" .. k .. ": " .. tostring(v) .. ", "
 	end
 	s = s .. "}"
 
