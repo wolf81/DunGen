@@ -76,12 +76,10 @@ local function generate_feature(dungeon, containers, feat_idx, connections)
 		containers[feat_idx].is_generated = true
 	end
 
-
 	local adj_feats = adjacency_list[feat_idx]
 	local n_conns = math.random(1, #adj_feats)
 
 	while #connections[feat_idx] < n_conns do
-
 		local adj_feat_idx = adj_feats[math.random(#adj_feats)]
 
 		for i, v in ipairs(connections[feat_idx]) do
@@ -102,71 +100,6 @@ local function generate_features(dungeon, containers)
 
 	local room_idx = math.random(1, #containers)
 	generate_feature(dungeon, containers, room_idx)
-
-	--[[
-	local feature = Room(containers[room_idx])
-
-	rooms[#rooms + 1] = feature
-
-	print(room_idx)
-
-	local connections = { [tostring(room_idx)] = {} }
-
-	local adjecent_indices = shuffle(adjacency_list[room_idx])
-	local n_conn = math.random(#adjecent_indices)
-	print()
-
-
-	--[[
-	for _, container in ipairs(containers) do
-		local v = math.random(6)
-		if v < 4 then
-			local room = Room(container)
-			rooms[#rooms + 1] = room
-
-			local x1 = room.x * 2 + 1
-			local x2 = (room.x + room.w - 1) * 2 + 1
-			local y1 = room.y * 2 + 1
-			local y2 = (room.y + room.h - 1) * 2 + 1
-
-			for x = x1, x2 do
-				for y = y1, y2 do
-					dungeon:set_cell(x, y, Flags.ROOM)
-				end
-			end
-		elseif v <5 then
-			local corridor = Corridor(container)
-			corridors[#corridors + 1] = corridor
-			local points = corridor:points()
-
-			for i = 1, #points - 1 do
-				local point1 = points[i]
-				local point2 = points[i + 1]
-
-				for x = point1.x * 2 + 1, point2.x * 2 + 1 do
-					for y = point1.y * 2 + 1, point2.y * 2 + 1 do
-						dungeon:set_cell(x, y, Flags.CORRIDOR)
-					end
-				end
-			end				
-		end
-	end
-	--]]
-
-	--[[
-	for _, room in ipairs(rooms) do
-		local x1 = room.x * 2 + 1
-		local x2 = (room.x + room.w - 1) * 2 + 1
-		local y1 = room.y * 2 + 1
-		local y2 = (room.y + room.h - 1) * 2 + 1
-
-		for x = x1, x2 do
-			for y = y1, y2 do
-				dungeon:set_cell(x, y, Flags.ROOM)
-			end
-		end
-	end
-	--]]
 
 	return concat(rooms, corridors)
 end
