@@ -26,7 +26,7 @@ end
 --[[
 Returns a list of keys from the given table.
 ]]
-function getKeys(tbl)
+function get_keys(tbl)
 	local n = 0
 	local keys = {}
 
@@ -52,7 +52,7 @@ end
 --[[
 Traverse a table by alphabetically sorted keys or using custom sort function.
 ]]
-function pairsByKeys(tbl, f)
+function pairs_by_keys(tbl, f)
 	local a = {}
 	for n in pairs(tbl) do table.insert(a, n) end
 	table.sort(a, f)

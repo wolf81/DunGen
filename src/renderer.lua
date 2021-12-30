@@ -1,4 +1,4 @@
-local BitMask = require 'src/bitmask'
+local BitMask = require 'src/utils/bitmask'
 
 local mfloor, mmax, mabs = math.floor, math.max, math.abs
 local bcheck = BitMask.check

@@ -1,4 +1,4 @@
-require "src/utils"
+require "src/utils/table"
 
 local Config = require "src/config"
 
@@ -16,20 +16,13 @@ local renderOptions = {
 }
 
 local function getRandomKey(config_tbl)
-	local keys = getKeys(config_tbl)
+	local keys = get_keys(config_tbl)
 	return keys[math.random(#keys)]
 end
 
 local function generate()
 	local dungeonOptions = {
 		["dungeon_size"] = "tiny", -- getRandomKey(Config.dungeon_size),
-		["dungeon_layout"] = getRandomKey(Config.dungeon_layout),
-		["doors"] = getRandomKey(Config.doors),
-		["room_size"] = "small", -- getRandomKey(Config.room_size),
-		["room_layout"] = getRandomKey(Config.room_layout),
-		["corridor_layout"] = getRandomKey(Config.corridor_layout),
-		["remove_deadends"] = getRandomKey(Config.remove_deadends),
-		["add_stairs"] = getRandomKey(Config.add_stairs),
 	}
 
 	dungeon = DunGen.generate(dungeonOptions)
