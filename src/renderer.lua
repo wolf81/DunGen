@@ -43,7 +43,7 @@ end
 
 local function fillImage(dungeon, config)
     fillRect(0, 0, config["max_x"], config["max_y"], { 0.0, 0.0, 0.0 })    
-    squareGrid(config, { 0.6, 0.6, 0.6 })
+    squareGrid(config, { 0.5, 0.5, 0.5 })
 end
 
 local function openCells(dungeon, config)
@@ -60,6 +60,26 @@ local function openCells(dungeon, config)
         end
 
     end
+end
+
+local function baseLayer(dungeon, config)
+    local ctx = love.graphics.getCanvas()
+
+    local canvas = love.graphics.newCanvas(config["width"], config["height"])
+    canvas:renderTo(function()
+        -- set background color if defined or use white background
+        fillRect(0, 0, config["max_x"], config["max_y"], { 1.0, 1.0, 1.0 })
+
+        -- if grid color is defined, draw grid
+        squareGrid(config, { 0.5, 0.5, 0.5 })
+    end)
+
+    local data = canvas:newImageData()
+    local image = love.graphics.newImage(data)
+
+    love.graphics.setCanvas(ctx)
+
+    return image
 end
 
 local function scaleDungeon(dungeon, options)
@@ -113,6 +133,8 @@ local function render(dungeon, options)
     local config = scaleDungeon(dungeon, options)
 
     return newImage(config["width"], config["height"], function(c)
+        config["base_layer"] = baseLayer(dungeon, config)
+
         fillImage(dungeon, config)  
         openCells(dungeon, config)
 
