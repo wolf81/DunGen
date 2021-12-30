@@ -1,5 +1,6 @@
 local Dungeon = require 'src/dungeon'
 local Room = require 'src/features/room'
+local Corridor = require 'src/features/corridor'
 local Config = require 'src/config'
 local Rect = require 'src/utils/rect'
 
@@ -15,7 +16,6 @@ local function generate_features(dungeon, containers)
 		local v = math.random(6)
 		if v < 4 then
 			local room = Room(container)
-			print(room)
 			rooms[#rooms + 1] = room
 
 			local x1 = room.x * 2 + 1
@@ -28,6 +28,21 @@ local function generate_features(dungeon, containers)
 					dungeon:set_cell(x, y, Flags.ROOM)
 				end
 			end
+		elseif v <5 then
+			local corridor = Corridor(container)
+			corridors[#corridors + 1] = corridor
+			local points = corridor:points()
+
+			for i = 1, #points - 1 do
+				local point1 = points[i]
+				local point2 = points[i + 1]
+
+				for x = point1.x * 2 + 1, point2.x * 2 + 1 do
+					for y = point1.y * 2 + 1, point2.y * 2 + 1 do
+						dungeon:set_cell(x, y, Flags.CORRIDOR)
+					end
+				end
+			end				
 		end
 	end
 
