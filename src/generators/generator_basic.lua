@@ -52,42 +52,44 @@ end
 local function generate_feature(dungeon, containers, feat_idx, connections)
 	local is_root = connections == nil
 
-	local feature = nil
-	if is_root then 
-		connections = {
-			[1] = {}, [2] = {}, [3] = {},
-			[4] = {}, [5] = {}, [6] = {},
-			[7] = {}, [8] = {}, [9] = {},
-		}
+	if containers[feat_idx].is_generated == nil then
+		local feature = nil
+		if is_root then 
+			connections = {
+				[1] = {}, [2] = {}, [3] = {},
+				[4] = {}, [5] = {}, [6] = {},
+				[7] = {}, [8] = {}, [9] = {},
+			}
 
-		feature = Room(containers[feat_idx])
-		dig_room(dungeon, feature)		
-	else
-		local feat_type = math.random(3)
-		if feat_type < 3 then
 			feature = Room(containers[feat_idx])
-			dig_room(dungeon, feature)
+			dig_room(dungeon, feature)		
 		else
-			feature = Corridor(containers[feat_idx])
-			dig_corridor(dungeon, feature)
+			local feat_type = math.random(3)
+			if feat_type < 3 then
+				feature = Room(containers[feat_idx])
+				dig_room(dungeon, feature)
+			else
+				feature = Corridor(containers[feat_idx])
+				dig_corridor(dungeon, feature)
+			end
 		end
+		containers[feat_idx].is_generated = true
 	end
+
 
 	local adj_feats = adjacency_list[feat_idx]
 	local n_conns = math.random(1, #adj_feats)
 
 	while #connections[feat_idx] < n_conns do
-		print('loop until', #connections[feat_idx], '=', n_conns)
 
 		local adj_feat_idx = adj_feats[math.random(#adj_feats)]
 
-		for _, v in ipairs(connections[feat_idx]) do
+		for i, v in ipairs(connections[feat_idx]) do
 			if v == adj_feat_idx then goto continue end
 		end
 
 		table.insert(connections[feat_idx], adj_feat_idx)
 		table.insert(connections[adj_feat_idx], feat_idx)
-		print('add conn, total:', #connections[feat_idx])
 		generate_feature(dungeon, containers, adj_feat_idx, connections)
 
 		::continue::
