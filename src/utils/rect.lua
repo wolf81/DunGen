@@ -1,20 +1,20 @@
 local Point = require 'src/utils/point'
 
-local Container = {}
-Container.__index = Container
+local Rect = {}
+Rect.__index = Rect
 
-function Container:new(x, y, w, h)
+function Rect:new(x, y, w, h)
 	return setmetatable({
 		x = x,
 		y = y,
 		w = w,
 		h = h,
 		center = Point(x + math.floor(w / 2), y + math.floor(h / 2)),
-	}, Container)
+	}, Rect)
 end
 
-function Container:__tostring()
-	local s = "Container {\n"
+function Rect:__tostring()
+	local s = "Rect {\n"
 	for k, v in pairs(self) do
 		s = s .. "\t" .. k .. ": " .. tostring(v) .. ",\n"
 	end
@@ -23,6 +23,6 @@ function Container:__tostring()
 	return s
 end
 
-return setmetatable(Container, {
-	__call = Container.new
+return setmetatable(Rect, {
+	__call = Rect.new
 })
