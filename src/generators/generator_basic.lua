@@ -7,9 +7,7 @@ local function sign(number)
 end
 
 local function generate(options)
-	local dungeon_size = Config.dungeon_size[options["dungeon_size"]]
-
-	local dungeon = Dungeon(dungeon_size, dungeon_size)
+	local dungeon = Dungeon(options)
 
 	return dungeon
 end

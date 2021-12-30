@@ -1,21 +1,28 @@
-require 'src/config'
+local Config = require 'src/config'
 
 local Dungeon = {}
 Dungeon.__index = Dungeon
 
-function Dungeon:new(w, h)
-	local cells = {}
+function Dungeon:new(options)
+	local dungeon_size = Config.dungeon_size[options["dungeon_size"]]
+	local i, j = dungeon_size, dungeon_size
 
-	for y = 0, h do
-		cells[y] = {}
-		for x = 0, w do
-			cells[y][x] = Flags.NOTHING
+	local rows = i * 2 + 1
+	local cols = j * 2 + 1
+
+	local cells = {}
+	for r = 0, rows do
+		cells[r] = {}
+		for c = 0, cols do
+			cells[r][c] = Flags.NOTHING
 		end
 	end
 
 	return setmetatable({
-		w = w,
-		h = h,
+		_i = i,
+		_j = j,
+		rows = rows,
+		cols = cols,
 		_cells = cells,
 	}, Dungeon)
 end

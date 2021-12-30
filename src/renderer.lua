@@ -41,42 +41,18 @@ local function squareGrid(config, color)
     end
 end
 
-local function imageGrid(dungeon, config, color)
-    -- TODO: grid style should not be stored in dungeon, but in config instead
-    local grid = config["grid"]
-
-    if grid ~= "none" then
-        if grid == "hex" then
-            hexGrid(config, color)
-        elseif grid == "vex" then
-            vexGrid(config, color)
-        else
-            squareGrid(config, color)
-        end 
-    end
-end
-
 local function fillImage(dungeon, config)
-    local palette = config["palette"]
-
-    -- set background color if defined or use black background
-    local bg_color = { 0.0, 0.0, 0.0 }
-    fillRect(0, 0, config["max_x"], config["max_y"], bg_color)
-    
-    -- draw grid if a grid color is defined
-    local grid_color = { 0.6, 0.6, 0.6 }
-    if grid_color ~= nil then
-        imageGrid(dungeon, config, grid_color)
-    end
+    fillRect(0, 0, config["max_x"], config["max_y"], { 0.0, 0.0, 0.0 })    
+    squareGrid(config, { 0.6, 0.6, 0.6 })
 end
 
 local function openCells(dungeon, config)
     local dim = config["cell_size"]
     local base_layer = config["base_layer"]
-    for r = 0, dungeon["h"] do
+    for r = 0, dungeon.rows do
         local y = r * dim
 
-        for c = 0, dungeon["w"] do
+        for c = 0, dungeon.cols do
             if bcheck(dungeon:cell(c, r), Flags.OPENSPACE) ~= 0 then
                 local x = c * dim
                 drawImage(base_layer, x, y, dim, dim, x, y)
@@ -86,42 +62,14 @@ local function openCells(dungeon, config)
     end
 end
 
-local function baseLayer(dungeon, config)
-    local ctx = love.graphics.getCanvas()
-
-    local canvas = love.graphics.newCanvas(config["width"], config["height"])
-    canvas:renderTo(function()
-        -- set background color if defined or use white background
-        local bg_color = { 1.0, 1.0, 1.0 }
-        fillRect(0, 0, config["max_x"], config["max_y"], bg_color)
-
-        -- if grid color is defined, draw grid
-        local grid_color = { 0.6, 0.6, 0.6 }
-        if grid_color ~= nil then
-            imageGrid(dungeon, config, grid_color)
-        end
-    end)
-
-    local data = canvas:newImageData()
-    local image = love.graphics.newImage(data)
-
-    love.graphics.setCanvas(ctx)
-
-    return image
-end
-
 local function scaleDungeon(dungeon, options)
     local config = {
-        ["map_style"] = options["map_style"],
-        ["grid"] = options["grid"],
         ["cell_size"] = options["cell_size"]
     }
-    config["width"] = (dungeon["w"] + 1) * config["cell_size"]
-    config["height"] = (dungeon["h"] + 1) * config["cell_size"]
+    config["width"] = (dungeon.cols + 1) * config["cell_size"]
+    config["height"] = (dungeon.rows + 1) * config["cell_size"]
     config["max_x"] = config["width"] - 1
     config["max_y"] = config["height"] - 1
-    local fontSize = config["cell_size"] * 0.75
-    config["font"] = love.graphics.newFont(fontSize)
 
     return config
 end
@@ -135,8 +83,8 @@ end
 local function debugMap(dungeon, config)
     local dim = config["cell_size"]
 
-    for r = 0, dungeon["h"] do
-        for c = 0, dungeon["w"] do
+    for r = 0, dungeon.rows do
+        for c = 0, dungeon.cols do
             local x1 = c * dim - 1
             local y1 = r * dim - 1
             local x2 = x1 + dim - 1
@@ -165,8 +113,6 @@ local function render(dungeon, options)
     local config = scaleDungeon(dungeon, options)
 
     return newImage(config["width"], config["height"], function(c)
-        config["base_layer"] = baseLayer(dungeon, config)
-
         fillImage(dungeon, config)  
         openCells(dungeon, config)
 
