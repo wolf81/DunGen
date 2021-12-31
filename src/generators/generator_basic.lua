@@ -74,7 +74,9 @@ local function dig_corridor(dungeon, corridor)
 
 		for x = p1.x * 2 + 1, p2.x * 2 + 1 do
 			for y = p1.y * 2 + 1, p2.y * 2 + 1 do
-				dungeon:set_cell(x, y, Flags.CORRIDOR)
+				if dungeon:cell(x, y) ~= Flags.ROOM then
+					dungeon:set_cell(x, y, Flags.CORRIDOR)
+				end
 			end
 		end
 	end		
@@ -93,7 +95,7 @@ local function dig_room(dungeon, room)
 	end
 end
 
-local function generate_feature(dungeon, containers, feat_idx, connections)
+local function generate_feature(containers, feat_idx, connections)
 	local is_root = connections == nil
 	local feature = nil
 
@@ -106,17 +108,17 @@ local function generate_feature(dungeon, containers, feat_idx, connections)
 			}
 
 			feature = Room(containers[feat_idx])
-			dig_room(dungeon, feature)		
 		else
 			local feat_type = math.random(3)
 			if feat_type < 3 then
 				feature = Room(containers[feat_idx])
-				dig_room(dungeon, feature)
 			else
 				feature = Corridor(containers[feat_idx])
-				dig_corridor(dungeon, feature)
 			end
 		end
+		
+		feature.adj_features = {}
+
 		containers[feat_idx].feature = feature
 	end
 
@@ -134,11 +136,10 @@ local function generate_feature(dungeon, containers, feat_idx, connections)
 
 		table.insert(connections[feat_idx], adj_feat_idx)
 		table.insert(connections[adj_feat_idx], feat_idx)
-		local next_feature = generate_feature(dungeon, containers, adj_feat_idx, connections)
 
-		if next_feature ~= nil then
-			connect_features(dungeon, feature, next_feature)
-		end
+		local adj_feature = generate_feature(containers, adj_feat_idx, connections)
+
+		table.insert(feature.adj_features, adj_feature)
 
 		::continue::
 	end
@@ -146,44 +147,72 @@ local function generate_feature(dungeon, containers, feat_idx, connections)
 	return feature
 end
 
-local function generate_features(dungeon, containers)
-	local rooms = {}
-	local corridors = {}
-
+local function generate_features(containers)
 	local room_idx = math.random(1, #containers)
-	generate_feature(dungeon, containers, room_idx)
+	generate_feature(containers, room_idx)
 
-	return concat(rooms, corridors)
+	local features = {}
+	for _, container in ipairs(containers) do
+		if container.feature ~= nil then
+			table.insert(features, container.feature)
+		end
+	end
+
+	return features
 end
 
 local function generate(options)
 	local dungeon = Dungeon(options)
 
+	-- create 9 rectangle containers for given width and height, as such:
+	-- 	1, 2, 3
+	-- 	4, 5, 6
+	--	7, 8, 9
+	local containers = {}
+
 	local step_i = math.ceil(dungeon.n_i / 3)
 	local step_j = math.ceil(dungeon.n_j / 3)
 
-	local containers = {}
-
 	for i = 0, dungeon.n_i, step_i do
 		local w = step_i
+		
+		-- if the remainder is not equal to a third, then use the remainder
 		if i + step_i > dungeon.n_i then
 			w = dungeon.n_i % step_i
 		end
 
 		for j = 0, dungeon.n_j, step_j do
 			local h = step_j
+			
+			-- if the remainder is not equal to a third, then use the remainder
 			if j + step_j > dungeon.n_j then
 				h = dungeon.n_j % step_j
 			end
 
+			-- create a rectangular area container
 			containers[#containers + 1] = Rect(j, i, w, h)
 		end
 	end
 
-	generate_features(dungeon, containers)
+	-- generate a feature in each container
+	local features = generate_features(containers)
 
-	for i, container in ipairs(containers) do
-		print(i, container.feature)
+	-- dig features and connect with corridors
+	for _, feature in ipairs(features) do
+		local mt = getmetatable(feature)
+		if mt == Room then 
+			dig_room(dungeon, feature)
+		elseif mt == Corridor then 
+			dig_corridor(dungeon, feature)
+		else 
+			error('unknown type: ', mt) 
+		end
+
+		for _, adj_feature in ipairs(feature.adj_features) do
+			connect_features(dungeon, feature, adj_feature)
+		end
+
+		::continue::
 	end
 
 	return dungeon
