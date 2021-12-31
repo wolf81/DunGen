@@ -57,7 +57,7 @@ local function connect_features(dungeon, feat1, feat2)
 		for x = p1.x * 2 + 1, p2.x * 2 + 1, step_x do
 			for y = p1.y * 2 + 1, p2.y * 2 + 1, step_y do
 				if dungeon:cell(x, y) ~= Flags.ROOM then
-				dungeon:set_cell(x, y, Flags.CORRIDOR)
+					dungeon:set_cell(x, y, Flags.CORRIDOR)
 				end
 			end
 		end
@@ -97,7 +97,7 @@ local function generate_feature(dungeon, containers, feat_idx, connections)
 	local is_root = connections == nil
 	local feature = nil
 
-	if containers[feat_idx].is_generated == nil then
+	if containers[feat_idx].feature == nil then
 		if is_root then 
 			connections = {
 				[1] = {}, [2] = {}, [3] = {},
@@ -117,7 +117,7 @@ local function generate_feature(dungeon, containers, feat_idx, connections)
 				dig_corridor(dungeon, feature)
 			end
 		end
-		containers[feat_idx].is_generated = true
+		containers[feat_idx].feature = feature
 	end
 
 	if feature == nil then return end
@@ -180,7 +180,11 @@ local function generate(options)
 		end
 	end
 
-	local features = generate_features(dungeon, containers)
+	generate_features(dungeon, containers)
+
+	for i, container in ipairs(containers) do
+		print(i, container.feature)
+	end
 
 	return dungeon
 end

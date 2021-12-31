@@ -52,6 +52,10 @@ function Corridor:random_point()
 	return self._points:get(p_idx)
 end
 
+function Corridor:is_a(class)
+	return getmetatable(self) == class
+end
+
 function Corridor:__tostring()
 	local s = "Corridor { "
 	for k, v in pairs(self) do

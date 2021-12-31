@@ -6,8 +6,8 @@ Room.__index = Room
 function Room:new(rect)
 	local x = rect.x + math.random(0, math.floor(rect.w / 3))
 	local y = rect.y + math.random(0, math.floor(rect.h / 3))
-	local w = rect.w - (x - rect.x) - 1
-	local h = rect.h - (y - rect.y) - 1
+	local w = rect.w - (x - rect.x)
+	local h = rect.h - (y - rect.y)
 	w = w - math.floor(math.random(0, w / 3))
 	h = h - math.floor(math.random(0, h / 3))
 	return setmetatable({
@@ -32,6 +32,10 @@ function Room:__tostring()
 	s = s .. "}"
 
 	return s
+end
+
+function Room:is_a(class)
+	return getmetatable(self) == class
 end
 
 return setmetatable(Room, {
