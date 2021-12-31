@@ -8,6 +8,10 @@ function Point:new(x, y)
 	}, Point)	
 end
 
+function Point:__eq(p)
+	return self.x == p.x and self.y == p.y
+end
+
 function Point:__tostring()
 	local s = "Point { "
 	for k, v in pairs(self) do

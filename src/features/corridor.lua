@@ -1,10 +1,11 @@
 local Point = require 'src/utils/point'
+local Set = require 'src/utils/set'
 
 local Corridor = {}
 Corridor.__index = Corridor
 
 function Corridor:new(rect)
-	local points = {}
+	local points = Set()
 
 	if rect ~= nil then
 		local x1 = rect.x + math.random(0, math.floor(rect.w / 3))
@@ -16,13 +17,19 @@ function Corridor:new(rect)
 
 		local dir = math.random(0, 1)
 		if dir == 0 then
-			points[#points + 1] = Point(x1, y1)
-			points[#points + 1] = Point(x1, y2)
-			points[#points + 1] = Point(x2, y2)
+			for y = y1, y2 do
+				points:add(Point(x1, y))
+			end
+			for x = x1, x2 do
+				points:add(Point(x, y2))
+			end
 		else
-			points[#points + 1] = Point(x1, y1)
-			points[#points + 1] = Point(x2, y1)
-			points[#points + 1] = Point(x2, y2)
+			for x = x1, x2 do
+				points:add(Point(x, y1))
+			end
+			for y = y1, y2 do
+				points:add(Point(x2, y))
+			end
 		end
 	end
 
@@ -32,15 +39,21 @@ function Corridor:new(rect)
 end
 
 function Corridor:add_point(point)	
-	local key = point.x..','..point.y
-
-	if self._points[key] ~= nil then return end
-	
-	self._points[key] = point
+	self._points:add(point)
 end
 
 function Corridor:points()
-	return self._points
+	return self._points:values()
+end
+
+function Corridor:random_point()
+	-- local points = {}
+	-- local last_point = nil
+	-- for _, p in ipairs(self._points) do
+	-- 	if p. ~= last_point then
+
+	-- 	end
+	-- end
 end
 
 function Corridor:__tostring()
