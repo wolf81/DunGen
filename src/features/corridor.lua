@@ -47,13 +47,9 @@ function Corridor:points()
 end
 
 function Corridor:random_point()
-	-- local points = {}
-	-- local last_point = nil
-	-- for _, p in ipairs(self._points) do
-	-- 	if p. ~= last_point then
-
-	-- 	end
-	-- end
+	local p_size = self._points:size()
+	local p_idx = math.random(1, p_size)
+	return self._points:get(p_idx)
 end
 
 function Corridor:__tostring()

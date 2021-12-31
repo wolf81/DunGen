@@ -1,3 +1,5 @@
+local Point = require 'src/utils/point'
+
 local Room = {}
 Room.__index = Room
 
@@ -14,6 +16,12 @@ function Room:new(rect)
 		w = w, 
 		h = h,
 	}, Room)
+end
+
+function Room:random_point()
+	local x = math.random(self.x, self.x + self.w - 1)
+	local y = math.random(self.y, self.y + self.h - 1)
+	return Point(x, y)
 end
 
 function Room:__tostring()

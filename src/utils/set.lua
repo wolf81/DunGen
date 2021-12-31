@@ -15,6 +15,18 @@ function Set:contains(value)
 	return false
 end
 
+function Set:size()
+	return #self._values
+end
+
+function Set:get(index)
+	if #self._values == 0 or index < 1 or index > #self._values then
+		error('index out of bounds: ', index)
+	end
+
+	return self._values[index]
+end
+
 function Set:add(value)
 	if self:contains(value) then return end
 

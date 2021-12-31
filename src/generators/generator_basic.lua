@@ -3,6 +3,8 @@ local Room = require 'src/features/room'
 local Corridor = require 'src/features/corridor'
 local Config = require 'src/config'
 local Rect = require 'src/utils/rect'
+local Point = require 'src/utils/point'
+local Set = require 'src/utils/set'
 
 --[[
 	{ 1, 2, 3 },
@@ -21,19 +23,55 @@ local adjacency_list = {
 	[9] = { 6, 8 },
 }
 
-local function connect_features(feat1, feat2)
-	
+local function connect_features(dungeon, feat1, feat2)
+	local p1 = feat1:random_point()
+	local p2 = feat2:random_point()
+
+	local mid_x = math.floor((p1.x + p2.x) / 2)
+	local mid_y = math.floor((p1.y + p2.y) / 2)
+
+	local points = Set()
+
+	local step_y = p2.y >= p1.y and 1 or -1
+	local step_x = p2.x >= p1.x and 1 or -1
+
+	for y = p1.y, mid_y, step_y do
+		points:add(Point(p1.x, y))
+	end
+
+	for x = p1.x, p2.x, step_x do
+		points:add(Point(x, mid_y))
+	end
+
+	for y = mid_y, p2.y, step_y do
+		points:add(Point(p2.x, y))		
+	end
+
+	for i = 1, points:size() - 1 do
+		local p1 = points:get(i)
+		local p2 = points:get(i + 1)
+
+		step_x = p2.x > p1.x and 1 or -1
+		step_y = p2.y > p1.y and 1 or -1
+
+		for x = p1.x * 2 + 1, p2.x * 2 + 1, step_x do
+			for y = p1.y * 2 + 1, p2.y * 2 + 1, step_y do
+				dungeon:set_cell(x, y, Flags.CORRIDOR)
+			end
+		end
+	end
+
 end
 
 local function dig_corridor(dungeon, corridor)
 	local points = corridor:points()
 
 	for i = 1, #points - 1 do
-		local point1 = points[i]
-		local point2 = points[i + 1]
+		local p1 = points[i]
+		local p2 = points[i + 1]
 
-		for x = point1.x * 2 + 1, point2.x * 2 + 1 do
-			for y = point1.y * 2 + 1, point2.y * 2 + 1 do
+		for x = p1.x * 2 + 1, p2.x * 2 + 1 do
+			for y = p1.y * 2 + 1, p2.y * 2 + 1 do
 				dungeon:set_cell(x, y, Flags.CORRIDOR)
 			end
 		end
@@ -80,6 +118,8 @@ local function generate_feature(dungeon, containers, feat_idx, connections)
 		containers[feat_idx].is_generated = true
 	end
 
+	if feature == nil then return end
+
 	local adj_feats = adjacency_list[feat_idx]
 	local n_conns = math.random(1, #adj_feats)
 
@@ -92,12 +132,14 @@ local function generate_feature(dungeon, containers, feat_idx, connections)
 
 		table.insert(connections[feat_idx], adj_feat_idx)
 		table.insert(connections[adj_feat_idx], feat_idx)
-		generate_feature(dungeon, containers, adj_feat_idx, connections)
+		local next_feature = generate_feature(dungeon, containers, adj_feat_idx, connections)
+
+		if next_feature ~= nil then
+			connect_features(dungeon, feature, next_feature)
+		end
 
 		::continue::
 	end
-
-	print(feature)
 
 	return feature
 end
