@@ -43,6 +43,16 @@ function Corridor:points()
 	return self._points
 end
 
+function Corridor:__tostring()
+	local s = "Corridor { "
+	for k, v in pairs(self) do
+		s = s .. "" .. k .. ": " .. tostring(v) .. ", "
+	end
+	s = s .. "}"
+
+	return s
+end
+
 return setmetatable(Corridor, {
 	__call = Corridor.new
 })

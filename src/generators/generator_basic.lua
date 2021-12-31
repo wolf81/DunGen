@@ -21,6 +21,10 @@ local adjacency_list = {
 	[9] = { 6, 8 },
 }
 
+local function connect_features(feat1, feat2)
+	
+end
+
 local function dig_corridor(dungeon, corridor)
 	local points = corridor:points()
 
@@ -51,9 +55,9 @@ end
 
 local function generate_feature(dungeon, containers, feat_idx, connections)
 	local is_root = connections == nil
+	local feature = nil
 
 	if containers[feat_idx].is_generated == nil then
-		local feature = nil
 		if is_root then 
 			connections = {
 				[1] = {}, [2] = {}, [3] = {},
@@ -92,6 +96,10 @@ local function generate_feature(dungeon, containers, feat_idx, connections)
 
 		::continue::
 	end
+
+	print(feature)
+
+	return feature
 end
 
 local function generate_features(dungeon, containers)
