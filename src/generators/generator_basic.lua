@@ -56,7 +56,9 @@ local function connect_features(dungeon, feat1, feat2)
 
 		for x = p1.x * 2 + 1, p2.x * 2 + 1, step_x do
 			for y = p1.y * 2 + 1, p2.y * 2 + 1, step_y do
+				if dungeon:cell(x, y) ~= Flags.ROOM then
 				dungeon:set_cell(x, y, Flags.CORRIDOR)
+				end
 			end
 		end
 	end
