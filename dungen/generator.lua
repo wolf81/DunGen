@@ -1,6 +1,6 @@
 local _PATH = (...):match("(.-)[^%.]+$") 
 
-require(_PATH .. ".table")
+local tablex = require(_PATH .. ".tablex")
 
 --local Generator = require 'src/generator'
 local Generator = require(_PATH .. ".generator_basic")
@@ -29,7 +29,7 @@ local function generatorDefaults()
 end
 
 local function generate(options)
-	local options = merge(generatorDefaults(), options or {})
+	local options = tablex.merge(generatorDefaults(), options or {})
 
 	--[[
 	print('\ngenerate:')

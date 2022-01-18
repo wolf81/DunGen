@@ -1,4 +1,4 @@
-require("dungen.table")
+local tablex = require("dungen.tablex")
 
 local Config = require("dungen.config")
 local Generator = require("dungen.generator")
@@ -16,7 +16,7 @@ local renderOptions = {
 }
 
 local function getRandomKey(config_tbl)
-	local keys = get_keys(config_tbl)
+	local keys = tablex.get_keys(config_tbl)
 	return keys[math.random(#keys)]
 end
 

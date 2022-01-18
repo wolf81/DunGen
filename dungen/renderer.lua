@@ -1,3 +1,7 @@
+local _PATH = (...):match("(.-)[^%.]+$") 
+
+local tablex = require(_PATH .. ".tablex")
+
 local mfloor, mmax, mabs = math.floor, math.max, math.abs
 
 local function rendererDefaults()
@@ -136,7 +140,7 @@ local function debugMap(dungeon, config)
 end
 
 local function render(dungeon, options)
-    local options = merge(rendererDefaults(), options or {})
+    local options = tablex.merge(rendererDefaults(), options or {})
 
     local config = scaleDungeon(dungeon, options)
 

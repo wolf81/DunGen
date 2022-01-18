@@ -1,6 +1,6 @@
 local _PATH = (...):match("(.-)[^%.]+$") 
 
-local Point = require(_PATH .. "point")
+local Point = require(_PATH .. ".point")
 
 local Rect = {}
 Rect.__index = Rect

@@ -37,6 +37,20 @@ function Dungeon:cell(x, y)
 	return self._cells[y][x]
 end
 
+function Dungeon:toAscii()
+	local s = ""
+
+	for r = 0, self.rows - 1 do
+		for c = 0, self.cols - 1 do
+			local v = self._cells[r][c]
+			s = s .. v
+		end
+		s = s .. "\n"
+	end
+
+	return s
+end
+
 return setmetatable(Dungeon, {
 	__call = Dungeon.new,
 })

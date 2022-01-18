@@ -1,8 +1,10 @@
+local tablex = {}
+
 --[[
 Merge second table into first table. The second table cannot contain any key 
 that does not exist in first table or merge will fail.
 --]]
-function merge(tbl1, tbl2)
+function tablex.merge(tbl1, tbl2)
 	for k, v in pairs(tbl2) do
 		assert(tbl1[k] ~= nil, "invalid key: " .. k)
 
@@ -15,7 +17,7 @@ end
 --[[
 Add items of second table to first table.
 ]]
-function concat(tbl1, tbl2)
+function tablex.concat(tbl1, tbl2)
 	for _, v in ipairs(tbl2) do
 		table.insert(tbl1, v)
 	end
@@ -26,7 +28,7 @@ end
 --[[
 Returns a list of keys from the given table.
 ]]
-function get_keys(tbl)
+function tablex.get_keys(tbl)
 	local n = 0
 	local keys = {}
 
@@ -41,7 +43,7 @@ end
 --[[
 Shuffle items in a table.
 ]]
-function shuffle(tbl)
+function tablex.shuffle(tbl)
 	for i = #tbl, 2, -1 do
 		local j = math.random(i)
 		tbl[i], tbl[j] = tbl[j], tbl[i]
@@ -52,7 +54,7 @@ end
 --[[
 Traverse a table by alphabetically sorted keys or using custom sort function.
 ]]
-function pairs_by_keys(tbl, f)
+function tablex.pairs_by_keys(tbl, f)
 	local a = {}
 	for n in pairs(tbl) do table.insert(a, n) end
 	table.sort(a, f)
@@ -65,3 +67,5 @@ function pairs_by_keys(tbl, f)
 	end
 	return iter
 end
+
+return tablex
