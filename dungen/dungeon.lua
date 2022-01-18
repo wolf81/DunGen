@@ -13,9 +13,9 @@ function Dungeon:new(options)
 	local cols = j * 2 + 1
 
 	local cells = {}
-	for r = 0, rows do
+	for r = 0, rows + 1 do
 		cells[r] = {}
-		for c = 0, cols do
+		for c = 0, cols + 1 do
 			cells[r][c] = " "
 		end
 	end
@@ -40,8 +40,8 @@ end
 function Dungeon:toAscii()
 	local s = ""
 
-	for r = 0, self.rows - 1 do
-		for c = 0, self.cols - 1 do
+	for r = 0, self.rows + 1 do
+		for c = 0, self.cols + 1 do
 			local v = self._cells[r][c]
 			s = s .. v
 		end

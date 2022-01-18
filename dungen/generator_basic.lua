@@ -91,6 +91,16 @@ local function dig_room(dungeon, room)
 	local y1 = room.y * 2 + 1
 	local y2 = (room.y + room.h - 1) * 2 + 1
 
+	for x = x1 - 1, x2 + 1 do
+		dungeon:set_cell(x, y1 - 1, "#")	
+		dungeon:set_cell(x, y2 + 1, "#")	
+	end
+
+	for y = y1 - 1, y2 + 1 do
+		dungeon:set_cell(x1 - 1, y, "#")	
+		dungeon:set_cell(x2 + 1, y, "#")	
+	end
+
 	for x = x1, x2 do
 		for y = y1, y2 do
 			dungeon:set_cell(x, y, ".")
@@ -175,13 +185,14 @@ local function generate(options)
 
 	local step_i = math.ceil(dungeon.n_i / 3)
 	local step_j = math.ceil(dungeon.n_j / 3)
+	print(step_i, step_j)
 
 	for i = 0, dungeon.n_i, step_i do
 		local w = step_i
 		
 		-- if the remainder is not equal to a third, then use the remainder
 		if i + step_i > dungeon.n_i then
-			w = dungeon.n_i % step_i
+			w = dungeon.n_i - step_i * 2 - 1
 		end
 
 		for j = 0, dungeon.n_j, step_j do
@@ -189,8 +200,10 @@ local function generate(options)
 			
 			-- if the remainder is not equal to a third, then use the remainder
 			if j + step_j > dungeon.n_j then
-				h = dungeon.n_j % step_j
+				h = dungeon.n_j - step_j * 2 - 1
 			end
+
+			print(j, i, w, h)
 
 			-- create a rectangular area container
 			containers[#containers + 1] = Rect(j, i, w, h)
@@ -219,7 +232,7 @@ local function generate(options)
 	end
 
 	local initial_room = containers[root_idx].feature
-	add_stairs(dungeon, initial_room)
+	add_stairs(dungeon, initial_room)	
 
 	return dungeon
 end
