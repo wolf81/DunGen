@@ -15,13 +15,13 @@ end
 
 local function fillRect(x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
-    love.graphics.rectangle('fill', x1 + 0.5, y1 + 0.5, x2 - x1, y2 - y1)
+    love.graphics.rectangle('fill', x1, y1, x2 - x1, y2 - y1)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
 local function drawLine(x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
-    love.graphics.line(x1 + 0.5, y1 + 0.5, x2 + 0.5, y2 + 0.5)
+    love.graphics.line(x1, y1, x2, y2)
     love.graphics.setColor(1.0, 1.0, 1.0)
 end
 
@@ -36,7 +36,7 @@ end
 
 local function drawImage(image, sx, sy, swidth, sheight, x, y)
     local quad = love.graphics.newQuad(sx, sy, swidth, sheight, image)
-    love.graphics.draw(image, quad, x - 0.5, y - 0.5)
+    love.graphics.draw(image, quad, x, y)
 end
 
 local function squareGrid(config, color)

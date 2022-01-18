@@ -25,6 +25,11 @@ local adjacency_list = {
 	[9] = { 6, 8 },
 }
 
+local function add_stairs(dungeon, room)
+	local p = room:random_point()
+	dungeon:set_cell(p.x * 2 + 1, p.y * 2 + 1, "/")
+end
+
 local function connect_features(dungeon, feat1, feat2)
 	local p1 = feat1:random_point()
 	local p2 = feat2:random_point()
@@ -156,7 +161,7 @@ local function generate_features(containers)
 		end
 	end
 
-	return features
+	return features, room_idx
 end
 
 local function generate(options)
@@ -193,7 +198,7 @@ local function generate(options)
 	end
 
 	-- generate a feature in each container
-	local features = generate_features(containers)
+	local features, root_idx = generate_features(containers)
 
 	-- dig features and connect with corridors
 	for _, feature in ipairs(features) do
@@ -212,6 +217,9 @@ local function generate(options)
 
 		::continue::
 	end
+
+	local initial_room = containers[root_idx].feature
+	add_stairs(dungeon, initial_room)
 
 	return dungeon
 end
