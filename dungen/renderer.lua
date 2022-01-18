@@ -1,7 +1,13 @@
-local BitMask = require 'src/utils/bitmask'
-
 local mfloor, mmax, mabs = math.floor, math.max, math.abs
-local bcheck = BitMask.check
+
+local function rendererDefaults()
+    return {
+        ["cell_size"]           = 20,           
+        --^ number (pixels)
+        ["debug"]               = false,
+        --^ true|false
+    }
+end
 
 local function fillRect(x1, y1, x2, y2, color)
     love.graphics.setColor(unpack(color))
@@ -53,7 +59,7 @@ local function openCells(dungeon, config)
         local y = r * dim
 
         for c = 0, dungeon.cols do
-            if bcheck(dungeon:cell(c, r), Flags.OPENSPACE) ~= 0 then
+            if dungeon:cell(c, r) == " " then
                 local x = c * dim
                 drawImage(base_layer, x, y, dim, dim, x, y)
             end
@@ -67,8 +73,8 @@ local function baseLayer(dungeon, config)
 
     local canvas = love.graphics.newCanvas(config["width"], config["height"])
     canvas:renderTo(function()
-        -- set background color if defined or use white background
-        fillRect(0, 0, config["max_x"], config["max_y"], { 1.0, 1.0, 1.0 })
+        -- set background color if defined or use black background
+        fillRect(0, 0, config["max_x"], config["max_y"], { 0.0, 0.0, 0.0 })
 
         -- if grid color is defined, draw grid
         squareGrid(config, { 0.5, 0.5, 0.5 })
@@ -109,20 +115,20 @@ local function debugMap(dungeon, config)
             local y1 = r * dim - 1
             local x2 = x1 + dim - 1
             local y2 = y1 + dim - 1
+
+            if dungeon:cell(c, r) == " " then
+                fillRect(x1, y1, x2, y2, { 0.0, 0.0, 0.0, 0.0 })
+            end
             
-            if bcheck(dungeon:cell(c, r), Flags.CORRIDOR) ~= 0 then
-                fillRect(x1, y1, x2, y2, { 1.0, 0.0, 0.0, 0.2 })
+            if dungeon:cell(c, r) == "." then
+                fillRect(x1, y1, x2, y2, { 0.8, 0.8, 0.8, 1.0 })
             end
 
-            if bcheck(dungeon:cell(c, r), Flags.ROOM) ~= 0 then
-                fillRect(x1, y1, x2, y2, { 0.0, 1.0, 0.0, 0.2 })
-            end
-
-            if bcheck(dungeon:cell(c, r), Flags.DOORSPACE) ~= 0 then
+            if dungeon:cell(c, r) == "+" then
                 fillRect(x1, y1, x2, y2, { 0.0, 1.0, 1.0, 0.5 })
             end
 
-            if bcheck(dungeon:cell(c, r), Flags.STAIRS) ~= 0 then
+            if dungeon:cell(c, r) == "/" or dungeon:cell(c, r) == "\\" then
                 fillRect(x1, y1, x2, y2, { 1.0, 0.0, 1.0, 0.8 })
             end
         end
@@ -130,9 +136,11 @@ local function debugMap(dungeon, config)
 end
 
 local function render(dungeon, options)
+    local options = merge(rendererDefaults(), options or {})
+
     local config = scaleDungeon(dungeon, options)
 
-    return newImage(config["width"], config["height"], function(c)
+    return newImage(config["width"], config["height"], function()
         config["base_layer"] = baseLayer(dungeon, config)
 
         fillImage(dungeon, config)  

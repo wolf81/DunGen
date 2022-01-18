@@ -1,8 +1,9 @@
-require 'src/utils/table'
+local _PATH = (...):match("(.-)[^%.]+$") 
 
-local Renderer = require 'src/renderer'
+require(_PATH .. ".table")
+
 --local Generator = require 'src/generator'
-local Generator = require 'src/generators/generator_basic'
+local Generator = require(_PATH .. ".generator_basic")
 
 local function generatorDefaults()
 	return {
@@ -27,15 +28,6 @@ local function generatorDefaults()
 	}
 end
 
-local function rendererDefaults()
-	return {
-		["cell_size"] 			= 20, 			
-		--^ number (pixels)
-		["debug"] 				= false,
-		--^ true|false
-	}
-end
-
 local function generate(options)
 	local options = merge(generatorDefaults(), options or {})
 
@@ -47,19 +39,6 @@ local function generate(options)
 	--]]
 
 	return Generator.generate(options)
-end
-
-local function render(dungeon, options)
-	local options = merge(rendererDefaults(), options or {})
-
-	--[[
-	print('\nrender:')
-	for k, v in pairs(options) do
-		print(' ' .. k, v)
-	end
-	--]]
-
-	return Renderer.render(dungeon, options)
 end
 
 -- the module

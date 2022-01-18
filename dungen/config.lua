@@ -1,5 +1,3 @@
-require "src/flags"
-
 -- the size of the dungeon in cells
 local dungeon_size = {
 	["fine"] 		= 11,

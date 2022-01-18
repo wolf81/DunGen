@@ -1,4 +1,6 @@
-local Point = require 'src/utils/point'
+local _PATH = (...):match("(.-)[^%.]+$") 
+
+local Point = require(_PATH .. ".point")
 
 local Room = {}
 Room.__index = Room

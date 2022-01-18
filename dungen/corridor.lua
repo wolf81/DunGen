@@ -1,5 +1,7 @@
-local Point = require 'src/utils/point'
-local Set = require 'src/utils/set'
+local _PATH = (...):match("(.-)[^%.]+$") 
+
+local Point = require(_PATH .. ".point")
+local Set = require(_PATH .. "set")
 
 local Corridor = {}
 Corridor.__index = Corridor

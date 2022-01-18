@@ -1,10 +1,10 @@
-require "src/utils/table"
+require("dungen.table")
 
-local Config = require "src/config"
+local Config = require("dungen.config")
+local Generator = require("dungen.generator")
+local Renderer = require("dungen.renderer")
 
 io.stdout:setvbuf('no') -- show debug output live in SublimeText console
-
-local DunGen = require 'src/dungen'
 
 local texture, info_texts, pointer_texts = nil, {}, {}
 local window_w, window_h = 1024, 720
@@ -25,12 +25,12 @@ local function generate()
 		["dungeon_size"] = "tiny", -- getRandomKey(Config.dungeon_size),
 	}
 
-	dungeon = DunGen.generate(dungeonOptions)
+	dungeon = Generator.generate(dungeonOptions)
 
 	local cell_h = math.max(window_h / (dungeon["cols"] + 1), 5)
 	renderOptions["cell_size"] = cell_h
 
-	texture = DunGen.render(dungeon, renderOptions)
+	texture = Renderer.render(dungeon, renderOptions)
 
 	local font = love.graphics.getFont()
 	info_texts = {}

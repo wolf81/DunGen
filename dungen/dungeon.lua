@@ -1,4 +1,6 @@
-local Config = require 'src/config'
+local _PATH = (...):match("(.-)[^%.]+$") 
+
+local Config = require(_PATH .. ".config")
 
 local Dungeon = {}
 Dungeon.__index = Dungeon
@@ -14,7 +16,7 @@ function Dungeon:new(options)
 	for r = 0, rows do
 		cells[r] = {}
 		for c = 0, cols do
-			cells[r][c] = Flags.NOTHING
+			cells[r][c] = " "
 		end
 	end
 

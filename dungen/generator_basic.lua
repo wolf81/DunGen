@@ -1,10 +1,12 @@
-local Dungeon = require 'src/dungeon'
-local Room = require 'src/features/room'
-local Corridor = require 'src/features/corridor'
-local Config = require 'src/config'
-local Rect = require 'src/utils/rect'
-local Point = require 'src/utils/point'
-local Set = require 'src/utils/set'
+local _PATH = (...):match("(.-)[^%.]+$") 
+
+local Dungeon = require(_PATH .. ".dungeon")
+local Room = require(_PATH .. ".room")
+local Corridor = require(_PATH .. ".corridor")
+local Config = require(_PATH .. ".config")
+local Rect = require(_PATH .. ".rect")
+local Point = require(_PATH .. ".point")
+local Set = require(_PATH .. ".set")
 
 --[[
 	{ 1, 2, 3 },
@@ -56,9 +58,7 @@ local function connect_features(dungeon, feat1, feat2)
 
 		for x = p1.x * 2 + 1, p2.x * 2 + 1, step_x do
 			for y = p1.y * 2 + 1, p2.y * 2 + 1, step_y do
-				if dungeon:cell(x, y) ~= Flags.ROOM then
-					dungeon:set_cell(x, y, Flags.CORRIDOR)
-				end
+				dungeon:set_cell(x, y, ".")
 			end
 		end
 	end
@@ -74,9 +74,7 @@ local function dig_corridor(dungeon, corridor)
 
 		for x = p1.x * 2 + 1, p2.x * 2 + 1 do
 			for y = p1.y * 2 + 1, p2.y * 2 + 1 do
-				if dungeon:cell(x, y) ~= Flags.ROOM then
-					dungeon:set_cell(x, y, Flags.CORRIDOR)
-				end
+				dungeon:set_cell(x, y, ".")
 			end
 		end
 	end		
@@ -90,7 +88,7 @@ local function dig_room(dungeon, room)
 
 	for x = x1, x2 do
 		for y = y1, y2 do
-			dungeon:set_cell(x, y, Flags.ROOM)
+			dungeon:set_cell(x, y, ".")
 		end
 	end
 end
