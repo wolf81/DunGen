@@ -123,6 +123,10 @@ local function debugMap(dungeon, config)
             if dungeon:cell(c, r) == " " then
                 fillRect(x1, y1, x2, y2, { 0.0, 0.0, 0.0, 0.0 })
             end
+
+            if dungeon:cell(c, r) == "#" then
+                fillRect(x1, y1, x2, y2, { 0.3, 0.2, 0.5, 1.0 })
+            end
             
             if dungeon:cell(c, r) == "." then
                 fillRect(x1, y1, x2, y2, { 0.8, 0.8, 0.8, 1.0 })

@@ -26,6 +26,10 @@ function Room:random_point()
 	return Point(x, y)
 end
 
+function Room:contains_point(p)
+	return p.x > self.x and p.x < self.x + self.w and p.y > self.y and p.y < self.y + self.h
+end
+
 function Room:__tostring()
 	local s = "Room {\n"
 	for k, v in pairs(self) do

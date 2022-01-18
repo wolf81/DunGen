@@ -30,6 +30,43 @@ local function add_stairs(dungeon, room)
 	dungeon:set_cell(p.x * 2 + 1, p.y * 2 + 1, "/")
 end
 
+local function add_doors(dungeon, feats)
+	for i, feat in ipairs(feats) do
+		if getmetatable(feat) == Room then
+			local x1, x2 = feat.x * 2, (feat.x + feat.w) * 2
+			local y1, y2 = feat.y * 2, (feat.y + feat.h) * 2
+
+			for y = y1, y2 do
+				if dungeon:cell(x1, y) == "." then
+					dungeon:set_cell(x1, y, "+")
+				elseif dungeon:cell(x1, y) == "#" then
+					if dungeon:cell(x1 - 1, y) == "." and dungeon:cell(x1 + 1, y) == "." then
+						dungeon:set_cell(x1, y, "+")
+					end
+				end
+
+				if dungeon:cell(x2, y) == "." then
+					dungeon:set_cell(x2, y, "+")
+				elseif dungeon:cell(x2, y) == "#" then
+					if dungeon:cell(x2 - 1, y) == "." and dungeon:cell(x2 + 1, y) == "." then
+						dungeon:set_cell(x2, y, "+")
+					end					
+				end
+			end
+
+			for x = x1, x2 do
+				if dungeon:cell(x, y1) == "." then
+					dungeon:set_cell(x, y1, "+")
+				end
+
+				if dungeon:cell(x, y2) == "." then
+					dungeon:set_cell(x, y2, "+")
+				end
+			end
+		end
+	end
+end
+
 local function connect_features(dungeon, feat1, feat2)
 	local p1 = feat1:random_point()
 	local p2 = feat2:random_point()
@@ -41,6 +78,9 @@ local function connect_features(dungeon, feat1, feat2)
 
 	local step_y = p2.y >= p1.y and 1 or -1
 	local step_x = p2.x >= p1.x and 1 or -1
+
+	local doors = {}
+	local add_door1 = getmetatable(feat1) == Room
 
 	for y = p1.y, mid_y, step_y do
 		points:add(Point(p1.x, y))
@@ -58,8 +98,8 @@ local function connect_features(dungeon, feat1, feat2)
 		local p1 = points:get(i)
 		local p2 = points:get(i + 1)
 
-		step_x = p2.x > p1.x and 1 or -1
-		step_y = p2.y > p1.y and 1 or -1
+		local step_x = p2.x > p1.x and 1 or -1
+		local step_y = p2.y > p1.y and 1 or -1
 
 		for x = p1.x * 2 + 1, p2.x * 2 + 1, step_x do
 			for y = p1.y * 2 + 1, p2.y * 2 + 1, step_y do
@@ -67,7 +107,6 @@ local function connect_features(dungeon, feat1, feat2)
 			end
 		end
 	end
-
 end
 
 local function dig_corridor(dungeon, corridor)
@@ -92,31 +131,13 @@ local function dig_room(dungeon, room)
 	local y2 = (room.y + room.h - 1) * 2 + 1
 
 	for x = x1 - 1, x2 + 1 do
-		if dungeon:cell(x, y1 - 1) == "." then
-			dungeon:set_cell(x, y1 - 1, "+")	
-		else
-			dungeon:set_cell(x, y1 - 1, "#")	
-		end
-
-		if dungeon:cell(x, y2 + 1) == "." then
-			dungeon:set_cell(x, y2 + 1, "+")	
-		else
-			dungeon:set_cell(x, y2 + 1, "#")	
-		end
+		dungeon:set_cell(x, y1 - 1, "#")
+		dungeon:set_cell(x, y2 + 1, "#")
 	end
 
 	for y = y1 - 1, y2 + 1 do
-		if dungeon:cell(x1 - 1, y) == "." then
-			dungeon:set_cell(x1 - 1, y, "+")	
-		else
-			dungeon:set_cell(x1 - 1, y, "#")	
-		end
-
-		if dungeon:cell(x2 + 1, y) == "." then
-			dungeon:set_cell(x2 + 1, y, "+")	
-		else
-			dungeon:set_cell(x2 + 1, y, "#")	
-		end
+		dungeon:set_cell(x1 - 1, y, "#")	
+		dungeon:set_cell(x2 + 1, y, "#")	
 	end
 
 	for x = x1, x2 do
@@ -203,7 +224,6 @@ local function generate(options)
 
 	local step_i = math.ceil(dungeon.n_i / 3)
 	local step_j = math.ceil(dungeon.n_j / 3)
-	print(step_i, step_j)
 
 	for i = 0, dungeon.n_i, step_i do
 		local w = step_i
@@ -220,8 +240,6 @@ local function generate(options)
 			if j + step_j > dungeon.n_j then
 				h = dungeon.n_j - step_j * 2 - 1
 			end
-
-			print(j, i, w, h)
 
 			-- create a rectangular area container
 			containers[#containers + 1] = Rect(j, i, w, h)
@@ -251,6 +269,8 @@ local function generate(options)
 
 	local initial_room = containers[root_idx].feature
 	add_stairs(dungeon, initial_room)	
+
+	add_doors(dungeon, features)
 
 	return dungeon
 end
