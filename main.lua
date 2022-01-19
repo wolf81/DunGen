@@ -22,7 +22,7 @@ end
 
 local function generate()
 	local dungeonOptions = {
-		["dungeon_size"] = "medium", -- getRandomKey(Config.dungeon_size),
+		["dungeon_size"] = getRandomKey(Config.dungeon_size),
 	}
 
 	dungeon = Generator.generate(dungeonOptions)

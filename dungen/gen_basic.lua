@@ -299,14 +299,14 @@ local function generate(options)
 	local step_j = math.ceil(dungeon.n_j / 3)
 
 	for i = 0, 2 do
-		local w = step_i
-		local x = i * w
+		local w = step_i - 1
+		local x = i * w + 1
 
 		if i == 2 then w = dungeon.n_i - x end 
 
 		for j = 0, 2 do
-			local h = step_j
-			local y = j * h
+			local h = step_j - 1
+			local y = j * h + 1
 
 			if h == 2 then h = dungeon.n_j - y end
 			
