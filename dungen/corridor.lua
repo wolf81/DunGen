@@ -6,37 +6,15 @@ local Set = require(_PATH .. "set")
 local Corridor = {}
 Corridor.__index = Corridor
 
-function Corridor:new(rect)
-	local points = Set()
+function Corridor:new(points)
+	local points_set = Set()
 
-	if rect ~= nil then
-		local x1 = rect.x + math.random(0, math.floor(rect.w / 3))
-		local y1 = rect.y + math.random(0, math.floor(rect.h / 3))
-		local w = rect.w - (x1 - rect.x) - 1
-		local h = rect.h - (y1 - rect.y) - 1
-		local x2 = x1 + w - math.floor(math.random(0, w / 3))
-		local y2 = y1 + h - math.floor(math.random(0, h / 3))
-
-		local dir = math.random(0, 1)
-		if dir == 0 then
-			for y = y1, y2 do
-				points:add(Point(x1, y))
-			end
-			for x = x1, x2 do
-				points:add(Point(x, y2))
-			end
-		else
-			for x = x1, x2 do
-				points:add(Point(x, y1))
-			end
-			for y = y1, y2 do
-				points:add(Point(x2, y))
-			end
-		end
+	for _, p in ipairs(points) do
+		points_set:add(p)
 	end
 
 	return setmetatable({
-		_points = points,
+		_points = points_set,
 	}, Corridor)
 end
 
@@ -52,10 +30,6 @@ function Corridor:random_point()
 	local p_size = self._points:size()
 	local p_idx = math.random(1, p_size)
 	return self._points:get(p_idx)
-end
-
-function Corridor:is_a(class)
-	return getmetatable(self) == class
 end
 
 function Corridor:__tostring()

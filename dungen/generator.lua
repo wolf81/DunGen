@@ -3,7 +3,7 @@ local _PATH = (...):match("(.-)[^%.]+$")
 local tablex = require(_PATH .. ".tablex")
 
 --local Generator = require 'src/generator'
-local Generator = require(_PATH .. ".generator_basic")
+local Generator = require(_PATH .. ".gen_basic")
 
 local function generatorDefaults()
 	return {

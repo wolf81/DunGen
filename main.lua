@@ -22,11 +22,11 @@ end
 
 local function generate()
 	local dungeonOptions = {
-		["dungeon_size"] = "tiny", -- getRandomKey(Config.dungeon_size),
+		["dungeon_size"] = "medium", -- getRandomKey(Config.dungeon_size),
 	}
 
 	dungeon = Generator.generate(dungeonOptions)
-	print(dungeon:toAscii())
+	--print(dungeon:toAscii())
 
 	local cell_h = math.max(window_h / (dungeon["cols"] + 1), 5)
 	renderOptions["cell_size"] = cell_h

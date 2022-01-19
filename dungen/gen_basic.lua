@@ -176,6 +176,47 @@ local function dig_room(dungeon, room)
 	end
 end
 
+local function corridor_points(rect)
+	local points = {}
+
+	local x1 = rect.x + math.random(0, math.floor(rect.w / 3))
+	local y1 = rect.y + math.random(0, math.floor(rect.h / 3))
+	local w = rect.w - (x1 - rect.x) - 1
+	local h = rect.h - (y1 - rect.y) - 1
+	local x2 = x1 + w - math.floor(math.random(0, w / 3))
+	local y2 = y1 + h - math.floor(math.random(0, h / 3))
+
+	local dir = math.random(0, 1)
+	if dir == 0 then
+		for y = y1, y2 do
+			points[#points + 1] = Point(x1, y)
+		end
+		for x = x1, x2 do
+			points[#points + 1] = Point(x, y2)
+		end
+	else
+		for x = x1, x2 do
+			points[#points + 1] = Point(x, y1)
+		end
+		for y = y1, y2 do
+			points[#points + 1] = Point(x2, y)
+		end
+	end
+
+	return points
+end
+
+local function room_rect(rect)
+	local x = rect.x + math.random(0, math.floor(rect.w / 3))
+	local y = rect.y + math.random(0, math.floor(rect.h / 3))
+	local w = rect.w - (x - rect.x)
+	local h = rect.h - (y - rect.y)
+	w = w - math.floor(math.random(0, w / 3))
+	h = h - math.floor(math.random(0, h / 3))
+
+	return x, y, w, h
+end
+
 local function generate_feature(containers, feat_idx, connections)
 	local is_root = connections == nil
 	local feature = nil
@@ -188,13 +229,16 @@ local function generate_feature(containers, feat_idx, connections)
 				[7] = {}, [8] = {}, [9] = {},
 			}
 
-			feature = Room(containers[feat_idx])
+			local x, y, w, h = room_rect(containers[feat_idx])
+			feature = Room(x, y, w, h)
 		else
 			local feat_type = math.random(3)
 			if feat_type < 3 then
-				feature = Room(containers[feat_idx])
+				local x, y, w, h = room_rect(containers[feat_idx])
+				feature = Room(x, y, w, h)
 			else
-				feature = Corridor(containers[feat_idx])
+				local points = corridor_points(containers[feat_idx])
+				feature = Corridor(points)
 			end
 		end
 		
@@ -254,24 +298,20 @@ local function generate(options)
 	local step_i = math.ceil(dungeon.n_i / 3)
 	local step_j = math.ceil(dungeon.n_j / 3)
 
-	for i = 0, dungeon.n_i, step_i do
+	for i = 0, 2 do
 		local w = step_i
-		
-		-- if the remainder is not equal to a third, then use the remainder
-		if i + step_i > dungeon.n_i then
-			w = dungeon.n_i - step_i * 2 - 1
-		end
+		local x = i * w
 
-		for j = 0, dungeon.n_j, step_j do
+		if i == 2 then w = dungeon.n_i - x end 
+
+		for j = 0, 2 do
 			local h = step_j
-			
-			-- if the remainder is not equal to a third, then use the remainder
-			if j + step_j > dungeon.n_j then
-				h = dungeon.n_j - step_j * 2 - 1
-			end
+			local y = j * h
 
+			if h == 2 then h = dungeon.n_j - y end
+			
 			-- create a rectangular area container
-			containers[#containers + 1] = Rect(j, i, w, h)
+			containers[#containers + 1] = Rect(x, y, w, h)
 		end
 	end
 

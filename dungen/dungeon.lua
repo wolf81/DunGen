@@ -42,9 +42,9 @@ end
 function Dungeon:toAscii()
 	local s = ""
 
-	for r = 0, self.rows do
-		for c = 0, self.cols do
-			local v = self._cells[r][c]
+	for y = 0, self.rows do
+		for x = 0, self.cols do
+			local v = self._cells[y][x]
 			s = s .. v
 		end
 		s = s .. "\n"
