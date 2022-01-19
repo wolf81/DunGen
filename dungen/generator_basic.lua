@@ -25,9 +25,32 @@ local adjacency_list = {
 	[9] = { 6, 8 },
 }
 
+local borders = {
+	{  1,  1 },
+	{ -1, -1 },
+	{  1, -1 },
+	{ -1,  1 },
+	{  1,  0 },
+	{  0,  1 },
+	{  0, -1 },
+	{ -1,  0 },
+}
+
 local function add_stairs(dungeon, room)
 	local p = room:random_point()
 	dungeon:set_cell(p.x * 2 + 1, p.y * 2 + 1, "/")
+end
+
+local function add_walls(dungeon, x, y)
+	for _, b in ipairs(borders) do
+		local bx, by = x + b[1], y + b[2]
+
+		if dungeon:cell(bx, by) == " " then
+			dungeon:set_cell(bx, by, "#")
+		end
+
+		::next::
+	end	
 end
 
 local function add_doors(dungeon, feats)
@@ -95,6 +118,8 @@ local function connect_features(dungeon, feat1, feat2)
 
 		for x = p1.x * 2 + 1, p2.x * 2 + 1, step_x do
 			for y = p1.y * 2 + 1, p2.y * 2 + 1, step_y do
+				add_walls(dungeon, x, y)
+
 				dungeon:set_cell(x, y, ".")
 			end
 		end
@@ -110,6 +135,8 @@ local function dig_corridor(dungeon, corridor)
 
 		for x = p1.x * 2 + 1, p2.x * 2 + 1 do
 			for y = p1.y * 2 + 1, p2.y * 2 + 1 do
+				add_walls(dungeon, x, y)
+
 				dungeon:set_cell(x, y, ".")
 			end
 		end
