@@ -9,13 +9,15 @@ function Dungeon:new(options)
 	local dungeon_size = Config.dungeon_size[options["dungeon_size"]]
 	local i, j = dungeon_size, dungeon_size
 
-	local rows = i * 2 + 1
-	local cols = j * 2 + 1
+	-- the additional 2 is a bit weird here, but crashes otherwise 
+	-- I guess used for the border?
+	local rows = i * 2 + 2
+	local cols = j * 2 + 2
 
 	local cells = {}
-	for r = 0, rows + 1 do
+	for r = 0, rows do
 		cells[r] = {}
-		for c = 0, cols + 1 do
+		for c = 0, cols do
 			cells[r][c] = " "
 		end
 	end
@@ -40,8 +42,8 @@ end
 function Dungeon:toAscii()
 	local s = ""
 
-	for r = 0, self.rows + 1 do
-		for c = 0, self.cols + 1 do
+	for r = 0, self.rows do
+		for c = 0, self.cols do
 			local v = self._cells[r][c]
 			s = s .. v
 		end

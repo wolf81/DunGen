@@ -39,18 +39,10 @@ local function add_doors(dungeon, feats)
 			for y = y1, y2 do
 				if dungeon:cell(x1, y) == "." then
 					dungeon:set_cell(x1, y, "+")
-				elseif dungeon:cell(x1, y) == "#" then
-					if dungeon:cell(x1 - 1, y) == "." and dungeon:cell(x1 + 1, y) == "." then
-						dungeon:set_cell(x1, y, "+")
-					end
 				end
 
 				if dungeon:cell(x2, y) == "." then
 					dungeon:set_cell(x2, y, "+")
-				elseif dungeon:cell(x2, y) == "#" then
-					if dungeon:cell(x2 - 1, y) == "." and dungeon:cell(x2 + 1, y) == "." then
-						dungeon:set_cell(x2, y, "+")
-					end					
 				end
 			end
 
@@ -131,13 +123,23 @@ local function dig_room(dungeon, room)
 	local y2 = (room.y + room.h - 1) * 2 + 1
 
 	for x = x1 - 1, x2 + 1 do
-		dungeon:set_cell(x, y1 - 1, "#")
-		dungeon:set_cell(x, y2 + 1, "#")
+		if dungeon:cell(x, y1 - 1) ~= "." then
+			dungeon:set_cell(x, y1 - 1, "#")
+		end
+
+		if dungeon:cell(x, y2 + 1) ~= "." then
+			dungeon:set_cell(x, y2 + 1, "#")
+		end
 	end
 
 	for y = y1 - 1, y2 + 1 do
-		dungeon:set_cell(x1 - 1, y, "#")	
-		dungeon:set_cell(x2 + 1, y, "#")	
+		if dungeon:cell(x1 - 1, y) ~= "." then
+			dungeon:set_cell(x1 - 1, y, "#")	
+		end
+
+		if dungeon:cell(x2 + 1, y) ~= "." then
+			dungeon:set_cell(x2 + 1, y, "#")	
+		end
 	end
 
 	for x = x1, x2 do
