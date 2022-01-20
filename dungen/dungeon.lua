@@ -9,10 +9,8 @@ function Dungeon:new(options)
 	local dungeon_size = Config.dungeon_size[options["dungeon_size"]]
 	local i, j = dungeon_size, dungeon_size
 
-	-- the additional 2 is a bit weird here, but crashes otherwise 
-	-- I guess used for the border?
-	local rows = i * 2 + 2
-	local cols = j * 2 + 2
+	local rows = i * 2 + 1
+	local cols = j * 2 + 1
 
 	local cells = {}
 	for r = 0, rows do

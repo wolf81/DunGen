@@ -52,9 +52,11 @@ local cell_sides = {
 	{ -1,  0 },
 }
 
-local function add_stairs(dungeon, room)
-	local p = room:random_point()
-	dungeon:set_cell(p.x * 2 + 1, p.y * 2 + 1, "/")
+local function add_stairs(dungeon, feat)
+	if getmetatable(feat) == Room then
+		local p = feat:random_point()
+		dungeon:set_cell(p.x * 2 + 1, p.y * 2 + 1, "\\")
+	end
 end
 
 local function add_walls(dungeon, x, y)
@@ -322,13 +324,13 @@ local function generate(options)
 
 	for i = 0, 2 do
 		local w = step_i - 1
-		local x = i * w + 1
+		local x = i * w
 
 		if i == 2 then w = dungeon.n_i - x end 
 
 		for j = 0, 2 do
 			local h = step_j - 1
-			local y = j * h + 1
+			local y = j * h
 
 			if h == 2 then h = dungeon.n_j - y end
 			
@@ -356,9 +358,7 @@ local function generate(options)
 		end
 	end
 
-	local initial_room = containers[root_idx].feature
-	add_stairs(dungeon, initial_room)	
-
+	add_stairs(dungeon, containers[root_idx].feature)
 	add_doors(dungeon, features)
 
 	return dungeon
