@@ -26,7 +26,7 @@ local function generate()
 	}
 
 	dungeon = Generator.generate(dungeonOptions)
-	--print(dungeon:toAscii())
+	--print(dungeon:to_ascii())
 
 	local cell_h = math.max(window_h / (dungeon["cols"] + 1), 5)
 	renderOptions["cell_size"] = cell_h

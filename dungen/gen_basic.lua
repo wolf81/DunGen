@@ -1,3 +1,17 @@
+--[[
+	This is a basic dungeon generation algorithm inspired by Rogue
+
+	The algorithm divides an area into 9 cells of about equal size and then 
+	randomly adds features to a cell. A feature can be a room or corridor, but
+	the first feature is always a room.
+
+	After adding a feature, a random adjacent cell is chosen to add a new 
+	feature and afterwards the features are connected. This process is repeated
+	several times.
+
+	The generator also adds doors and walls to each room.
+--]]
+
 local _PATH = (...):match("(.-)[^%.]+$") 
 
 local Dungeon = require(_PATH .. ".dungeon")
@@ -7,6 +21,8 @@ local Config = require(_PATH .. ".config")
 local Rect = require(_PATH .. ".rect")
 local Point = require(_PATH .. ".point")
 local Set = require(_PATH .. ".set")
+
+local mfloor, mceil, mrandom = math.floor, math.ceil, math.random
 
 --[[
 	{ 1, 2, 3 },
@@ -25,7 +41,7 @@ local adjacency_list = {
 	[9] = { 6, 8 },
 }
 
-local borders = {
+local cell_sides = {
 	{  1,  1 },
 	{ -1, -1 },
 	{  1, -1 },
@@ -42,52 +58,73 @@ local function add_stairs(dungeon, room)
 end
 
 local function add_walls(dungeon, x, y)
-	for _, b in ipairs(borders) do
-		local bx, by = x + b[1], y + b[2]
+	for _, side in ipairs(cell_sides) do
+		local side_x, side_y = x + side[1], y + side[2]
 
-		if dungeon:cell(bx, by) == " " then
-			dungeon:set_cell(bx, by, "#")
+		if dungeon:cell(side_x, side_y) == " " then
+			dungeon:set_cell(side_x, side_y, "#")
 		end
-
-		::next::
 	end	
 end
 
 local function add_doors(dungeon, feats)
 	for i, feat in ipairs(feats) do
-		if getmetatable(feat) == Room then
-			local x1, x2 = feat.x * 2, (feat.x + feat.w) * 2
-			local y1, y2 = feat.y * 2, (feat.y + feat.h) * 2
+		if getmetatable(feat) ~= Room then goto next end
 
-			for y = y1, y2 do
-				if dungeon:cell(x1, y) == "." then
-					dungeon:set_cell(x1, y, "+")
-				end
+		local x1, x2 = feat.x * 2, (feat.x + feat.w) * 2
+		local y1, y2 = feat.y * 2, (feat.y + feat.h) * 2
 
-				if dungeon:cell(x2, y) == "." then
-					dungeon:set_cell(x2, y, "+")
-				end
+		for y = y1, y2 do
+			if dungeon:cell(x1, y) == "." then
+				dungeon:set_cell(x1, y, "+")
 			end
 
-			for x = x1, x2 do
-				if dungeon:cell(x, y1) == "." then
-					dungeon:set_cell(x, y1, "+")
-				end
-
-				if dungeon:cell(x, y2) == "." then
-					dungeon:set_cell(x, y2, "+")
-				end
+			if dungeon:cell(x2, y) == "." then
+				dungeon:set_cell(x2, y, "+")
 			end
 		end
+
+		for x = x1, x2 do
+			if dungeon:cell(x, y1) == "." then
+				dungeon:set_cell(x, y1, "+")
+			end
+
+			if dungeon:cell(x, y2) == "." then
+				dungeon:set_cell(x, y2, "+")
+			end
+		end
+
+		::next::
 	end
 end
+
+
+local function dig_corridor(dungeon, corridor)
+	local points = corridor:points()
+
+	for i = 1, #points - 1 do
+		local p1 = points[i]
+		local p2 = points[i + 1]
+
+		local step_x = p2.x > p1.x and 1 or -1
+		local step_y = p2.y > p1.y and 1 or -1
+
+		for x = p1.x * 2 + 1, p2.x * 2 + 1, step_x do
+			for y = p1.y * 2 + 1, p2.y * 2 + 1, step_y do
+				add_walls(dungeon, x, y)
+				dungeon:set_cell(x, y, ".")
+			end
+		end
+	end		
+end
+
 
 local function connect_features(dungeon, feat1, feat2)
 	local p1 = feat1:random_point()
 	local p2 = feat2:random_point()
 
-	local mid_x = math.floor((p1.x + p2.x) / 2)
-	local mid_y = math.floor((p1.y + p2.y) / 2)
+	local mid_x = mfloor((p1.x + p2.x) / 2)
+	local mid_y = mfloor((p1.y + p2.y) / 2)
 
 	local points = Set()
 
@@ -109,6 +146,9 @@ local function connect_features(dungeon, feat1, feat2)
 		points:add(Point(p2.x, y))		
 	end
 
+	local corr = Corridor(points)
+	dig_corridor(dungeon, corr)
+
 	for i = 1, points:size() - 1 do
 		local p1 = points:get(i)
 		local p2 = points:get(i + 1)
@@ -119,28 +159,10 @@ local function connect_features(dungeon, feat1, feat2)
 		for x = p1.x * 2 + 1, p2.x * 2 + 1, step_x do
 			for y = p1.y * 2 + 1, p2.y * 2 + 1, step_y do
 				add_walls(dungeon, x, y)
-
 				dungeon:set_cell(x, y, ".")
 			end
 		end
 	end
-end
-
-local function dig_corridor(dungeon, corridor)
-	local points = corridor:points()
-
-	for i = 1, #points - 1 do
-		local p1 = points[i]
-		local p2 = points[i + 1]
-
-		for x = p1.x * 2 + 1, p2.x * 2 + 1 do
-			for y = p1.y * 2 + 1, p2.y * 2 + 1 do
-				add_walls(dungeon, x, y)
-
-				dungeon:set_cell(x, y, ".")
-			end
-		end
-	end		
 end
 
 local function dig_room(dungeon, room)
@@ -179,14 +201,14 @@ end
 local function corridor_points(rect)
 	local points = {}
 
-	local x1 = rect.x + math.random(0, math.floor(rect.w / 3))
-	local y1 = rect.y + math.random(0, math.floor(rect.h / 3))
+	local x1 = rect.x + mrandom(0, mfloor(rect.w / 3))
+	local y1 = rect.y + mrandom(0, mfloor(rect.h / 3))
 	local w = rect.w - (x1 - rect.x) - 1
 	local h = rect.h - (y1 - rect.y) - 1
-	local x2 = x1 + w - math.floor(math.random(0, w / 3))
-	local y2 = y1 + h - math.floor(math.random(0, h / 3))
+	local x2 = x1 + w - mfloor(mrandom(0, w / 3))
+	local y2 = y1 + h - mfloor(mrandom(0, h / 3))
 
-	local dir = math.random(0, 1)
+	local dir = mrandom(0, 1)
 	if dir == 0 then
 		for y = y1, y2 do
 			points[#points + 1] = Point(x1, y)
@@ -207,12 +229,12 @@ local function corridor_points(rect)
 end
 
 local function room_rect(rect)
-	local x = rect.x + math.random(0, math.floor(rect.w / 3))
-	local y = rect.y + math.random(0, math.floor(rect.h / 3))
+	local x = rect.x + mrandom(0, mfloor(rect.w / 3))
+	local y = rect.y + mrandom(0, mfloor(rect.h / 3))
 	local w = rect.w - (x - rect.x)
 	local h = rect.h - (y - rect.y)
-	w = w - math.floor(math.random(0, w / 3))
-	h = h - math.floor(math.random(0, h / 3))
+	w = w - mfloor(mrandom(0, w / 3))
+	h = h - mfloor(mrandom(0, h / 3))
 
 	return x, y, w, h
 end
@@ -232,7 +254,7 @@ local function generate_feature(containers, feat_idx, connections)
 			local x, y, w, h = room_rect(containers[feat_idx])
 			feature = Room(x, y, w, h)
 		else
-			local feat_type = math.random(3)
+			local feat_type = mrandom(3)
 			if feat_type < 3 then
 				local x, y, w, h = room_rect(containers[feat_idx])
 				feature = Room(x, y, w, h)
@@ -250,13 +272,13 @@ local function generate_feature(containers, feat_idx, connections)
 	if feature == nil then return end
 
 	local adj_feats = adjacency_list[feat_idx]
-	local n_conns = math.random(1, #adj_feats)
+	local n_conns = mrandom(1, #adj_feats)
 
 	while #connections[feat_idx] < n_conns do
-		local adj_feat_idx = adj_feats[math.random(#adj_feats)]
+		local adj_feat_idx = adj_feats[mrandom(#adj_feats)]
 
 		for i, v in ipairs(connections[feat_idx]) do
-			if v == adj_feat_idx then goto continue end
+			if v == adj_feat_idx then goto next end
 		end
 
 		table.insert(connections[feat_idx], adj_feat_idx)
@@ -266,14 +288,14 @@ local function generate_feature(containers, feat_idx, connections)
 
 		table.insert(feature.adj_features, adj_feature)
 
-		::continue::
+		::next::
 	end
 
 	return feature
 end
 
 local function generate_features(containers)
-	local room_idx = math.random(1, #containers)
+	local room_idx = mrandom(1, #containers)
 	generate_feature(containers, room_idx)
 
 	local features = {}
@@ -295,8 +317,8 @@ local function generate(options)
 	--	7, 8, 9
 	local containers = {}
 
-	local step_i = math.ceil(dungeon.n_i / 3)
-	local step_j = math.ceil(dungeon.n_j / 3)
+	local step_i = mceil(dungeon.n_i / 3)
+	local step_j = mceil(dungeon.n_j / 3)
 
 	for i = 0, 2 do
 		local w = step_i - 1
@@ -332,8 +354,6 @@ local function generate(options)
 		for _, adj_feature in ipairs(feature.adj_features) do
 			connect_features(dungeon, feature, adj_feature)
 		end
-
-		::continue::
 	end
 
 	local initial_room = containers[root_idx].feature

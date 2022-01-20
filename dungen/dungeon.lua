@@ -39,7 +39,7 @@ function Dungeon:cell(x, y)
 	return self._cells[y][x]
 end
 
-function Dungeon:toAscii()
+function Dungeon:to_ascii()
 	local s = ""
 
 	for y = 0, self.rows do
