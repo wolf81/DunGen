@@ -1,10 +1,10 @@
-require "src/utils"
+local tablex = require("dungen.tablex")
 
-local Config = require "src/config"
+local Config = require("dungen.config")
+local Generator = require("dungen.generator")
+local Renderer = require("dungen.renderer")
 
 io.stdout:setvbuf('no') -- show debug output live in SublimeText console
-
-local DunGen = require 'src/dungen'
 
 local texture, info_texts, pointer_texts = nil, {}, {}
 local window_w, window_h = 1024, 720
@@ -12,33 +12,26 @@ local dungeon = nil
 
 local renderOptions = {
 	["cell_size"] = 12,
-	["grid"] = square,
-	--["debug"] = true,
+	["debug"] = true,
 }
 
 local function getRandomKey(config_tbl)
-	local keys = getKeys(config_tbl)
+	local keys = tablex.get_keys(config_tbl)
 	return keys[math.random(#keys)]
 end
 
 local function generate()
 	local dungeonOptions = {
 		["dungeon_size"] = getRandomKey(Config.dungeon_size),
-		["dungeon_layout"] = getRandomKey(Config.dungeon_layout),
-		["doors"] = getRandomKey(Config.doors),
-		["room_size"] = getRandomKey(Config.room_size),
-		["room_layout"] = getRandomKey(Config.room_layout),
-		["corridor_layout"] = getRandomKey(Config.corridor_layout),
-		["remove_deadends"] = getRandomKey(Config.remove_deadends),
-		["add_stairs"] = getRandomKey(Config.add_stairs),
 	}
 
-	dungeon = DunGen.generate(dungeonOptions)
+	dungeon = Generator.generate(dungeonOptions)
+	--print(dungeon:to_ascii())
 
-	local cell_h = math.max(window_h / (dungeon["n_rows"] + 1), 5)
+	local cell_h = math.max(window_h / (dungeon["cols"] + 1), 5)
 	renderOptions["cell_size"] = cell_h
 
-	texture = DunGen.render(dungeon, renderOptions)
+	texture = Renderer.render(dungeon, renderOptions)
 
 	local font = love.graphics.getFont()
 	info_texts = {}
@@ -80,13 +73,20 @@ function love.keypressed(key, code)
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
-	local r = math.floor(y / renderOptions["cell_size"])
-	local c = math.floor(x / renderOptions["cell_size"])
+	local y = math.floor(y / renderOptions["cell_size"])
+	local x = math.floor(x / renderOptions["cell_size"])
 	local font = love.graphics.getFont()
-	local cell = tonumber(dungeon:getCell(r, c))
+	local cell = tonumber(dungeon:cell(x, y))
 
 	pointer_texts = {}
 
-	pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, string.format("val: 0x%x", cell))
-	pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, "pos: "..r..","..c)
+	if cell ~= nil then
+		pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, string.format("val: 0x%x", cell))
+		pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, "pos: "..x..","..y)
+
+		local roomId = tonumber(bit.rshift(bit.band(cell, Flags.ROOM_ID), 6))
+		if roomId ~= 0 then
+			pointer_texts[#pointer_texts + 1] = love.graphics.newText(font, "room: "..roomId)
+		end
+	end
 end
