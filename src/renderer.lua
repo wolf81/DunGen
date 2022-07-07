@@ -1,7 +1,4 @@
-local BitMask = require 'src/bitmask'
-
 local mfloor, mmax, mabs = math.floor, math.max, math.abs
-local bcheck = BitMask.check
 
 local palette = {
     ["standard"] = {
@@ -212,7 +209,7 @@ local function imageDoors(dungeon, config)
         local col = door["col"]
         local x1 = col * dim - 1
         local attr = getDoorAttributes(door)
-        local rotate = bcheck(dungeon["cell"][row][col - 1], Flags.OPENSPACE) ~= 0
+        local rotate = bit.band(dungeon["cell"][row][col - 1], Flags.OPENSPACE) ~= 0
         local y2 = y1 + dim
         local x2 = x1 + dim
         local dy = mfloor((y1 + y2) / 2)
@@ -303,51 +300,51 @@ local function imageWalls(dungeon, config)
         local y1 = r * dim
         local y2 = y1 + dim
         for c = 0, dungeon["n_cols"] do
-            if bcheck(dungeon["cell"][r][c], Flags.OPENSPACE) ~= 0 then
+            if bit.band(dungeon["cell"][r][c], Flags.OPENSPACE) ~= 0 then
                 local x1 = c * dim
                 local x2 = x1 + dim
                 local bevel_color = palette["bevel_nw"]
                 if bevel_color ~= nil then
-                    if bcheck(dungeon["cell"][r][c - 1], Flags.OPENSPACE) == 0 then
+                    if bit.band(dungeon["cell"][r][c - 1], Flags.OPENSPACE) == 0 then
                         drawLine(x1 - 1, y1, x1 - 1, y2, bevel_color)
                     end
-                    if bcheck(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
+                    if bit.band(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
                         drawLine(x1, y1 - 1, x2, y1 - 1, bevel_color)
                     end
                     if g ~= nil then
-                        if bcheck(dungeon["cell"][r][c + 1], Flags.OPENSPACE) == 0 then
+                        if bit.band(dungeon["cell"][r][c + 1], Flags.OPENSPACE) == 0 then
                             drawLine(x1 - 1, y1, x1 - 1, y2, bevel_color)
                         end
 
-                        if bcheck(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
+                        if bit.band(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
                             drawLine(x1, y1 - 1, x2, y1 - 1, bevel_color)
                         end
                     end
                 else
                     local shade_color = palette["wall_shading"]
                     if shade_color ~= nil then
-                        if bcheck(dungeon["cell"][r - 1][c - 1], Flags.OPENSPACE) == 0 then
+                        if bit.band(dungeon["cell"][r - 1][c - 1], Flags.OPENSPACE) == 0 then
                             wallShading(x1 - e, y1 - e, x1 - 1, y1 - 1, shade_color)
                         end
-                        if bcheck(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
+                        if bit.band(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
                             wallShading(x1, y1 - e, x2, y1 - 1, shade_color)
                         end
-                        if bcheck(dungeon["cell"][r - 1][c + 1], Flags.OPENSPACE) == 0 then
+                        if bit.band(dungeon["cell"][r - 1][c + 1], Flags.OPENSPACE) == 0 then
                             wallShading(x2 + 1, y1 - e, x2 + e, y1 - 1, shade_color)
                         end
-                        if bcheck(dungeon["cell"][r][c - 1], Flags.OPENSPACE) == 0 then
+                        if bit.band(dungeon["cell"][r][c - 1], Flags.OPENSPACE) == 0 then
                             wallShading(x1 - e, y1, x1 - 1, y2, shade_color)
                         end
-                        if bcheck(dungeon["cell"][r][c + 1], Flags.OPENSPACE) == 0 then
+                        if bit.band(dungeon["cell"][r][c + 1], Flags.OPENSPACE) == 0 then
                             wallShading(x2 + 1, y1, x2 + e, y2, shade_color)
                         end
-                        if bcheck(dungeon["cell"][r + 1][c - 1], Flags.OPENSPACE) == 0 then
+                        if bit.band(dungeon["cell"][r + 1][c - 1], Flags.OPENSPACE) == 0 then
                             wallShading(x1 - e, y2 + 1, x1 - 1, y2 + e, shade_color)
                         end
-                        if bcheck(dungeon["cell"][r + 1][c], Flags.OPENSPACE) == 0 then
+                        if bit.band(dungeon["cell"][r + 1][c], Flags.OPENSPACE) == 0 then
                             wallShading(x1, y2 + 1, x2, y2 + e, shade_color)
                         end
-                        if bcheck(dungeon["cell"][r + 1][c - 1], Flags.OPENSPACE) == 0 then
+                        if bit.band(dungeon["cell"][r + 1][c - 1], Flags.OPENSPACE) == 0 then
                             wallShading(x2 + 1, y2 + 1, x2 + e, y2 + e, shade_color)
                         end
                     end
@@ -355,16 +352,16 @@ local function imageWalls(dungeon, config)
 
                 local wall_color = palette["wall"]
                 if wall_color ~= nil then
-                    if bcheck(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
+                    if bit.band(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
                         drawLine(x1, y1, x2, y1, wall_color)
                     end
-                    if bcheck(dungeon["cell"][r][c - 1], Flags.OPENSPACE) == 0 then
+                    if bit.band(dungeon["cell"][r][c - 1], Flags.OPENSPACE) == 0 then
                         drawLine(x1, y1, x1, y2, wall_color)
                     end
-                    if bcheck(dungeon["cell"][r][c + 1], Flags.OPENSPACE) == 0 then
+                    if bit.band(dungeon["cell"][r][c + 1], Flags.OPENSPACE) == 0 then
                         drawLine(x2, y1, x2, y2, wall_color)
                     end
-                    if bcheck(dungeon["cell"][r + 1][c], Flags.OPENSPACE) == 0 then
+                    if bit.band(dungeon["cell"][r + 1][c], Flags.OPENSPACE) == 0 then
                         drawLine(x1, y2, x2, y2, wall_color)
                     end
                 end
@@ -379,8 +376,8 @@ local function openCells(dungeon, config)
     for r = 0, dungeon["n_rows"] do
         local y = r * dim
 
-        for c = 0, dungeon["n_cols"] do
-            if bcheck(dungeon["cell"][r][c], Flags.OPENSPACE) ~= 0 then
+        for c = 0, dungeon["n_cols"] do            
+            if bit.band(dungeon["cell"][r][c], Flags.OPENSPACE) ~= 0 then
                 local x = c * dim
                 drawImage(base_layer, x, y, dim, dim, x, y)
             end
@@ -463,7 +460,7 @@ local function imageLabels(dungeon, config)
     local color = getColor(palette, "label")
     for r = 0, dungeon["n_rows"] do
         for c = 0, dungeon["n_cols"] do
-            if bcheck(dungeon["cell"][r][c], Flags.OPENSPACE) ~= 0 then
+            if bit.band(dungeon["cell"][r][c], Flags.OPENSPACE) ~= 0 then
                 local label = cellLabel(dungeon["cell"][r][c])
 
                 if label ~= nil then

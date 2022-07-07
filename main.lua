@@ -35,6 +35,8 @@ local function generate()
 
 	dungeon = DunGen.generate(dungeonOptions)
 
+	print(dungeon.seed)
+
 	local cell_h = math.max(window_h / (dungeon["n_rows"] + 1), 5)
 	renderOptions["cell_size"] = cell_h
 
