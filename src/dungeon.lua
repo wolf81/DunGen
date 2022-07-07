@@ -14,8 +14,8 @@ function Dungeon:new(options)
     	this[k] = v
     end
 
-	local dungeon_size = Config.dungeon_size[options["dungeon_size"]]
-	local dungeon_layout = Config.dungeon_layout[options["dungeon_layout"]]	
+	local dungeon_size = DungeonSize[options["dungeon_size"]]
+	local dungeon_layout = DungeonLayout[options["dungeon_layout"]]	
 	local aspect = dungeon_layout["aspect"]
     local n_i, n_j = dungeon_size, mfloor(dungeon_size * aspect)
     if n_i % 2 == 0 then n_i = n_i - 1 end

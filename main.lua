@@ -23,14 +23,14 @@ end
 
 local function generate()
 	local dungeonOptions = {
-		["dungeon_size"] = getRandomKey(Config.dungeon_size),
-		["dungeon_layout"] = getRandomKey(Config.dungeon_layout),
+		["dungeon_size"] = getRandomKey(DungeonSize),
+		["dungeon_layout"] = getRandomKey(DungeonLayout),
 		["doors"] = getRandomKey(Config.doors),
-		["room_size"] = getRandomKey(Config.room_size),
-		["room_layout"] = getRandomKey(Config.room_layout),
-		["corridor_layout"] = getRandomKey(Config.corridor_layout),
-		["remove_deadends"] = getRandomKey(Config.remove_deadends),
-		["add_stairs"] = getRandomKey(Config.add_stairs),
+		["room_size"] = getRandomKey(RoomSize),
+		["room_layout"] = getRandomKey(RoomLayout),
+		["corridor_layout"] = getRandomKey(CorridorLayout),
+		["remove_deadends"] = getRandomKey(RemoveDeadends),
+		["add_stairs"] = getRandomKey(AddStairs),
 	}
 
 	dungeon = DunGen.generate(dungeonOptions)

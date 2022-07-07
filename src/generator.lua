@@ -213,8 +213,8 @@ local function applyLayout(dungeon)
 		saltireMask(dungeon)
 	elseif layout == "hexagon" then
 		hexagonMask(dungeon)
-	elseif Config.dungeon_layout[layout] ~= nil then
-		local mask = Config.dungeon_layout[layout]["mask"]
+	elseif DungeonLayout[layout] ~= nil then
+		local mask = DungeonLayout[layout].mask
 		maskCells(dungeon, mask or {{ 1 }})
 	end
 end
@@ -242,7 +242,7 @@ end
 
 local function setRoom(a, b)
 	b["size"] = b["size"] or a["room_size"]
-	local c = Config.room_size[b["size"]]
+	local c = RoomSize[b["size"]]
 	local d = c["size"] or 2
 	local c = c["radix"] or 5
 	if b["height"] == nil then
@@ -369,7 +369,7 @@ local function allocRooms(a, b)
 	local a = a
 	local c = b or a["room_size"]
 	local b = a["n_cols"] * a["n_rows"]
-	local d = Config.room_size[c]
+	local d = RoomSize[c]
 	local c = d["size"] or 2
 	local d = d["radix"] or 5
 	local c = c + d + 1
@@ -429,8 +429,8 @@ local function scatterRooms(dungeon)
 end
 
 local function emplaceRooms(dungeon)
-	local is_huge = Config.room_size[dungeon["room_size"]]["huge"]
-	local is_complex = Config.room_layout[dungeon["room_layout"]]["complex"]
+	local is_huge = RoomSize[dungeon["room_size"]]["huge"]
+	local is_complex = RoomLayout[dungeon["room_layout"]]["complex"]
 
 	dungeon["huge_rooms"] = is_huge
 	dungeon["complex_rooms"] = is_complex
@@ -766,7 +766,7 @@ local function closeArcs(dungeon)
 end
 
 local function cleanDungeon(dungeon)	
-	local percentage = Config["remove_deadends"][dungeon["remove_deadends"]]
+	local percentage = RemoveDeadends[dungeon["remove_deadends"]]
 
 	if percentage > 0 then
 		removeDeadends(dungeon, percentage)
@@ -920,7 +920,7 @@ end
 local function corridors(dungeon)
 	local cell = dungeon["cell"]
 
-	dungeon["straight_pct"] = Config.corridor_layout[dungeon["corridor_layout"]]
+	dungeon["straight_pct"] = CorridorLayout[dungeon["corridor_layout"]]
 
 	for i = 1, dungeon["n_i"] - 1 do
 		local r = i * 2 + 1
@@ -968,7 +968,7 @@ local function stairEnds(dungeon)
 end
 
 local function emplaceStairs(dungeon)
-	local n = Config.add_stairs[dungeon["add_stairs"]]
+	local n = AddStairs[dungeon["add_stairs"]]
 
 	if n == 0 then return end
 
