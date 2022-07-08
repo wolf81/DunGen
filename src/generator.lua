@@ -1,21 +1,11 @@
 require 'src/flags'
+require 'src/direction'
 
 local Config = require 'src/config'
 local Dungeon = require 'src/dungeon'
 
 local mfloor, mrandom, msqrt, mpow = math.floor, math.random, math.sqrt, math.pow
 local mmax, mmin, mabs, mhuge = math.max, math.min, math.abs, math.huge
-
--- directions
-local di = { ["north"] = -1, ["south"] = 1, ["west"] =  0, ["east"] = 0 }
-local dj = { ["north"] =  0, ["south"] = 0, ["west"] = -1, ["east"] = 1 }
-
-local opposite = {
-	["north"] 	= "south",
-	["south"] 	= "north",
-	["east"] 	= "west",
-	["west"] 	= "east",
-}
 
 local stair_end = {
     ["north"] = {
@@ -454,13 +444,14 @@ local function allocOpens(dungeon, room)
 end
 
 local function checkSill(cell, room, sill_r, sill_c, dir)
-	local door_r = sill_r + di[dir]
-	local door_c = sill_c + dj[dir]
+    local di, dj = unpack(Direction.cardinal[dir])
+	local door_r = sill_r + di
+	local door_c = sill_c + dj
 	local door_cell = cell[door_r][door_c]
 	if bit.band(door_cell, Flags.PERIMETER) == 0 then return end
 	if bit.band(door_cell, Flags.BLOCK_DOOR) ~= 0 then return end
-	local out_r = door_r + di[dir]
-	local out_c = door_c + dj[dir]
+	local out_r = door_r + di
+	local out_c = door_c + dj
 	local out_cell = cell[out_r][out_c]
 	if bit.band(out_cell, Flags.BLOCKED) == Flags.BLOCKED then return end
 
@@ -524,10 +515,11 @@ local function openDoor(dungeon, room, sill)
 	local open_dir = sill["dir"]
 
 	local out_id = sill["out_id"]
+    local di, dj = unpack(Direction.cardinal[open_dir])
 
-    for x = 0, 2 do
-    	local r = open_r + di[open_dir] * x
-    	local c = open_c + dj[open_dir] * x
+    for x = 0, 2 do        
+    	local r = open_r + di * x
+    	local c = open_c + dj * x
 
     	cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.PERIMETER))
     	cell[r][c] = bit.bor(cell[r][c], Flags.ENTRANCE)
@@ -632,7 +624,7 @@ local function fixDoors(dungeon)
 				else
 					if door["out_id"] ~= nil then
 						local out_id = door["out_id"]
-						out_dir = opposite[dir]
+						out_dir = Direction.opposite[dir]
 
 						if dungeon["room"][out_id] == nil then
 							dungeon["room"][out_id] = {}
@@ -831,7 +823,7 @@ end
 local function tunnelDirs(dungeon, last_dir)
 	-- TODO: what does it matter if we use sorted table dj_dirs while
 	-- afterwards shuffling as in original code?
-	local keys = getKeys(dj)
+	local keys = getKeys(Direction.cardinal)
 	local dirs = shuffle(keys)
 	local p = dungeon["straight_pct"]
 
@@ -888,10 +880,11 @@ local function soundTunnel(dungeon, mid_r, mid_c, next_r, next_c)
 end
 
 local function openTunnel(dungeon, i, j, dir)
+    local di, dj = unpack(Direction.cardinal[dir])
 	local this_r = (i * 2) + 1
 	local this_c = (j * 2) + 1
-	local next_r = ((i + di[dir]) * 2) + 1
-	local next_c = ((j + dj[dir]) * 2) + 1
+	local next_r = (i + di) * 2 + 1
+	local next_c = (j + dj) * 2 + 1
 	local mid_r = (this_r + next_r) / 2
 	local mid_c = (this_c + next_c) / 2
 
@@ -906,9 +899,10 @@ local function tunnel(dungeon, i, j, last_dir)
 	local dirs = tunnelDirs(dungeon, last_dir)
 
 	for _, dir in ipairs(dirs) do
+        local di, dj = unpack(Direction.cardinal[dir])
 		if openTunnel(dungeon, i, j, dir) then
-			local next_i = i + di[dir]
-			local next_j = j + dj[dir]
+			local next_i = i + di
+			local next_j = j + dj
 
 			tunnel(dungeon, next_i, next_j, dir)
 		end
