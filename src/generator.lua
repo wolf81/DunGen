@@ -316,7 +316,7 @@ local function emplaceRoom(a, b)
 		["east"] = g,
 		["height"] = h,
 		["width"] = i,
-		["door"] = {
+		door = {
 			["north"] = {},
 			["south"] = {},
 			["west"] = {},
@@ -564,7 +564,7 @@ local function openDoor(dungeon, room, sill)
 
     if out_id ~= nil then door["out_id"] = out_id end
 
-    table.insert(room["door"][open_dir], door)	
+    table.insert(room.door[open_dir], door)	
 end
 
 local connect = {}
@@ -607,10 +607,10 @@ local function fixDoors(dungeon)
 	local fixed = {}
 
 	for _, room in ipairs(dungeon.room) do
-		for dir, _ in pairsByKeys(room["door"]) do
+		for dir, _ in pairsByKeys(room.door) do
 			local shiny = {}
 
-			for _, door in ipairs(room["door"][dir]) do
+			for _, door in ipairs(room.door[dir]) do
 				local door_r = door["row"]
 				local door_c = door["col"]
 				local door_cell = cell[door_r][door_c]
@@ -628,10 +628,10 @@ local function fixDoors(dungeon)
 
 						if dungeon.room[out_id] == nil then
 							dungeon.room[out_id] = {}
-							dungeon.room[out_id]["door"] = {}
+							dungeon.room[out_id].door = {}
 						end
 
-						dungeon.room[out_id]["door"][out_dir] = door
+						dungeon.room[out_id].door[out_dir] = door
 					end
 					shiny[#shiny + 1] = door
 					fixed[door_id] = true
@@ -641,10 +641,10 @@ local function fixDoors(dungeon)
 			end
 
 			if #shiny > 0 then
-				room["door"][dir] = shiny
-				concat(dungeon["door"], shiny)
+				room.door[dir] = shiny
+				concat(dungeon.door, shiny)
 			else
-				room["door"][dir] = nil
+				room.door[dir] = nil
 			end
 		end
 	end
