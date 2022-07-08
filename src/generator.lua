@@ -11,7 +11,7 @@ local mfloor, mrandom, msqrt, mpow = math.floor, math.random, math.sqrt, math.po
 local mmax, mmin, mabs, mhuge = math.max, math.min, math.abs, math.huge
 
 local function getDoorType(dungeon)
-	local doorTypes = Config.doors[dungeon["doors"]]
+	local doorTypes = Config.doors[dungeon.doors]
 	local max = doorTypes[#doorTypes][1]
 
 	local value = mfloor(mrandom(max))
@@ -88,7 +88,7 @@ local function roundMask(dungeon)
 end
 
 local function applyLayout(dungeon)
-	local layout = dungeon["dungeon_layout"]
+	local layout = dungeon.dungeon_layout
 	if layout == "round" then
 		roundMask(dungeon)
 	elseif layout == "saltire" then
@@ -108,7 +108,7 @@ local function soundRoom(dungeon, r1, c1, r2, c2)
 	for r = r1, r2 do
 		for c = c1, c2 do
 			if bit.band(cell[r][c], Flags.BLOCKED) == Flags.BLOCKED then
-				return { ["blocked"] = true }
+				return { blocked = true }
 			end
 
 			if bit.band(cell[r][c], Flags.ROOM) == Flags.ROOM then
@@ -123,60 +123,60 @@ local function soundRoom(dungeon, r1, c1, r2, c2)
 end
 
 local function setRoom(a, b)
-	b["size"] = b["size"] or a["room_size"]
-	local c = RoomSize[b["size"]]
-	local d = c["size"] or 2
-	local c = c["radix"] or 5
-	if b["height"] == nil then
-		if b["i"] ~= nil then
-			local e = mmax(a.n_i - d - b["i"], 0)
+	b.size = b.size or a.room_size
+	local c = RoomSize[b.size]
+	local d = c.size or 2
+	local c = c.radix or 5
+	if b.height == nil then
+		if b.i ~= nil then
+			local e = mmax(a.n_i - d - b.i, 0)
 			e = mmin(e, c)
-			b["height"] = mrandom(e) + d
+			b.height = mrandom(e) + d
 		else
-			b["height"] = mrandom(c) + d
+			b.height = mrandom(c) + d
 		end
 	end
-	if b["width"] == nil then
-		if b["j"] ~= nil then
-			local e = mmax(a.n_j - d - b["j"], 0)
+	if b.width == nil then
+		if b.j ~= nil then
+			local e = mmax(a.n_j - d - b.j, 0)
 			b['width'] = mrandom(e) + d
 		else
 			b['width'] = mrandom(c) + d
 		end
 	end
-	if b["i"] == nil then
-		b["i"] = mrandom(a.n_i - b["height"])
+	if b.i == nil then
+		b.i = mrandom(a.n_i - b.height)
 	end
-	if b["j"] == nil then
-		b["j"] = mrandom(a.n_j - b["width"])
+	if b.j == nil then
+		b.j = mrandom(a.n_j - b.width)
 	end
 
 	return b
 end
 
 local function emplaceRoom(a, b)
-	if a["n_rooms"] == 999 then return end
+	if a.n_rooms == 999 then return end
 
 	local c = b or {}
 	local c = setRoom(a, c)
-	local b = c["i"] * 2 + 1
-	local d = c["j"] * 2 + 1
-	local e = (c["i"] + c["height"]) * 2 - 1
-	local g = (c["j"] + c["width"]) * 2 - 1
-	if b < 1 or e > a["max_row"] then return end
-	if d < 1 or g > a["max_col"] then return end
+	local b = c.i * 2 + 1
+	local d = c.j * 2 + 1
+	local e = (c.i + c.height) * 2 - 1
+	local g = (c.j + c.width) * 2 - 1
+	if b < 1 or e > a.max_row then return end
+	if d < 1 or g > a.max_col then return end
 	local f = soundRoom(a, b, d, e, g)
-	if f["blocked"] then return end
+	if f.blocked then return end
 
 	local f = getKeys(f)
 	local h = #f
 	if h == 0 then
-		f = a["n_rooms"] + 1
-		a["n_rooms"] = f
+		f = a.n_rooms + 1
+		a.n_rooms = f
 	elseif h == 1 then
-		if a["complex_rooms"] then
+		if a.complex_rooms then
 			f = f[1] -- or 1?
-			if f ~= c["complex_id"] then return end
+			if f ~= c.complex_id then return end
 		else
 			return
 		end
@@ -200,30 +200,30 @@ local function emplaceRoom(a, b)
 	local h = (e - b + 1) * 10
 	local i = (g - d + 1) * 10
 	local c = {
-		["id"] = f,
-		["size"] = c["size"],
-		["row"] = b,
-		["col"] = d,
+		id = f,
+		size = c.size,
+		row = b,
+		col = d,
 		north = b,
-		["south"] = e,
-		["west"] = d,
-		["east"] = g,
-		["height"] = h,
-		["width"] = i,
+		south = e,
+		west = d,
+		east = g,
+		height = h,
+		width = i,
 		door = {
 			north = {},
-			["south"] = {},
-			["west"] = {},
-			["east"] = {},
+			south = {},
+			west = {},
+			east = {},
 		}
 	}
 	local h = a.room[f]
 	if h ~= nil then
-		if h["complex"] ~= nil then 
-			table.insert(h["complex"], c)
+		if h.complex ~= nil then 
+			table.insert(h.complex, c)
 		else
 			complex = {
-				["complex"] = { h, c }
+				complex = { h, c }
 			}
 			a.room[f] = complex
 		end
@@ -251,16 +251,16 @@ end
 
 local function allocRooms(a, b)
 	local a = a
-	local c = b or a["room_size"]
+	local c = b or a.room_size
 	local b = a.n_cols * a.n_rows
 	local d = RoomSize[c]
-	local c = d["size"] or 2
-	local d = d["radix"] or 5
+	local c = d.size or 2
+	local d = d.radix or 5
 	local c = c + d + 1
 	local c = c * c
 	local b = mfloor(b / c) * 2
 	
-	if (a["room_layout"] == "sparse") then b = mfloor(b / 13) end
+	if (a.room_layout == "sparse") then b = mfloor(b / 13) end
 
 	return b
 end
@@ -273,16 +273,16 @@ local function denseRooms(a)
 			if bit.band(a.cell[c][e], Flags.ROOM) == 0 then
 				if not((b == 0 or c == 0) and mrandom(2) > 0) then
 					local g = {
-						["i"] = b,
-						["j"] = d,
+						i = b,
+						j = d,
 					}
 					emplaceRoom(a, g)
-					if (a["huge_rooms"]) then
+					if (a.huge_rooms) then
 						if bit.band(a.cell[c][e], Flags.ROOM) == 0 then
 							g = {
-								["i"] = b,
-								["j"] = d,
-								["size"] = 'medium'
+								i = b,
+								j = d,
+								size = 'medium'
 							}
 							emplaceRoom(a, g)
 						end
@@ -299,12 +299,12 @@ local function scatterRooms(dungeon)
 	for c = 0, b - 1 do
 		emplaceRoom(dungeon)
 
-		if dungeon["huge_rooms"] then
+		if dungeon.huge_rooms then
 			b = allocRooms(dungeon, "medium")
 
 			for c = 0, b - 1 do
 				local d = {
-					["size"] = "medium"
+					size = "medium"
 				}
 				emplaceRoom(dungeon, d)
 			end
@@ -313,15 +313,15 @@ local function scatterRooms(dungeon)
 end
 
 local function emplaceRooms(dungeon)
-	local is_huge = RoomSize[dungeon["room_size"]]["huge"]
-	local is_complex = RoomLayout[dungeon["room_layout"]]["complex"]
+	local is_huge = RoomSize[dungeon.room_size].huge
+	local is_complex = RoomLayout[dungeon.room_layout].complex
 
-	dungeon["huge_rooms"] = is_huge
-	dungeon["complex_rooms"] = is_complex
-	dungeon["n_rooms"] = 0
-	dungeon["rooms"] = {}
+	dungeon.huge_rooms = is_huge
+	dungeon.complex_rooms = is_complex
+	dungeon.n_rooms = 0
+	dungeon.rooms = {}
 
-	if dungeon["room_layout"] == "dense" then
+	if dungeon.room_layout == "dense" then
 		denseRooms(dungeon)
 	else
 		scatterRooms(dungeon)
@@ -329,8 +329,8 @@ local function emplaceRooms(dungeon)
 end
 
 local function allocOpens(dungeon, room)
-	local room_h = (room["south"] - room.north) / 2 + 1
-	local room_w = (room["east"] - room["west"]) / 2 + 1
+	local room_h = (room.south - room.north) / 2 + 1
+	local room_w = (room.east - room.west) / 2 + 1
 	local flumph = mfloor(msqrt(room_w * room_h))
 	local n_opens = flumph + mrandom(flumph)
 
@@ -351,15 +351,15 @@ local function checkSill(cell, room, sill_r, sill_c, dir)
 
 	local out_id = tonumber(bit.rshift(bit.band(out_cell, Flags.ROOM_ID), 6))
 
-	if out_id == room["id"] then return end
+	if out_id == room.id then return end
 
 	return {
-		["sill_r"] = sill_r,
-		["sill_c"] = sill_c,
-		["dir"] = dir,
-		["door_r"] = door_r,
-		["door_c"] = door_c,
-		["out_id"] = out_id,
+		sill_r = sill_r,
+		sill_c = sill_c,
+		dir = dir,
+		door_r = door_r,
+		door_c = door_c,
+		out_id = out_id,
 	}
 end
 
@@ -368,29 +368,29 @@ local function doorSills(dungeon, room)
 	local list = {}
 
 	if room.north >= 3 then
-		for c = room["west"], room["east"], 2 do
+		for c = room.west, room.east, 2 do
 			local sill = checkSill(cell, room, room.north, c, "north")
 			if sill ~= nil then list[#list + 1] = sill end
 		end
 	end
 
-	if room["south"] <= dungeon.n_rows - 3 then
-		for c = room["west"], room["east"], 2 do
-			local sill = checkSill(cell, room, room["south"], c, "south")
+	if room.south <= dungeon.n_rows - 3 then
+		for c = room.west, room.east, 2 do
+			local sill = checkSill(cell, room, room.south, c, "south")
 			if sill ~= nil then list[#list + 1] = sill end
 		end
 	end
 
-	if room["west"] >= 3 then
-		for r = room.north, room["south"], 2 do
-			local sill = checkSill(cell, room, r, room["west"], "west")
+	if room.west >= 3 then
+		for r = room.north, room.south, 2 do
+			local sill = checkSill(cell, room, r, room.west, "west")
 			if sill ~= nil then list[#list + 1] = sill end
 		end
 	end
 
-	if room["east"] <= dungeon.n_cols - 3 then
-		for r = room.north, room["south"], 2 do
-			local sill = checkSill(cell, room, r, room["east"], "east")			
+	if room.east <= dungeon.n_cols - 3 then
+		for r = room.north, room.south, 2 do
+			local sill = checkSill(cell, room, r, room.east, "east")			
 			if sill ~= nil then list[#list + 1] = sill end
 		end
 	end
@@ -401,14 +401,14 @@ end
 local function openDoor(dungeon, room, sill)
 	local cell = dungeon.cell
 
-	local door_r = sill["door_r"]
-	local door_c = sill["door_c"]
+	local door_r = sill.door_r
+	local door_c = sill.door_c
 
-	local open_r = sill["sill_r"]
-	local open_c = sill["sill_c"]
-	local open_dir = sill["dir"]
+	local open_r = sill.sill_r
+	local open_c = sill.sill_c
+	local open_dir = sill.dir
 
-	local out_id = sill["out_id"]
+	local out_id = sill.out_id
     local di, dj = unpack(Direction.cardinal[open_dir])
 
     for x = 0, 2 do        
@@ -421,42 +421,42 @@ local function openDoor(dungeon, room, sill)
 
     local door_type = getDoorType(dungeon)
     local door = {
-    	["row"] = door_r,
-    	["col"] = door_c,
+    	row = door_r,
+    	col = door_c,
     }
 
     if door_type == Flags.ARCH then
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.ARCH)
-    	door["key"] = "arch"
-    	door["type"] = "Archway"
+    	door.key = "arch"
+    	door.type = "Archway"
     elseif door_type == Flags.DOOR then
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.DOOR)
-    	door["key"] = "open"
-    	door["type"] = "Unlocked Door"
+    	door.key = "open"
+    	door.type = "Unlocked Door"
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('o'), 24))
     elseif door_type == Flags.LOCKED then
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.LOCKED)
-    	door["key"] = "lock"
-    	door["type"] = "Locked Door"
+    	door.key = "lock"
+    	door.type = "Locked Door"
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('x'), 24))
     elseif door_type == Flags.TRAPPED then
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.TRAPPED)
-    	door["key"] = "trap"
-    	door["type"] = "Trapped Door"
+    	door.key = "trap"
+    	door.type = "Trapped Door"
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('t'), 24))
     elseif door_type == Flags.SECRET then
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.SECRET)
-    	door["key"] = "secret"
-    	door["type"] = "Secret Door"
+    	door.key = "secret"
+    	door.type = "Secret Door"
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('s'), 24))
     elseif door_type == Flags.PORTC then	        	
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.PORTC)
-    	door["key"] = "portc"
-    	door["type"] = "Portcullis"
+    	door.key = "portc"
+    	door.type = "Portcullis"
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('#'), 24))
     end
 
-    if out_id ~= nil then door["out_id"] = out_id end
+    if out_id ~= nil then door.out_id = out_id end
 
     table.insert(room.door[open_dir], door)	
 end
@@ -475,14 +475,14 @@ local function openRoom(dungeon, room)
 
 		local idx = mrandom(#list)
 		local sill = table.remove(list, idx)
-		local door_r = sill["door_r"]
-		local door_c = sill["door_c"]
+		local door_r = sill.door_r
+		local door_c = sill.door_c
 		local door_cell = cell[door_r][door_c]
 
 		if bit.band(door_cell, Flags.DOORSPACE) == 0 then
-			local out_id = sill["out_id"]
+			local out_id = sill.out_id
 			if out_id ~= nil then
-				local room_ids = { room["id"], out_id } 			
+				local room_ids = { room.id, out_id } 			
 				table.sort(room_ids)
 				local id = table.concat(room_ids, ',')
 				if not connect[id] then
@@ -505,8 +505,8 @@ local function fixDoors(dungeon)
 			local shiny = {}
 
 			for _, door in ipairs(room.door[dir]) do
-				local door_r = door["row"]
-				local door_c = door["col"]
+				local door_r = door.row
+				local door_c = door.col
 				local door_cell = cell[door_r][door_c]
 
 				if bit.band(door_cell, Flags.OPENSPACE) == 0 then goto continue end
@@ -516,8 +516,8 @@ local function fixDoors(dungeon)
 				if fixed[door_id] ~= nil then
 					shiny[#shiny + 1] = door
 				else
-					if door["out_id"] ~= nil then
-						local out_id = door["out_id"]
+					if door.out_id ~= nil then
+						local out_id = door.out_id
 						out_dir = Direction.opposite[dir]
 
 						if dungeon.room[out_id] == nil then
@@ -545,7 +545,7 @@ local function fixDoors(dungeon)
 end
 
 local function checkTunnel(cell, r, c, check)
-	local list = check["corridor"]
+	local list = check.corridor
 	if list ~= nil then
 		for _, p in ipairs(list) do
 			if bit.band(cell[r + p[1]][c + p[2]], Flags.CORRIDOR) == 0 then
@@ -554,7 +554,7 @@ local function checkTunnel(cell, r, c, check)
 		end
 	end
 
-	list = check["walled"]
+	list = check.walled
 	if list ~= nil then
 		for _, p in ipairs(list) do
 			if bit.band(cell[r + p[1]][c + p[2]], Flags.OPENSPACE) ~= 0 then
@@ -602,16 +602,16 @@ local function collapse(dungeon, r, c, xc)
 
 	for _, dir in pairs(getKeys(xc)) do
 		if checkTunnel(cell, r, c, xc[dir]) then
-			for _, p in ipairs(xc[dir]["close"]) do
+			for _, p in ipairs(xc[dir].close) do
 				cell[r + p[1]][c + p[2]] = Flags.NOTHING
 			end
 
-			local p = xc[dir]["open"]
+			local p = xc[dir].open
 			if p ~= nil then
 				cell[r + p[1]][c + p[2]] = bit.bor(cell[r + p[1]][c + p[2]], Flags.CORRIDOR)
 			end
 
-			p = xc[dir]["recurse"]
+			p = xc[dir].recurse
 			if p ~= nil then
 				collapse(dungeon, r + p[1], c + p[2], xc)
 			end
@@ -642,31 +642,31 @@ local function collapseTunnels(dungeon, percentage, xc)
 end
 
 local function removeDeadends(dungeon, percentage)
-	dungeon["remove_pct"] = percentage
+	dungeon.remove_pct = percentage
 
 	collapseTunnels(dungeon, percentage, close_end)    
 end
 
 local function closeArcs(dungeon)
-	collapseTunnels(dungeon, dungeon["close_arcs"], close_arcs)
+	collapseTunnels(dungeon, dungeon.close_arcs, close_arcs)
 end
 
 local function cleanDungeon(dungeon)	
-	local percentage = RemoveDeadends[dungeon["remove_deadends"]]
+	local percentage = RemoveDeadends[dungeon.remove_deadends]
 
 	if percentage > 0 then
 		removeDeadends(dungeon, percentage)
 
 		-- TODO: seems buggy with stair rendering - also not sure what this adds
 
-		if dungeon["corridor_layout"] == "errant" then
-			dungeon["close_arcs"] = dungeon["remove_pct"]
-		elseif dungeon["corridor_layout"] == "straight" then
-			dungeon["close_arcs"] = dungeon["remove_pct"]
+		if dungeon.corridor_layout == "errant" then
+			dungeon.close_arcs = dungeon.remove_pct
+		elseif dungeon.corridor_layout == "straight" then
+			dungeon.close_arcs = dungeon.remove_pct
 		end
 	end
 
-	if dungeon["close_arcs"] ~= nil then
+	if dungeon.close_arcs ~= nil then
 		closeArcs(dungeon)
 	end
 
@@ -677,7 +677,7 @@ end
 local function openRooms(dungeon)
 	connect = {}
 
-	for id = 1, dungeon["n_rooms"] do
+	for id = 1, dungeon.n_rooms do
 		openRoom(dungeon, dungeon.room[id])
 	end
 end
@@ -699,12 +699,12 @@ end
 local function labelRooms(dungeon)
 	local cell = dungeon.cell
 
-	for id = 1, dungeon["n_rooms"] do
+	for id = 1, dungeon.n_rooms do
 		local room = dungeon.room[id]
-		local label = room["id"]
+		local label = room.id
 		local len = string.len(label)
-		local label_r = mfloor((room.north + room["south"]) / 2)
-		local label_c = mfloor((room["west"] + room["east"] - len) / 2) + 1
+		local label_r = mfloor((room.north + room.south) / 2)
+		local label_c = mfloor((room.west + room.east - len) / 2) + 1
 
 		for c = 0, len - 1 do
 			local char = string.sub(label, c + 1)
@@ -719,7 +719,7 @@ local function tunnelDirs(dungeon, last_dir)
 	-- afterwards shuffling as in original code?
 	local keys = getKeys(Direction.cardinal)
 	local dirs = shuffle(keys)
-	local p = dungeon["straight_pct"]
+	local p = dungeon.straight_pct
 
 	if last_dir ~= nil and p ~= nil then
 		if mrandom(100) < p then
@@ -806,7 +806,7 @@ end
 local function corridors(dungeon)
 	local cell = dungeon.cell
 
-	dungeon["straight_pct"] = CorridorLayout[dungeon["corridor_layout"]]
+	dungeon.straight_pct = CorridorLayout[dungeon.corridor_layout]
 
 	for i = 1, dungeon.n_i - 1 do
 		local r = i * 2 + 1
@@ -836,10 +836,10 @@ local function stairEnds(dungeon)
 
 			for _, dir in ipairs(getKeys(stair_end)) do
 				if checkTunnel(cell, r, c, stair_end[dir]) then
-					local s_end = { ["row"] = r, ["col"] = c, ["dir"] = dir }
-					local n = stair_end[dir]["next"]
-					s_end["next_row"] = s_end["row"] + n[1]
-					s_end["next_col"] = s_end["col"] + n[2]
+					local s_end = { row = r, col = c, dir = dir }
+					local n = stair_end[dir].next
+					s_end.next_row = s_end.row + n[1]
+					s_end.next_col = s_end.col + n[2]
 
 					table.insert(list, s_end)
 					break
@@ -854,7 +854,7 @@ local function stairEnds(dungeon)
 end
 
 local function emplaceStairs(dungeon)
-	local n = AddStairs[dungeon["add_stairs"]]
+	local n = AddStairs[dungeon.add_stairs]
 
 	if n == 0 then return end
 
@@ -873,26 +873,26 @@ local function emplaceStairs(dungeon)
 
 		local stair = table.remove(list)
 
-		local r, next_r = stair["row"], stair["next_row"]
-		local c, next_c = stair["col"], stair["next_col"]
+		local r, next_r = stair.row, stair.next_row
+		local c, next_c = stair.col, stair.next_col
 		local s_type = i < 2 and (i + 1) or mrandom(2)
 
 		if s_type == 1 then
 			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_DN)
 			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte("d"), 24))
-			stair["key"] = "down"
+			stair.key = "down"
 		else
 			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_UP)
 			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte("u"), 24))
-			stair["key"] = "up"
+			stair.key = "up"
 		end
 
-		table.insert(dungeon["stair"], stair)
+		table.insert(dungeon.stair, stair)
 	end
 end
 
 local function generate(options)
-	love.math.setRandomSeed(options["seed"])
+	love.math.setRandomSeed(options.seed)
 
 	local dungeon = Dungeon(options)
 
