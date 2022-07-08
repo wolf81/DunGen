@@ -5,7 +5,7 @@ local mfloor, mmax, mabs = math.floor, math.max, math.abs
 local function getColor(color_table, key)
     while key ~= nil do
         if color_table[key] ~= nil then return color_table[key]
-        else key = color_chain[key] end
+        else key = ColorChain[key] end
     end
 
     return color_table["black"]

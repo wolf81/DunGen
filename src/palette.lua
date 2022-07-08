@@ -28,11 +28,11 @@ Palette = {
     },
 }
 
-color_chain = {
-    ["door"] = "fill",
-    ["label"] = "fill",
-    ["stair"] = "wall",
-    ["wall"] = "fill",
-    ["fill"] = "black",
-    ["tag"] = "white",
+ColorChain = {
+    door = "fill",
+    label = "fill",
+    stair = "wall",
+    wall = "fill",
+    fill = "black",
+    tag = "white",
 }
