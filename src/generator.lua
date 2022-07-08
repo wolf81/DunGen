@@ -26,12 +26,12 @@ local function getDoorType(dungeon)
 end
 
 local function maskCells(dungeon, mask)
-	local r_x = #mask * 1.0 / (dungeon["n_rows"])
-	local c_x = #mask[1] * 1.0 / (dungeon["n_cols"])
+	local r_x = #mask * 1.0 / (dungeon.n_rows)
+	local c_x = #mask[1] * 1.0 / (dungeon.n_cols)
 	local cell = dungeon.cell
 
-	for r = 0, dungeon["n_rows"] - 1 do
-		for c = 0, dungeon["n_cols"] - 1 do
+	for r = 0, dungeon.n_rows - 1 do
+		for c = 0, dungeon.n_cols - 1 do
 			local y = mfloor(r * r_x + 1.0)
 			local x = mfloor(c * c_x + 1.0)
 			cell[r][c] = (mask[y][x] == 1 and Flags.NOTHING or Flags.BLOCKED)
@@ -42,16 +42,16 @@ end
 local function saltireMask(dungeon)
 	local cell = dungeon.cell
 
-	local i_max = mfloor(dungeon["n_rows"] / 4)
+	local i_max = mfloor(dungeon.n_rows / 4)
 	for i = 0, i_max - 1 do
 		local j = i + i_max
-		local j_max = dungeon["n_cols"] - j
+		local j_max = dungeon.n_cols - j
 
 		for j = j, j_max do
 			cell[i][j] = Flags.BLOCKED
-			cell[dungeon["n_rows"] - i][j] = Flags.BLOCKED
+			cell[dungeon.n_rows - i][j] = Flags.BLOCKED
 			cell[j][i] = Flags.BLOCKED
-			cell[j][dungeon["n_cols"] - i] = Flags.BLOCKED
+			cell[j][dungeon.n_cols - i] = Flags.BLOCKED
 		end
 	end
 end
@@ -59,12 +59,12 @@ end
 local function hexagonMask(dungeon)
 	local cell = dungeon.cell
 
-	local r_half = dungeon["n_rows"] / 2
-	for r = 0, dungeon["n_rows"] do
+	local r_half = dungeon.n_rows / 2
+	for r = 0, dungeon.n_rows do
 		local c_min = mfloor(mabs(r - r_half) * 0.57735)
-		local c_max = dungeon["n_cols"] - c_min
+		local c_max = dungeon.n_cols - c_min
 
-		for c = 0, dungeon["n_cols"] do
+		for c = 0, dungeon.n_cols do
 			if c < c_min or c > c_max then
 				cell[r][c] = Flags.BLOCKED
 			end
@@ -73,12 +73,12 @@ local function hexagonMask(dungeon)
 end
 
 local function roundMask(dungeon)
-	local center_r = mfloor(dungeon["n_rows"] / 2)
-	local center_c = mfloor(dungeon["n_cols"] / 2)
+	local center_r = mfloor(dungeon.n_rows / 2)
+	local center_c = mfloor(dungeon.n_cols / 2)
 	local cell = dungeon.cell
 
-	for r = 0, dungeon["n_rows"] do
-		for c = 0, dungeon["n_cols"] do
+	for r = 0, dungeon.n_rows do
+		for c = 0, dungeon.n_cols do
 			local d = msqrt(
 				mpow((r - center_r), 2) + 
 				mpow((c - center_c), 2))
@@ -252,7 +252,7 @@ end
 local function allocRooms(a, b)
 	local a = a
 	local c = b or a["room_size"]
-	local b = a["n_cols"] * a["n_rows"]
+	local b = a.n_cols * a.n_rows
 	local d = RoomSize[c]
 	local c = d["size"] or 2
 	local d = d["radix"] or 5
@@ -374,7 +374,7 @@ local function doorSills(dungeon, room)
 		end
 	end
 
-	if room["south"] <= dungeon["n_rows"] - 3 then
+	if room["south"] <= dungeon.n_rows - 3 then
 		for c = room["west"], room["east"], 2 do
 			local sill = checkSill(cell, room, room["south"], c, "south")
 			if sill ~= nil then list[#list + 1] = sill end
@@ -388,7 +388,7 @@ local function doorSills(dungeon, room)
 		end
 	end
 
-	if room["east"] <= dungeon["n_cols"] - 3 then
+	if room["east"] <= dungeon.n_cols - 3 then
 		for r = room.north, room["south"], 2 do
 			local sill = checkSill(cell, room, r, room["east"], "east")			
 			if sill ~= nil then list[#list + 1] = sill end
@@ -569,8 +569,8 @@ end
 local function emptyBlocks(dungeon)
 	local cell = dungeon.cell
 
-	for r = 0, dungeon["n_rows"] do
-		for c = 0, dungeon["n_cols"] do
+	for r = 0, dungeon.n_rows do
+		for c = 0, dungeon.n_cols do
 			-- clear all blocked cells, nothing to see here ...
 			if bit.band(cell[r][c], Flags.BLOCKED) ~= 0 then
 				cell[r][c] = Flags.NOTHING
@@ -752,8 +752,8 @@ local function delveTunnel(dungeon, this_r, this_c, next_r, next_c)
 end
 
 local function soundTunnel(dungeon, mid_r, mid_c, next_r, next_c)
-	if next_r < 0 or next_r > dungeon["n_rows"] then return false end
-	if next_c < 0 or next_c > dungeon["n_cols"] then return false end
+	if next_r < 0 or next_r > dungeon.n_rows then return false end
+	if next_c < 0 or next_c > dungeon.n_cols then return false end
 
 	local cell = dungeon.cell
 	local tbl_r, tbl_c = { mid_r, next_r }, { mid_c, next_c }
@@ -859,7 +859,7 @@ local function emplaceStairs(dungeon)
 	if n == 0 then return end
 
 	if n == mhuge then
-		n = dungeon["n_cols"] * dungeon["n_rows"]
+		n = dungeon.n_cols * dungeon.n_rows
 		n = 2 + mrandom(n / 1e3)
 	end
 
