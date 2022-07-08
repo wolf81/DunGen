@@ -115,10 +115,10 @@ local function imageGrid(dungeon, config, color)
     -- TODO: grid style should not be stored in dungeon, but in config instead
     local grid = config.grid
 
-    if grid ~= "none" then
-        if grid == "hex" then
+    if grid ~= 'none' then
+        if grid == 'hex' then
             hexGrid(config, color)
-        elseif grid == "vex" then
+        elseif grid == 'vex' then
             vexGrid(config, color)
         else
             squareGrid(config, color)
@@ -142,19 +142,19 @@ end
 
 
 local function getDoorAttributes(door)
-    if door.key == "arch" then
+    if door.key == 'arch' then
         return { arch = true }
-    elseif door.key == "open" then
+    elseif door.key == 'open' then
         return { arch = true, door = true }
-    elseif door.key == "lock" then
+    elseif door.key == 'lock' then
         return { arch = true, door = true, lock = true }
-    elseif door.key == "trap" then
+    elseif door.key == 'trap' then
         local attr = { arch = true, door = true, trap = true }
-        if door.desc == "Lock" then attr.lock = true end
+        if door.desc == 'Lock' then attr.lock = true end
         return attr
-    elseif door.key == "secret" then
+    elseif door.key == 'secret' then
         return { wall = true, arch = true, secret = true }
-    elseif door.key == "portc" then
+    elseif door.key == 'portc' then
         return { arch = true, portc = true }
     end
 end
@@ -163,8 +163,8 @@ local function imageDoors(dungeon, config)
     local doors, dim = dungeon.door, config.cell_size
     local g, f, h = mfloor(dim / 6), mfloor(dim / 4), mfloor(dim / 3)
     local Palette = config.Palette
-    local wall_color = getColor(Palette, "wall")
-    local door_color = getColor(Palette, "door")
+    local wall_color = getColor(Palette, 'wall')
+    local door_color = getColor(Palette, 'door')
 
     for _, door in pairs(doors) do
         local row = door.row
@@ -420,7 +420,7 @@ local function imageLabels(dungeon, config)
     local Palette = config.Palette
 
     local font = config.font
-    local color = getColor(Palette, "label")
+    local color = getColor(Palette, 'label')
     for r = 0, dungeon.n_rows do
         for c = 0, dungeon.n_cols do
             if bit.band(dungeon.cell[r][c], Mask.OPENSPACE) ~= 0 then
@@ -539,10 +539,10 @@ local function imageStairs(dungeon, config)
     local stairs = dungeon.stair
     local scaled = scaleStairs(config.cell_size)
     local Palette = config.Palette
-    local color = getColor(Palette, "stair")
+    local color = getColor(Palette, 'stair')
     for _, stair in ipairs(stairs) do
         local stair_dim = stairDim(stair, scaled)
-        if stair.key == "up" then 
+        if stair.key == 'up' then 
             imageAscend(stair_dim, color)
         else
             imageDescend(stair_dim, color)
