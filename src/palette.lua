@@ -29,10 +29,10 @@ Palette = {
 }
 
 ColorChain = {
-    door = "fill",
-    label = "fill",
-    stair = "wall",
-    wall = "fill",
-    fill = "black",
-    tag = "white",
+    door = 'fill',
+    label = 'fill',
+    stair = 'wall',
+    wall = 'fill',
+    fill = 'black',
+    tag = 'white',
 }
