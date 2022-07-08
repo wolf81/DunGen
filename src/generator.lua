@@ -323,7 +323,7 @@ local function emplaceRoom(a, b)
 			["east"] = {},
 		}
 	}
-	local h = a["room"][f]
+	local h = a.room[f]
 	if h ~= nil then
 		if h["complex"] ~= nil then 
 			table.insert(h["complex"], c)
@@ -331,10 +331,10 @@ local function emplaceRoom(a, b)
 			complex = {
 				["complex"] = { h, c }
 			}
-			a["room"][f] = complex
+			a.room[f] = complex
 		end
 	else
-		a["room"][f] = c		
+		a.room[f] = c		
 	end
 
 	for h = b - 1, e + 1 do
@@ -606,7 +606,7 @@ local function fixDoors(dungeon)
 	local cell = dungeon["cell"]
 	local fixed = {}
 
-	for _, room in ipairs(dungeon["room"]) do
+	for _, room in ipairs(dungeon.room) do
 		for dir, _ in pairsByKeys(room["door"]) do
 			local shiny = {}
 
@@ -626,12 +626,12 @@ local function fixDoors(dungeon)
 						local out_id = door["out_id"]
 						out_dir = Direction.opposite[dir]
 
-						if dungeon["room"][out_id] == nil then
-							dungeon["room"][out_id] = {}
-							dungeon["room"][out_id]["door"] = {}
+						if dungeon.room[out_id] == nil then
+							dungeon.room[out_id] = {}
+							dungeon.room[out_id]["door"] = {}
 						end
 
-						dungeon["room"][out_id]["door"][out_dir] = door
+						dungeon.room[out_id]["door"][out_dir] = door
 					end
 					shiny[#shiny + 1] = door
 					fixed[door_id] = true
@@ -784,7 +784,7 @@ local function openRooms(dungeon)
 	connect = {}
 
 	for id = 1, dungeon["n_rooms"] do
-		openRoom(dungeon, dungeon["room"][id])
+		openRoom(dungeon, dungeon.room[id])
 	end
 end
 
@@ -806,7 +806,7 @@ local function labelRooms(dungeon)
 	local cell = dungeon["cell"]
 
 	for id = 1, dungeon["n_rooms"] do
-		local room = dungeon["room"][id]
+		local room = dungeon.room[id]
 		local label = room["id"]
 		local len = string.len(label)
 		local label_r = mfloor((room["north"] + room["south"]) / 2)
