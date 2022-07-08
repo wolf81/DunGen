@@ -14,11 +14,11 @@ local function getDoorType(dungeon)
 	local doorTypes = Doors[dungeon.doors]
 	local max = doorTypes[#doorTypes][1]
 
-	local value = mfloor(mrandom(max))
+	local rank = mfloor(mrandom(max))
 	local door = Flag.ARCH
 
 	for _, doorType in ipairs(doorTypes) do
-		if doorType[1] >= value then break end
+		if doorType[1] >= rank then break end
 		door = doorType[2]
 	end
 
@@ -26,15 +26,15 @@ local function getDoorType(dungeon)
 end
 
 local function maskCells(dungeon, mask)
-	local r_x = #mask * 1.0 / (dungeon.n_rows)
-	local c_x = #mask[1] * 1.0 / (dungeon.n_cols)
+	local r_x = #mask / (dungeon.n_rows)
+	local c_x = #mask[1] / (dungeon.n_cols)
 	local cell = dungeon.cell
 
 	for r = 0, dungeon.n_rows - 1 do
 		for c = 0, dungeon.n_cols - 1 do
 			local y = mfloor(r * r_x + 1.0)
 			local x = mfloor(c * c_x + 1.0)
-			cell[r][c] = (mask[y][x] == 1 and Flag.NOTHING or Flag.BLOCKED)
+			cell[r][c] = (mask[y][x] == 1) and Flag.NOTHING or Flag.BLOCKED
 		end
 	end
 end
@@ -123,49 +123,48 @@ local function soundRoom(dungeon, r1, c1, r2, c2)
 	return hit
 end
 
-local function setRoom(dungeon, b)
-	b.size = b.size or dungeon.room_size
-	local c = RoomSize[b.size]
-	local d = c.size or 2
-	local c = c.radix or 5
-	if b.height == nil then
-		if b.i ~= nil then
-			local e = mmax(dungeon.n_i - d - b.i, 0)
-			e = mmin(e, c)
-			b.height = mrandom(e) + d
+local function setRoom(dungeon, room)
+	room = room or {}
+
+	local r_size = RoomSize[room.size or dungeon.room_size]
+	local size = r_size.size or 2
+	local radix = r_size.radix or 5
+	if room.height == nil then
+		if room.i ~= nil then
+			room.height = mrandom(mmin(mmax(dungeon.n_i - size - room.i, 0), radix)) + size
 		else
-			b.height = mrandom(c) + d
+			room.height = mrandom(radix) + size
 		end
 	end
-	if b.width == nil then
-		if b.j ~= nil then
-			local e = mmax(dungeon.n_j - d - b.j, 0)
-			b['width'] = mrandom(e) + d
+	if room.width == nil then
+		if room.j ~= nil then
+			room.width = mrandom(mmax(dungeon.n_j - size - room.j, 0)) + size
 		else
-			b['width'] = mrandom(c) + d
+			room.width = mrandom(radix) + size
 		end
 	end
-	if b.i == nil then
-		b.i = mrandom(dungeon.n_i - b.height)
+	if room.i == nil then
+		room.i = mrandom(dungeon.n_i - room.height)
 	end
-	if b.j == nil then
-		b.j = mrandom(dungeon.n_j - b.width)
+	if room.j == nil then
+		room.j = mrandom(dungeon.n_j - room.width)
 	end
 
-	return b
+	return room
 end
 
-local function emplaceRoom(dungeon, b)
+local function emplaceRoom(dungeon, room)
 	if dungeon.n_rooms == 999 then return end
 
-	local c = setRoom(dungeon, b or {})
-	local b = c.i * 2 + 1
-	local d = c.j * 2 + 1
-	local e = (c.i + c.height) * 2 - 1
-	local g = (c.j + c.width) * 2 - 1
-	if b < 1 or e > dungeon.max_row then return end
+	room = setRoom(dungeon, room)
+
+	local y1 = room.i * 2 + 1
+	local d = room.j * 2 + 1
+	local y2 = (room.i + room.height) * 2 - 1
+	local g = (room.j + room.width) * 2 - 1
+	if y1 < 1 or y2 > dungeon.max_row then return end
 	if d < 1 or g > dungeon.max_col then return end
-	local f = soundRoom(dungeon, b, d, e, g)
+	local f = soundRoom(dungeon, y1, d, y2, g)
 	if f.blocked then return end
 
 	local f = getKeys(f)
@@ -176,7 +175,7 @@ local function emplaceRoom(dungeon, b)
 	elseif h == 1 then
 		if dungeon.complex_rooms then
 			f = f[1] -- or 1?
-			if f ~= c.complex_id then return end
+			if f ~= room.complex_id then return end
 		else
 			return
 		end
@@ -184,28 +183,28 @@ local function emplaceRoom(dungeon, b)
 		return
 	end
 
-	for h = b, e do
+	for y = y1, y2 do
 		for i = d, g do            
-            local cell = dungeon.cell[h][i]
+            local cell = dungeon.cell[y][i]
 			if bit.band(cell, Flag.ENTRANCE) == Flag.ENTRANCE then
 				cell = bit.band(cell, bit.bnot(Flag.ESPACE))
 			elseif bit.band(cell, Flag.PERIMETER) == Flag.PERIMETER then
                 cell = bit.band(cell, bit.bnot(Flag.PERIMETER))
 			end			
 
-            dungeon.cell[h][i] = bit.bor(cell, bit.bor(Flag.ROOM, bit.lshift(f, 6)))
+            dungeon.cell[y][i] = bit.bor(cell, bit.bor(Flag.ROOM, bit.lshift(f, 6)))
 		end
 	end
 
-	local h = (e - b + 1) * 10
+	local h = (y2 - y1 + 1) * 10
 	local i = (g - d + 1) * 10
-	local c = {
+	room = {
 		id = f,
-		size = c.size,
-		row = b,
+		size = room.size,
+		row = y1,
 		col = d,
-		north = b,
-		south = e,
+		north = y2,
+		south = y2,
 		west = d,
 		east = g,
 		height = h,
@@ -220,31 +219,31 @@ local function emplaceRoom(dungeon, b)
 	local h = dungeon.room[f]
 	if h ~= nil then
 		if h.complex ~= nil then 
-			table.insert(h.complex, c)
+			table.insert(h.complex, room)
 		else
 			complex = {
-				complex = { h, c }
+				complex = { h, room }
 			}
 			dungeon.room[f] = complex
 		end
 	else
-		dungeon.room[f] = c		
+		dungeon.room[f] = room	
 	end
 
-	for h = b - 1, e + 1 do
-		if bit.band(dungeon.cell[h][d - 1], Mask.ROOM_ENTRANCE) == 0 then
-			dungeon.cell[h][d - 1] = bit.bor(dungeon.cell[h][d - 1], Flag.PERIMETER)
+	for y = y1 - 1, y2 + 1 do
+		if bit.band(dungeon.cell[y][d - 1], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[y][d - 1] = bit.bor(dungeon.cell[y][d - 1], Flag.PERIMETER)
 		end
-		if bit.band(dungeon.cell[h][g + 1], Mask.ROOM_ENTRANCE) == 0 then
-			dungeon.cell[h][g + 1] = bit.bor(dungeon.cell[h][g + 1], Flag.PERIMETER)
+		if bit.band(dungeon.cell[y][g + 1], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[y][g + 1] = bit.bor(dungeon.cell[y][g + 1], Flag.PERIMETER)
 		end
 	end
 	for i = d - 1, g + 1 do
-		if bit.band(dungeon.cell[b - 1][i], Mask.ROOM_ENTRANCE) == 0 then
-			dungeon.cell[b - 1][i] = bit.bor(dungeon.cell[b - 1][i], Flag.PERIMETER)
+		if bit.band(dungeon.cell[y1 - 1][i], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[y1 - 1][i] = bit.bor(dungeon.cell[y1 - 1][i], Flag.PERIMETER)
 		end
-		if bit.band(dungeon.cell[e + 1][i], Mask.ROOM_ENTRANCE) == 0 then
-			dungeon.cell[e + 1][i] = bit.bor(dungeon.cell[e + 1][i], Flag.PERIMETER)
+		if bit.band(dungeon.cell[y2 + 1][i], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[y2 + 1][i] = bit.bor(dungeon.cell[y2 + 1][i], Flag.PERIMETER)
 		end
 	end
 end
@@ -822,21 +821,23 @@ local function stairEnds(dungeon)
 	local list = {}
 
 	for i = 0, dungeon.n_i - 1 do
-		local r = (i * 2) + 1
+		local y = i * 2 + 1
 		for j = 0, dungeon.n_j - 1 do
-			local c = (j * 2) + 1
+			local x = j * 2 + 1
 
-			if bit.band(cell[r][c], Flag.CORRIDOR) == 0 then goto continue end
-			if bit.band(cell[r][c], Mask.STAIRS) ~= 0 then goto continue end
+			if bit.band(cell[y][x], Flag.CORRIDOR) == 0 then goto continue end
+			if bit.band(cell[y][x], Mask.STAIRS) ~= 0 then goto continue end
 
 			for _, dir in ipairs(getKeys(StairEnd)) do
-				if checkTunnel(cell, r, c, StairEnd[dir]) then
-					local s_end = { row = r, col = c, dir = dir }
-					local n = StairEnd[dir].NEXT
-					s_end.next_row = s_end.row + n[1]
-					s_end.next_col = s_end.col + n[2]
-
-					table.insert(list, s_end)
+				if checkTunnel(cell, y, x, StairEnd[dir]) then
+					local dy, dx = unpack(StairEnd[dir].NEXT)
+					table.insert(list, {
+						row = y,
+						col = x,
+						dir = dir,
+						next_row = y + dy,
+						next_col = x + dx,
+					})
 					break
 				end				
 			end
@@ -855,7 +856,7 @@ local function emplaceStairs(dungeon)
 
 	if n == mhuge then
 		n = dungeon.n_cols * dungeon.n_rows
-		n = 2 + mrandom(n / 1e3)
+		n = 2 + mrandom(n / 1000)
 	end
 
 	local list = stairEnds(dungeon)
@@ -867,10 +868,9 @@ local function emplaceStairs(dungeon)
 		if #list == 0 then return end
 
 		local stair = table.remove(list)
-
-		local r, next_r = stair.row, stair.next_row
-		local c, next_c = stair.col, stair.next_col
-		local s_type = i < 2 and (i + 1) or mrandom(2)
+		local r = stair.row
+		local c = stair.col
+		local s_type = (i < 2) and (i + 1) or mrandom(2)
 
 		if s_type == 1 then
 			cell[r][c] = bit.bor(cell[r][c], Flag.STAIR_DN)
