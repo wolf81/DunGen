@@ -21,11 +21,22 @@ Flags = {
 	["LABEL"] = 4278190080LL,	-- 0xFF000000
 }
 
-Flags["OPENSPACE"] = bit.bor(Flags.ROOM, Flags.CORRIDOR)
-Flags["DOORSPACE"] = bit.bor(Flags.ARCH, Flags.DOOR, Flags.LOCKED, Flags.TRAPPED, Flags.SECRET, Flags.PORTC)
-Flags["ESPACE"] = bit.bor(Flags.ENTRANCE, Flags.DOORSPACE, Flags.LABEL)
-Flags["STAIRS"] = bit.bor(Flags.STAIR_DN, Flags.STAIR_UP)
-Flags["BLOCK_ROOM"] = bit.bor(Flags.BLOCKED, Flags.ROOM)
-Flags["BLOCK_CORR"] = bit.bor(Flags.BLOCKED, Flags.PERIMETER, Flags.CORRIDOR)
-Flags["BLOCK_DOOR"] = bit.bor(Flags.BLOCKED, Flags.DOORSPACE)
-Flags["ROOM_ENTRANCE"] = bit.bor(Flags.ROOM, Flags.ENTRANCE)
+local openspace = bit.bor(Flags.ROOM, Flags.CORRIDOR)
+local doorspace = bit.bor(Flags.ARCH, Flags.DOOR, Flags.LOCKED, Flags.TRAPPED, Flags.SECRET, Flags.PORTC)
+local espace = bit.bor(Flags.ENTRANCE, doorspace, Flags.LABEL)
+local stairs = bit.bor(Flags.STAIR_DN, Flags.STAIR_UP)
+local block_room = bit.bor(Flags.BLOCKED, Flags.ROOM)
+local block_corr = bit.bor(Flags.BLOCKED, Flags.PERIMETER, Flags.CORRIDOR)
+local block_door = bit.bor(Flags.BLOCKED, doorspace)
+local room_entrance = bit.bor(Flags.ROOM, Flags.ENTRANCE)
+
+Mask = {
+	openspace = openspace,
+	doorspace = doorspace,
+	espace = espace,
+	stairs = stairs,
+	block_room = block_room,
+	block_corr = block_corr,
+	block_door = block_door,
+	room_entrance = room_entrance,
+}
