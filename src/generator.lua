@@ -310,11 +310,8 @@ local function scatterRooms(dungeon)
 end
 
 local function emplaceRooms(dungeon)
-	local is_huge = RoomSize[dungeon.room_size].huge
-	local is_complex = RoomLayout[dungeon.room_layout].complex
-
-	dungeon.huge_rooms = is_huge
-	dungeon.complex_rooms = is_complex
+	dungeon.huge_rooms = RoomSize[dungeon.room_size].huge
+	dungeon.complex_rooms = RoomLayout[dungeon.room_layout].complex
 	dungeon.n_rooms = 0
 	dungeon.rooms = {}
 
@@ -328,10 +325,8 @@ end
 local function allocOpens(dungeon, room)
 	local room_h = (room.south - room.north) / 2 + 1
 	local room_w = (room.east - room.west) / 2 + 1
-	local flumph = mfloor(msqrt(room_w * room_h))
-	local n_opens = flumph + mrandom(flumph)
-
-	return n_opens
+	local base = mfloor(msqrt(room_w * room_h))
+	return base + mrandom(base)
 end
 
 local function checkSill(cell, room, sill_r, sill_c, dir)
@@ -467,14 +462,12 @@ local function openRoom(dungeon, room)
 	local n_opens = allocOpens(dungeon, room)
 	local cell = dungeon.cell
 
-	for i = 0, n_opens + 1 do
+	for i = 0, n_opens do
 		if #list == 0 then break end
 
 		local idx = mrandom(#list)
 		local sill = table.remove(list, idx)
-		local door_r = sill.door_r
-		local door_c = sill.door_c
-		local door_cell = cell[door_r][door_c]
+		local door_cell = cell[sill.door_r][sill.door_c]
 
 		if bit.band(door_cell, Mask.DOORSPACE) == 0 then
 			local out_id = sill.out_id
@@ -543,8 +536,6 @@ end
 
 local function checkTunnel(cell, r, c, check)
 	local list = check.CORRIDOR
-
-	local rows, cols = #cell, #cell[r]
 
 	if list ~= nil then
 		for _, p in ipairs(list) do
@@ -763,13 +754,13 @@ local function soundTunnel(dungeon, mid_r, mid_c, next_r, next_c)
 	if next_c < 0 or next_c > dungeon.n_cols then return false end
 
 	local cell = dungeon.cell
-	local tbl_r, tbl_c = { mid_r, next_r }, { mid_c, next_c }
+	local rows, cols = { mid_r, next_r }, { mid_c, next_c }
 
-	table.sort(tbl_r)
-	local r1, r2 = unpack(tbl_r)
+	table.sort(rows)
+	local r1, r2 = unpack(rows)
 
-	table.sort(tbl_c)
-	local c1, c2 = unpack(tbl_c)
+	table.sort(cols)
+	local c1, c2 = unpack(cols)
 
 	for r = r1, r2 do
 		for c = c1, c2 do
@@ -802,10 +793,7 @@ local function tunnel(dungeon, i, j, last_dir)
 	for _, dir in ipairs(dirs) do
         local di, dj = unpack(Direction.cardinal[dir])
 		if openTunnel(dungeon, i, j, dir) then
-			local next_i = i + di
-			local next_j = j + dj
-
-			tunnel(dungeon, next_i, next_j, dir)
+			tunnel(dungeon, i + di, j + dj, dir)
 		end
 	end
 end
