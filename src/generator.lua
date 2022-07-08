@@ -129,7 +129,7 @@ local function setRoom(a, b)
 	local c = c["radix"] or 5
 	if b["height"] == nil then
 		if b["i"] ~= nil then
-			local e = mmax(a["n_i"] - d - b["i"], 0)
+			local e = mmax(a.n_i - d - b["i"], 0)
 			e = mmin(e, c)
 			b["height"] = mrandom(e) + d
 		else
@@ -138,17 +138,17 @@ local function setRoom(a, b)
 	end
 	if b["width"] == nil then
 		if b["j"] ~= nil then
-			local e = mmax(a["n_j"] - d - b["j"], 0)
+			local e = mmax(a.n_j - d - b["j"], 0)
 			b['width'] = mrandom(e) + d
 		else
 			b['width'] = mrandom(c) + d
 		end
 	end
 	if b["i"] == nil then
-		b["i"] = mrandom(a["n_i"] - b["height"])
+		b["i"] = mrandom(a.n_i - b["height"])
 	end
 	if b["j"] == nil then
-		b["j"] = mrandom(a["n_j"] - b["width"])
+		b["j"] = mrandom(a.n_j - b["width"])
 	end
 
 	return b
@@ -266,9 +266,9 @@ local function allocRooms(a, b)
 end
 
 local function denseRooms(a)
-	for b = 0, a["n_i"] - 1 do
+	for b = 0, a.n_i - 1 do
 		local c = b * 2 + 1
-		for d = 0, a["n_j"] - 1 do
+		for d = 0, a.n_j - 1 do
 			local e = d * 2 + 1
 			if bit.band(a.cell[c][e], Flags.ROOM) == 0 then
 				if not((b == 0 or c == 0) and mrandom(2) > 0) then
@@ -625,9 +625,9 @@ local function collapseTunnels(dungeon, percentage, xc)
 	local all = percentage == 100
 	local cell = dungeon.cell
 
-	for i = 0, dungeon["n_i"] - 1 do
+	for i = 0, dungeon.n_i - 1 do
 		local r = (i * 2) + 1
-		for j = 0, dungeon["n_j"] - 1 do
+		for j = 0, dungeon.n_j - 1 do
 			local c = (j * 2) + 1
 
 			if bit.band(cell[r][c], Flags.OPENSPACE) == 0 then goto continue end
@@ -808,9 +808,9 @@ local function corridors(dungeon)
 
 	dungeon["straight_pct"] = CorridorLayout[dungeon["corridor_layout"]]
 
-	for i = 1, dungeon["n_i"] - 1 do
+	for i = 1, dungeon.n_i - 1 do
 		local r = i * 2 + 1
-		for j = 1, dungeon["n_j"] - 1 do
+		for j = 1, dungeon.n_j - 1 do
 			local c = j * 2 + 1
 
 			if bit.band(cell[r][c], Flags.CORRIDOR) == Flags.CORRIDOR then goto continue end
@@ -826,9 +826,9 @@ local function stairEnds(dungeon)
 	local cell = dungeon.cell
 	local list = {}
 
-	for i = 0, dungeon["n_i"] - 1 do
+	for i = 0, dungeon.n_i - 1 do
 		local r = (i * 2) + 1
-		for j = 0, dungeon["n_j"] - 1 do
+		for j = 0, dungeon.n_j - 1 do
 			local c = (j * 2) + 1
 
 			if bit.band(cell[r][c], Flags.CORRIDOR) == 0 then goto continue end
