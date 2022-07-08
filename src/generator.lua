@@ -73,16 +73,17 @@ local function hexagonMask(dungeon)
 end
 
 local function roundMask(dungeon)
-	local center_r = mfloor(dungeon.n_rows / 2)
-	local center_c = mfloor(dungeon.n_cols / 2)
+	local mid_r = mfloor(dungeon.n_rows / 2)
+	local mid_c = mfloor(dungeon.n_cols / 2)
 	local cell = dungeon.cell
 
 	for r = 0, dungeon.n_rows do
 		for c = 0, dungeon.n_cols do
 			local d = msqrt(
-				mpow((r - center_r), 2) + 
-				mpow((c - center_c), 2))
-			cell[r][c] = d > center_c and Flags.BLOCKED or Flags.NOTHING
+				mpow((r - mid_r), 2) + 
+				mpow((c - mid_c), 2)
+            )
+			cell[r][c] = d > mid_c and Flags.BLOCKED or Flags.NOTHING
 		end
 	end
 end
@@ -97,7 +98,7 @@ local function applyLayout(dungeon)
 		hexagonMask(dungeon)
 	elseif DungeonLayout[layout] ~= nil then
 		local mask = DungeonLayout[layout].mask
-		maskCells(dungeon, mask or {{ 1 }})
+		maskCells(dungeon, mask or {{ Flags.BLOCKED }})
 	end
 end
 
@@ -122,14 +123,14 @@ local function soundRoom(dungeon, r1, c1, r2, c2)
 	return hit
 end
 
-local function setRoom(a, b)
-	b.size = b.size or a.room_size
+local function setRoom(dungeon, b)
+	b.size = b.size or dungeon.room_size
 	local c = RoomSize[b.size]
 	local d = c.size or 2
 	local c = c.radix or 5
 	if b.height == nil then
 		if b.i ~= nil then
-			local e = mmax(a.n_i - d - b.i, 0)
+			local e = mmax(dungeon.n_i - d - b.i, 0)
 			e = mmin(e, c)
 			b.height = mrandom(e) + d
 		else
@@ -138,43 +139,43 @@ local function setRoom(a, b)
 	end
 	if b.width == nil then
 		if b.j ~= nil then
-			local e = mmax(a.n_j - d - b.j, 0)
+			local e = mmax(dungeon.n_j - d - b.j, 0)
 			b['width'] = mrandom(e) + d
 		else
 			b['width'] = mrandom(c) + d
 		end
 	end
 	if b.i == nil then
-		b.i = mrandom(a.n_i - b.height)
+		b.i = mrandom(dungeon.n_i - b.height)
 	end
 	if b.j == nil then
-		b.j = mrandom(a.n_j - b.width)
+		b.j = mrandom(dungeon.n_j - b.width)
 	end
 
 	return b
 end
 
-local function emplaceRoom(a, b)
-	if a.n_rooms == 999 then return end
+local function emplaceRoom(dungeon, b)
+	if dungeon.n_rooms == 999 then return end
 
 	local c = b or {}
-	local c = setRoom(a, c)
+	local c = setRoom(dungeon, c)
 	local b = c.i * 2 + 1
 	local d = c.j * 2 + 1
 	local e = (c.i + c.height) * 2 - 1
 	local g = (c.j + c.width) * 2 - 1
-	if b < 1 or e > a.max_row then return end
-	if d < 1 or g > a.max_col then return end
-	local f = soundRoom(a, b, d, e, g)
+	if b < 1 or e > dungeon.max_row then return end
+	if d < 1 or g > dungeon.max_col then return end
+	local f = soundRoom(dungeon, b, d, e, g)
 	if f.blocked then return end
 
 	local f = getKeys(f)
 	local h = #f
 	if h == 0 then
-		f = a.n_rooms + 1
-		a.n_rooms = f
+		f = dungeon.n_rooms + 1
+		dungeon.n_rooms = f
 	elseif h == 1 then
-		if a.complex_rooms then
+		if dungeon.complex_rooms then
 			f = f[1] -- or 1?
 			if f ~= c.complex_id then return end
 		else
@@ -186,14 +187,14 @@ local function emplaceRoom(a, b)
 
 	for h = b, e do
 		for i = d, g do            
-            local cell = a.cell[h][i]
+            local cell = dungeon.cell[h][i]
 			if bit.band(cell, Flags.ENTRANCE) == Flags.ENTRANCE then
 				cell = bit.band(cell, bit.bnot(Flags.ESPACE))
 			elseif bit.band(cell, Flags.PERIMETER) == Flags.PERIMETER then
                 cell = bit.band(cell, bit.bnot(Flags.PERIMETER))
 			end			
 
-            a.cell[h][i] = bit.bor(cell, bit.bor(Flags.ROOM, bit.lshift(f, 6)))
+            dungeon.cell[h][i] = bit.bor(cell, bit.bor(Flags.ROOM, bit.lshift(f, 6)))
 		end
 	end
 
@@ -217,7 +218,7 @@ local function emplaceRoom(a, b)
 			east = {},
 		}
 	}
-	local h = a.room[f]
+	local h = dungeon.room[f]
 	if h ~= nil then
 		if h.complex ~= nil then 
 			table.insert(h.complex, c)
@@ -225,34 +226,33 @@ local function emplaceRoom(a, b)
 			complex = {
 				complex = { h, c }
 			}
-			a.room[f] = complex
+			dungeon.room[f] = complex
 		end
 	else
-		a.room[f] = c		
+		dungeon.room[f] = c		
 	end
 
 	for h = b - 1, e + 1 do
-		if bit.band(a.cell[h][d - 1], Flags.ROOM_ENTRANCE) == 0 then
-			a.cell[h][d - 1] = bit.bor(a.cell[h][d - 1], Flags.PERIMETER)
+		if bit.band(dungeon.cell[h][d - 1], Flags.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[h][d - 1] = bit.bor(dungeon.cell[h][d - 1], Flags.PERIMETER)
 		end
-		if bit.band(a.cell[h][g + 1], Flags.ROOM_ENTRANCE) == 0 then
-			a.cell[h][g + 1] = bit.bor(a.cell[h][g + 1], Flags.PERIMETER)
+		if bit.band(dungeon.cell[h][g + 1], Flags.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[h][g + 1] = bit.bor(dungeon.cell[h][g + 1], Flags.PERIMETER)
 		end
 	end
 	for i = d - 1, g + 1 do
-		if bit.band(a.cell[b - 1][i], Flags.ROOM_ENTRANCE) == 0 then
-			a.cell[b - 1][i] = bit.bor(a.cell[b - 1][i], Flags.PERIMETER)
+		if bit.band(dungeon.cell[b - 1][i], Flags.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[b - 1][i] = bit.bor(dungeon.cell[b - 1][i], Flags.PERIMETER)
 		end
-		if bit.band(a.cell[e + 1][i], Flags.ROOM_ENTRANCE) == 0 then
-			a.cell[e + 1][i] = bit.bor(a.cell[e + 1][i], Flags.PERIMETER)
+		if bit.band(dungeon.cell[e + 1][i], Flags.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[e + 1][i] = bit.bor(dungeon.cell[e + 1][i], Flags.PERIMETER)
 		end
 	end
 end
 
-local function allocRooms(a, b)
-	local a = a
-	local c = b or a.room_size
-	local b = a.n_cols * a.n_rows
+local function allocRooms(dungeon, b)
+	local c = b or dungeon.room_size
+	local b = dungeon.n_cols * dungeon.n_rows
 	local d = RoomSize[c]
 	local c = d.size or 2
 	local d = d.radix or 5
@@ -260,31 +260,31 @@ local function allocRooms(a, b)
 	local c = c * c
 	local b = mfloor(b / c) * 2
 	
-	if (a.room_layout == 'sparse') then b = mfloor(b / 13) end
+	if (dungeon.room_layout == 'sparse') then b = mfloor(b / 13) end
 
 	return b
 end
 
-local function denseRooms(a)
-	for b = 0, a.n_i - 1 do
+local function denseRooms(dungeon)
+	for b = 0, dungeon.n_i - 1 do
 		local c = b * 2 + 1
-		for d = 0, a.n_j - 1 do
+		for d = 0, dungeon.n_j - 1 do
 			local e = d * 2 + 1
-			if bit.band(a.cell[c][e], Flags.ROOM) == 0 then
+			if bit.band(dungeon.cell[c][e], Flags.ROOM) == 0 then
 				if not((b == 0 or c == 0) and mrandom(2) > 0) then
 					local g = {
 						i = b,
 						j = d,
 					}
-					emplaceRoom(a, g)
-					if (a.huge_rooms) then
-						if bit.band(a.cell[c][e], Flags.ROOM) == 0 then
+					emplaceRoom(dungeon, g)
+					if (dungeon.huge_rooms) then
+						if bit.band(dungeon.cell[c][e], Flags.ROOM) == 0 then
 							g = {
 								i = b,
 								j = d,
 								size = 'medium'
 							}
-							emplaceRoom(a, g)
+							emplaceRoom(dungeon, g)
 						end
 					end
 				end
@@ -684,14 +684,14 @@ end
 
 --[[
     var b;
-    for (b = 1; b <= a.n_rooms; b++) {
-        var c = a.room[b],
+    for (b = 1; b <= dungeon.n_rooms; b++) {
+        var c = dungeon.room[b],
             d = c.id.toString(),
             e = d.length,
             g = Math.floor((c.north + c.south) / 2);
         c = Math.floor((c.west + c.east - e) / 2) + 1;
         var f;
-        for (f = 0; f < e; f++) a.cell[g][c + f] |= d.charCodeAt(f) << 24
+        for (f = 0; f < e; f++) dungeon.cell[g][c + f] |= d.charCodeAt(f) << 24
     }
     return a
 ]]
