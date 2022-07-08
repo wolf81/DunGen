@@ -844,10 +844,10 @@ local function stairEnds(dungeon)
 			if bit.band(cell[r][c], Flag.CORRIDOR) == 0 then goto continue end
 			if bit.band(cell[r][c], Mask.STAIRS) ~= 0 then goto continue end
 
-			for _, dir in ipairs(getKeys(stair_end)) do
-				if checkTunnel(cell, r, c, stair_end[dir]) then
+			for _, dir in ipairs(getKeys(StairEnd)) do
+				if checkTunnel(cell, r, c, StairEnd[dir]) then
 					local s_end = { row = r, col = c, dir = dir }
-					local n = stair_end[dir].next
+					local n = StairEnd[dir].next
 					s_end.next_row = s_end.row + n[1]
 					s_end.next_col = s_end.col + n[2]
 
