@@ -13,4 +13,3 @@ Direction.opposite = {
     east  = 'west',
     west  = 'east',
 }
-

@@ -1,4 +1,4 @@
-require "src/cell"
+require "src.cell"
 
 DungeonSize = {
 	fine 		= 11,
@@ -80,20 +80,20 @@ RoomLayout = {
 	dense = { complex = false },
 }
 
-local doors = {
-	["none"] = {
+Doors = {
+	none = {
 		{ 15, 	Flag.ARCH },
 	},
-	["basic"] = {
+	basic = {
 		{ 15, 	Flag.ARCH },
 		{ 60, 	Flag.DOOR },
 	},
-	["secure"] = {
+	secure = {
 		{ 15, 	Flag.ARCH },
 		{ 60, 	Flag.DOOR },
 		{ 75, 	Flag.LOCKED },		
 	},
-	["standard"] = {
+	standard = {
 		{ 15, 	Flag.ARCH },
 		{ 60, 	Flag.DOOR },
 		{ 75, 	Flag.LOCKED },
@@ -101,7 +101,7 @@ local doors = {
 		{ 100, 	Flag.SECRET },
 		{ 110, 	Flag.PORTC },
 	},
-	["deathtrap"] = {
+	deathtrap = {
 		{ 15, 	Flag.ARCH },
 		{ 30, 	Flag.TRAPPED },
 		{ 40, 	Flag.SECRET },
@@ -125,7 +125,3 @@ AddStairs = {
 	yes 		= 2,
 	many 		= math.huge,
 }
-
-return setmetatable({
-	doors = doors,
-}, {})

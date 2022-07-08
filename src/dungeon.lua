@@ -1,6 +1,4 @@
-require 'src/config'
-
-local Config = require 'src/config'
+local Config = require 'src.config'
 
 local mfloor = math.floor
 

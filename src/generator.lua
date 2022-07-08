@@ -1,17 +1,17 @@
-require 'src/cell'
-require 'src/direction'
-require 'src/close_arc'
-require 'src/close_end'
-require 'src/stair_end'
+require 'src.cell'
+require 'src.direction'
+require 'src.close_arc'
+require 'src.close_end'
+require 'src.stair_end'
+require 'src.config'
 
-local Config = require 'src/config'
-local Dungeon = require 'src/dungeon'
+local Dungeon = require 'src.dungeon'
 
 local mfloor, mrandom, msqrt, mpow = math.floor, math.random, math.sqrt, math.pow
 local mmax, mmin, mabs, mhuge = math.max, math.min, math.abs, math.huge
 
 local function getDoorType(dungeon)
-	local doorTypes = Config.doors[dungeon.doors]
+	local doorTypes = Doors[dungeon.doors]
 	local max = doorTypes[#doorTypes][1]
 
 	local value = mfloor(mrandom(max))
@@ -654,7 +654,7 @@ end
 local function removeDeadends(dungeon, percentage)
 	dungeon.remove_pct = percentage
 
-	collapseTunnels(dungeon, percentage, close_end)    
+	collapseTunnels(dungeon, percentage, CloseEnd)    
 end
 
 local function closeArcs(dungeon)
