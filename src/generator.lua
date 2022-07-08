@@ -158,8 +158,7 @@ end
 local function emplaceRoom(dungeon, b)
 	if dungeon.n_rooms == 999 then return end
 
-	local c = b or {}
-	local c = setRoom(dungeon, c)
+	local c = setRoom(dungeon, b or {})
 	local b = c.i * 2 + 1
 	local d = c.j * 2 + 1
 	local e = (c.i + c.height) * 2 - 1
@@ -266,25 +265,24 @@ local function allocRooms(dungeon, b)
 end
 
 local function denseRooms(dungeon)
-	for b = 0, dungeon.n_i - 1 do
-		local row = b * 2 + 1
-		for d = 0, dungeon.n_j - 1 do
-			local col = d * 2 + 1
+	for i = 0, dungeon.n_i - 1 do
+		local row = i * 2 + 1
+		for j = 0, dungeon.n_j - 1 do
+			local col = j * 2 + 1
 			if bit.band(dungeon.cell[row][col], Flag.ROOM) == 0 then
-				if not((b == 0 or c == 0) and mrandom(2) > 0) then
-					local g = {
-						i = b,
-						j = d,
-					}
-					emplaceRoom(dungeon, g)
+				if not((i == 0 or j == 0) and mrandom(2) > 0) then
+					emplaceRoom(dungeon, {
+						i = i,
+						j = j,
+					})
+
 					if (dungeon.huge_rooms) then
 						if bit.band(dungeon.cell[row][col], Flag.ROOM) == 0 then
-							g = {
-								i = b,
-								j = d,
+							emplaceRoom(dungeon, {
+								i = i,
+								j = j,
 								size = 'medium'
-							}
-							emplaceRoom(dungeon, g)
+							})
 						end
 					end
 				end
@@ -294,19 +292,18 @@ local function denseRooms(dungeon)
 end
 
 local function scatterRooms(dungeon)
-	local b = allocRooms(dungeon)
+	local count = allocRooms(dungeon)
 
-	for c = 0, b - 1 do
+	for i = 0, count - 1 do
 		emplaceRoom(dungeon)
 
 		if dungeon.huge_rooms then
-			b = allocRooms(dungeon, 'medium')
+			count = allocRooms(dungeon, 'medium')
 
-			for c = 0, b - 1 do
-				local d = {
+			for i = 0, count - 1 do
+				emplaceRoom(dungeon, {
 					size = 'medium'
-				}
-				emplaceRoom(dungeon, d)
+				})
 			end
 		end
 	end
