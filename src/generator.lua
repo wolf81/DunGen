@@ -28,7 +28,7 @@ end
 local function maskCells(dungeon, mask)
 	local r_x = #mask * 1.0 / (dungeon["n_rows"])
 	local c_x = #mask[1] * 1.0 / (dungeon["n_cols"])
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	for r = 0, dungeon["n_rows"] - 1 do
 		for c = 0, dungeon["n_cols"] - 1 do
@@ -40,7 +40,7 @@ local function maskCells(dungeon, mask)
 end
 
 local function saltireMask(dungeon)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	local i_max = mfloor(dungeon["n_rows"] / 4)
 	for i = 0, i_max - 1 do
@@ -57,7 +57,7 @@ local function saltireMask(dungeon)
 end
 
 local function hexagonMask(dungeon)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	local r_half = dungeon["n_rows"] / 2
 	for r = 0, dungeon["n_rows"] do
@@ -75,7 +75,7 @@ end
 local function roundMask(dungeon)
 	local center_r = mfloor(dungeon["n_rows"] / 2)
 	local center_c = mfloor(dungeon["n_cols"] / 2)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	for r = 0, dungeon["n_rows"] do
 		for c = 0, dungeon["n_cols"] do
@@ -102,7 +102,7 @@ local function applyLayout(dungeon)
 end
 
 local function soundRoom(dungeon, r1, c1, r2, c2)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 	local hit = {}
 
 	for r = r1, r2 do
@@ -186,14 +186,14 @@ local function emplaceRoom(a, b)
 
 	for h = b, e do
 		for i = d, g do            
-            local cell = a["cell"][h][i]
+            local cell = a.cell[h][i]
 			if bit.band(cell, Flags.ENTRANCE) == Flags.ENTRANCE then
 				cell = bit.band(cell, bit.bnot(Flags.ESPACE))
 			elseif bit.band(cell, Flags.PERIMETER) == Flags.PERIMETER then
                 cell = bit.band(cell, bit.bnot(Flags.PERIMETER))
 			end			
 
-            a["cell"][h][i] = bit.bor(cell, bit.bor(Flags.ROOM, bit.lshift(f, 6)))
+            a.cell[h][i] = bit.bor(cell, bit.bor(Flags.ROOM, bit.lshift(f, 6)))
 		end
 	end
 
@@ -232,19 +232,19 @@ local function emplaceRoom(a, b)
 	end
 
 	for h = b - 1, e + 1 do
-		if bit.band(a["cell"][h][d - 1], Flags.ROOM_ENTRANCE) == 0 then
-			a["cell"][h][d - 1] = bit.bor(a["cell"][h][d - 1], Flags.PERIMETER)
+		if bit.band(a.cell[h][d - 1], Flags.ROOM_ENTRANCE) == 0 then
+			a.cell[h][d - 1] = bit.bor(a.cell[h][d - 1], Flags.PERIMETER)
 		end
-		if bit.band(a["cell"][h][g + 1], Flags.ROOM_ENTRANCE) == 0 then
-			a["cell"][h][g + 1] = bit.bor(a["cell"][h][g + 1], Flags.PERIMETER)
+		if bit.band(a.cell[h][g + 1], Flags.ROOM_ENTRANCE) == 0 then
+			a.cell[h][g + 1] = bit.bor(a.cell[h][g + 1], Flags.PERIMETER)
 		end
 	end
 	for i = d - 1, g + 1 do
-		if bit.band(a["cell"][b - 1][i], Flags.ROOM_ENTRANCE) == 0 then
-			a["cell"][b - 1][i] = bit.bor(a["cell"][b - 1][i], Flags.PERIMETER)
+		if bit.band(a.cell[b - 1][i], Flags.ROOM_ENTRANCE) == 0 then
+			a.cell[b - 1][i] = bit.bor(a.cell[b - 1][i], Flags.PERIMETER)
 		end
-		if bit.band(a["cell"][e + 1][i], Flags.ROOM_ENTRANCE) == 0 then
-			a["cell"][e + 1][i] = bit.bor(a["cell"][e + 1][i], Flags.PERIMETER)
+		if bit.band(a.cell[e + 1][i], Flags.ROOM_ENTRANCE) == 0 then
+			a.cell[e + 1][i] = bit.bor(a.cell[e + 1][i], Flags.PERIMETER)
 		end
 	end
 end
@@ -270,7 +270,7 @@ local function denseRooms(a)
 		local c = b * 2 + 1
 		for d = 0, a["n_j"] - 1 do
 			local e = d * 2 + 1
-			if bit.band(a["cell"][c][e], Flags.ROOM) == 0 then
+			if bit.band(a.cell[c][e], Flags.ROOM) == 0 then
 				if not((b == 0 or c == 0) and mrandom(2) > 0) then
 					local g = {
 						["i"] = b,
@@ -278,7 +278,7 @@ local function denseRooms(a)
 					}
 					emplaceRoom(a, g)
 					if (a["huge_rooms"]) then
-						if bit.band(a["cell"][c][e], Flags.ROOM) == 0 then
+						if bit.band(a.cell[c][e], Flags.ROOM) == 0 then
 							g = {
 								["i"] = b,
 								["j"] = d,
@@ -364,7 +364,7 @@ local function checkSill(cell, room, sill_r, sill_c, dir)
 end
 
 local function doorSills(dungeon, room)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 	local list = {}
 
 	if room.north >= 3 then
@@ -399,7 +399,7 @@ local function doorSills(dungeon, room)
 end
 
 local function openDoor(dungeon, room, sill)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	local door_r = sill["door_r"]
 	local door_c = sill["door_c"]
@@ -468,7 +468,7 @@ local function openRoom(dungeon, room)
 	if #list == 0 then return end
 
 	local n_opens = allocOpens(dungeon, room)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	for i = 0, n_opens + 1 do
 		if #list == 0 then break end
@@ -497,7 +497,7 @@ local function openRoom(dungeon, room)
 end
 
 local function fixDoors(dungeon)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 	local fixed = {}
 
 	for _, room in ipairs(dungeon.room) do
@@ -567,7 +567,7 @@ local function checkTunnel(cell, r, c, check)
 end
 
 local function emptyBlocks(dungeon)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	for r = 0, dungeon["n_rows"] do
 		for c = 0, dungeon["n_cols"] do
@@ -596,7 +596,7 @@ local function emptyBlocks(dungeon)
 end
 
 local function collapse(dungeon, r, c, xc)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	if bit.band(cell[r][c], Flags.OPENSPACE) ~= Flags.OPENSPACE then return end
 
@@ -623,7 +623,7 @@ local function collapseTunnels(dungeon, percentage, xc)
 	if percentage == 0 then return end
 
 	local all = percentage == 100
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	for i = 0, dungeon["n_i"] - 1 do
 		local r = (i * 2) + 1
@@ -697,7 +697,7 @@ end
 ]]
 
 local function labelRooms(dungeon)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	for id = 1, dungeon["n_rooms"] do
 		local room = dungeon.room[id]
@@ -731,7 +731,7 @@ local function tunnelDirs(dungeon, last_dir)
 end
 
 local function delveTunnel(dungeon, this_r, this_c, next_r, next_c)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	local tbl_r, tbl_c = { this_r, next_r }, { this_c, next_c }
 	
@@ -755,7 +755,7 @@ local function soundTunnel(dungeon, mid_r, mid_c, next_r, next_c)
 	if next_r < 0 or next_r > dungeon["n_rows"] then return false end
 	if next_c < 0 or next_c > dungeon["n_cols"] then return false end
 
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 	local tbl_r, tbl_c = { mid_r, next_r }, { mid_c, next_c }
 
 	table.sort(tbl_r)
@@ -804,7 +804,7 @@ local function tunnel(dungeon, i, j, last_dir)
 end
 
 local function corridors(dungeon)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	dungeon["straight_pct"] = CorridorLayout[dungeon["corridor_layout"]]
 
@@ -823,7 +823,7 @@ local function corridors(dungeon)
 end
 
 local function stairEnds(dungeon)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 	local list = {}
 
 	for i = 0, dungeon["n_i"] - 1 do
@@ -864,7 +864,7 @@ local function emplaceStairs(dungeon)
 	end
 
 	local list = stairEnds(dungeon)
-	local cell = dungeon["cell"]
+	local cell = dungeon.cell
 
 	shuffle(list)
 
