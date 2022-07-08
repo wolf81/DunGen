@@ -1,43 +1,6 @@
+require 'src.palette'
+
 local mfloor, mmax, mabs = math.floor, math.max, math.abs
-
-local palette = {
-    ["standard"] = {
-        ["colors"] = {
-            ["fill"] = { 0.0, 0.0, 0.0 },
-            ["open"] = { 1.0, 1.0, 1.0 },
-            ["open_grid"] = { 0.8, 0.8, 0.8 },
-        },
-    },
-    ["classic"] = {
-        ["colors"] = {
-            ["fill"] = { 0.2, 0.6, 0.8 },
-            ["open"] = { 1.0, 1.0, 1.0 },
-            ["open_grid"] = { 0.2, 0.6, 0.8 },
-            ["hover"] = { 0.71, 0.87, 0.95 },
-        },
-    },
-    ["graph"] = {
-        ["colors"] = {
-            ["fill"] = { 1.0, 1.0, 1.0 },
-            ["open"] = { 1.0, 1.0, 1.0 },
-            ["grid"] = { 0.79, 0.92, 0.96 },
-            ["wall"] = { 0.4, 0.4, 0.4 },
-            ["wall_shading"] = { 0.4, 0.4, 0.4 },
-            ["door"] = { 0.2, 0.2, 0.2 },
-            ["label"] = { 0.2, 0.2, 0.2 },
-            ["tag"] = { 0.4, 0.4, 0.4 },
-        },
-    },
-}
-
-local color_chain = {
-    ["door"] = "fill",
-    ["label"] = "fill",
-    ["stair"] = "wall",
-    ["wall"] = "fill",
-    ["fill"] = "black",
-    ["tag"] = "white",
-}
 
 local function getColor(color_table, key)
     while key ~= nil do
@@ -164,14 +127,14 @@ local function imageGrid(dungeon, config, color)
 end
 
 local function fillImage(dungeon, config)
-    local palette = config["palette"]
+    local Palette = config["Palette"]
 
     -- set background color if defined or use black background
-    local bg_color = palette["fill"] or palette["black"]
+    local bg_color = Palette["fill"] or Palette["black"]
     fillRect(0, 0, config["max_x"], config["max_y"], bg_color)
     
     -- draw grid if a grid color is defined
-    local grid_color = palette["fill_grid"] or palette["grid"]
+    local grid_color = Palette["fill_grid"] or Palette["grid"]
     if grid_color ~= nil then
         imageGrid(dungeon, config, grid_color)
     end
@@ -199,9 +162,9 @@ end
 local function imageDoors(dungeon, config)
     local doors, dim = dungeon["door"], config["cell_size"]
     local g, f, h = mfloor(dim / 6), mfloor(dim / 4), mfloor(dim / 3)
-    local palette = config["palette"]
-    local wall_color = getColor(palette, "wall")
-    local door_color = getColor(palette, "door")
+    local Palette = config["Palette"]
+    local wall_color = getColor(Palette, "wall")
+    local door_color = getColor(Palette, "door")
 
     for _, door in pairs(doors) do
         local row = door["row"]
@@ -294,7 +257,7 @@ end
 local function imageWalls(dungeon, config)
     local dim = config["cell_size"]
     local e = mmax(mfloor(dim / 4), 3)
-    local palette = config["palette"]
+    local Palette = config["Palette"]
     
     for r = 0, dungeon["n_rows"] do
         local y1 = r * dim
@@ -303,7 +266,7 @@ local function imageWalls(dungeon, config)
             if bit.band(dungeon["cell"][r][c], Mask.OPENSPACE) ~= 0 then
                 local x1 = c * dim
                 local x2 = x1 + dim
-                local bevel_color = palette["bevel_nw"]
+                local bevel_color = Palette["bevel_nw"]
                 if bevel_color ~= nil then
                     if bit.band(dungeon["cell"][r][c - 1], Mask.OPENSPACE) == 0 then
                         drawLine(x1 - 1, y1, x1 - 1, y2, bevel_color)
@@ -321,7 +284,7 @@ local function imageWalls(dungeon, config)
                         end
                     end
                 else
-                    local shade_color = palette["wall_shading"]
+                    local shade_color = Palette["wall_shading"]
                     if shade_color ~= nil then
                         if bit.band(dungeon["cell"][r - 1][c - 1], Mask.OPENSPACE) == 0 then
                             wallShading(x1 - e, y1 - e, x1 - 1, y1 - 1, shade_color)
@@ -350,7 +313,7 @@ local function imageWalls(dungeon, config)
                     end
                 end
 
-                local wall_color = palette["wall"]
+                local wall_color = Palette["wall"]
                 if wall_color ~= nil then
                     if bit.band(dungeon["cell"][r - 1][c], Flags.OPENSPACE) == 0 then
                         drawLine(x1, y1, x2, y1, wall_color)
@@ -391,14 +354,14 @@ local function baseLayer(dungeon, config)
 
     local canvas = love.graphics.newCanvas(config["width"], config["height"])
     canvas:renderTo(function()
-        local palette = config["palette"]
+        local Palette = config["Palette"]
 
         -- set background color if defined or use white background
-        local bg_color = palette["open"] or palette["white"]
+        local bg_color = Palette["open"] or Palette["white"]
         fillRect(0, 0, config["max_x"], config["max_y"], bg_color)
 
         -- if grid color is defined, draw grid
-        local grid_color = palette["open_grid"] or palette["grid"]
+        local grid_color = Palette["open_grid"] or Palette["grid"]
         if grid_color ~= nil then
             imageGrid(dungeon, config, grid_color)
         end
@@ -413,19 +376,19 @@ local function baseLayer(dungeon, config)
 end
 
 local function getPalette(config)
-    local palette = (config["palette"] ~= nil 
-        and config["palette"] 
-        or palette[config["map_style"]])
+    local Palette = (config["Palette"] ~= nil 
+        and config["Palette"] 
+        or Palette[config["map_style"]])
 
-    local colors = palette["colors"]
+    local colors = Palette["colors"]
     for key, _ in pairs(colors) do
-        palette[key] = colors[key]
+        Palette[key] = colors[key]
     end
 
-    palette["black"] = palette["black"] or { 0.0, 0.0, 0.0 }
-    palette["white"] = palette["white"] or { 1.0, 1.0, 1.0 }
+    Palette["black"] = Palette["black"] or { 0.0, 0.0, 0.0 }
+    Palette["white"] = Palette["white"] or { 1.0, 1.0, 1.0 }
 
-    return palette
+    return Palette
 end
 
 local function scaleDungeon(dungeon, options)
@@ -454,10 +417,10 @@ end
 local function imageLabels(dungeon, config)
     local dim = config["cell_size"]
     local d = mfloor(dim / 2)
-    local palette = config["palette"]
+    local Palette = config["Palette"]
 
     local font = config["font"]
-    local color = getColor(palette, "label")
+    local color = getColor(Palette, "label")
     for r = 0, dungeon["n_rows"] do
         for c = 0, dungeon["n_cols"] do
             if bit.band(dungeon["cell"][r][c], Mask.OPENSPACE) ~= 0 then
@@ -575,8 +538,8 @@ end
 local function imageStairs(dungeon, config)
     local stairs = dungeon["stair"]
     local scaled = scaleStairs(config["cell_size"])
-    local palette = config["palette"]
-    local color = getColor(palette, "stair")
+    local Palette = config["Palette"]
+    local color = getColor(Palette, "stair")
     for _, stair in ipairs(stairs) do
         local stair_dim = stairDim(stair, scaled)
         if stair["key"] == "up" then 
@@ -627,7 +590,7 @@ local function render(dungeon, options)
     local config = scaleDungeon(dungeon, options)
 
     return newImage(config["width"], config["height"], function(c)
-        config["palette"] = getPalette(config)        
+        config["Palette"] = getPalette(config)        
         config["base_layer"] = baseLayer(dungeon, config)
 
         fillImage(dungeon, config)  
