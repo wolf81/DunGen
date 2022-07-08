@@ -545,7 +545,7 @@ local function fixDoors(dungeon)
 end
 
 local function checkTunnel(cell, r, c, check)
-	local list = check.corridor
+	local list = check.CORRIDOR
 
 	local rows, cols = #cell, #cell[r]
 
@@ -557,7 +557,7 @@ local function checkTunnel(cell, r, c, check)
 		end
 	end
 
-	list = check.walled
+	list = check.WALLED
 	if list ~= nil then
 		for _, p in ipairs(list) do
 			if bit.band(cell[r + p[1]][c + p[2]], Mask.OPENSPACE) ~= 0 then
@@ -612,16 +612,16 @@ local function collapse(dungeon, r, c, xc)
 
 	for _, dir in pairs(getKeys(xc)) do
 		if checkTunnel(cell, r, c, xc[dir]) then
-			for _, p in ipairs(xc[dir].close) do
+			for _, p in ipairs(xc[dir].CLOSE) do
 				cell[r + p[1]][c + p[2]] = Flag.NOTHING
 			end
 
-			local p = xc[dir].open
+			local p = xc[dir].OPEN
 			if p ~= nil then
 				cell[r + p[1]][c + p[2]] = bit.bor(cell[r + p[1]][c + p[2]], Flag.CORRIDOR)
 			end
 
-			p = xc[dir].recurse
+			p = xc[dir].RECURSE
 			if p ~= nil then
 				collapse(dungeon, r + p[1], c + p[2], xc)
 			end
@@ -847,7 +847,7 @@ local function stairEnds(dungeon)
 			for _, dir in ipairs(getKeys(StairEnd)) do
 				if checkTunnel(cell, r, c, StairEnd[dir]) then
 					local s_end = { row = r, col = c, dir = dir }
-					local n = StairEnd[dir].next
+					local n = StairEnd[dir].NEXT
 					s_end.next_row = s_end.row + n[1]
 					s_end.next_col = s_end.col + n[2]
 
