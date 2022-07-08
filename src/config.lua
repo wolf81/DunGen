@@ -1,4 +1,4 @@
-require "src/flags"
+require "src/cell"
 
 DungeonSize = {
 	fine 		= 11,
@@ -82,29 +82,29 @@ RoomLayout = {
 
 local doors = {
 	["none"] = {
-		{ 15, 	Flags.ARCH },
+		{ 15, 	Flag.ARCH },
 	},
 	["basic"] = {
-		{ 15, 	Flags.ARCH },
-		{ 60, 	Flags.DOOR },
+		{ 15, 	Flag.ARCH },
+		{ 60, 	Flag.DOOR },
 	},
 	["secure"] = {
-		{ 15, 	Flags.ARCH },
-		{ 60, 	Flags.DOOR },
-		{ 75, 	Flags.LOCKED },		
+		{ 15, 	Flag.ARCH },
+		{ 60, 	Flag.DOOR },
+		{ 75, 	Flag.LOCKED },		
 	},
 	["standard"] = {
-		{ 15, 	Flags.ARCH },
-		{ 60, 	Flags.DOOR },
-		{ 75, 	Flags.LOCKED },
-		{ 90, 	Flags.TRAPPED },
-		{ 100, 	Flags.SECRET },
-		{ 110, 	Flags.PORTC },
+		{ 15, 	Flag.ARCH },
+		{ 60, 	Flag.DOOR },
+		{ 75, 	Flag.LOCKED },
+		{ 90, 	Flag.TRAPPED },
+		{ 100, 	Flag.SECRET },
+		{ 110, 	Flag.PORTC },
 	},
 	["deathtrap"] = {
-		{ 15, 	Flags.ARCH },
-		{ 30, 	Flags.TRAPPED },
-		{ 40, 	Flags.SECRET },
+		{ 15, 	Flag.ARCH },
+		{ 30, 	Flag.TRAPPED },
+		{ 40, 	Flag.SECRET },
 	},
 }
 

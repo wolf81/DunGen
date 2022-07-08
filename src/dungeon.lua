@@ -36,7 +36,7 @@ function Dungeon:new(options)
 	for r = 0, self.n_rows do
 		self.cell[r] = {}
 		for c = 0, self.n_cols do
-			self.cell[r][c] = Flags.NOTHING
+			self.cell[r][c] = Flag.NOTHING
 		end
 	end
 
@@ -48,7 +48,7 @@ function Dungeon:getCell(r, c)
 		return self.cell[r][c]
 	end
 
-	return Flags.NOTHING
+	return Flag.NOTHING
 end
 
 return setmetatable(Dungeon, {

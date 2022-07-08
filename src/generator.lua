@@ -1,4 +1,4 @@
-require 'src/flags'
+require 'src/cell'
 require 'src/direction'
 require 'src/close_arc'
 require 'src/close_end'
@@ -15,7 +15,7 @@ local function getDoorType(dungeon)
 	local max = doorTypes[#doorTypes][1]
 
 	local value = mfloor(mrandom(max))
-	local door = Flags.ARCH
+	local door = Flag.ARCH
 
 	for _, doorType in ipairs(doorTypes) do
 		if doorType[1] >= value then break end
@@ -34,7 +34,7 @@ local function maskCells(dungeon, mask)
 		for c = 0, dungeon.n_cols - 1 do
 			local y = mfloor(r * r_x + 1.0)
 			local x = mfloor(c * c_x + 1.0)
-			cell[r][c] = (mask[y][x] == 1 and Flags.NOTHING or Flags.BLOCKED)
+			cell[r][c] = (mask[y][x] == 1 and Flag.NOTHING or Flag.BLOCKED)
 		end
 	end
 end
@@ -48,10 +48,10 @@ local function saltireMask(dungeon)
 		local j_max = dungeon.n_cols - j
 
 		for j = j, j_max do
-			cell[i][j] = Flags.BLOCKED
-			cell[dungeon.n_rows - i][j] = Flags.BLOCKED
-			cell[j][i] = Flags.BLOCKED
-			cell[j][dungeon.n_cols - i] = Flags.BLOCKED
+			cell[i][j] = Flag.BLOCKED
+			cell[dungeon.n_rows - i][j] = Flag.BLOCKED
+			cell[j][i] = Flag.BLOCKED
+			cell[j][dungeon.n_cols - i] = Flag.BLOCKED
 		end
 	end
 end
@@ -66,7 +66,7 @@ local function hexagonMask(dungeon)
 
 		for c = 0, dungeon.n_cols do
 			if c < c_min or c > c_max then
-				cell[r][c] = Flags.BLOCKED
+				cell[r][c] = Flag.BLOCKED
 			end
 		end
 	end
@@ -83,7 +83,7 @@ local function roundMask(dungeon)
 				mpow((r - mid_r), 2) + 
 				mpow((c - mid_c), 2)
             )
-			cell[r][c] = d > mid_c and Flags.BLOCKED or Flags.NOTHING
+			cell[r][c] = d > mid_c and Flag.BLOCKED or Flag.NOTHING
 		end
 	end
 end
@@ -98,7 +98,7 @@ local function applyLayout(dungeon)
 		hexagonMask(dungeon)
 	elseif DungeonLayout[layout] ~= nil then
 		local mask = DungeonLayout[layout].mask
-		maskCells(dungeon, mask or {{ Flags.BLOCKED }})
+		maskCells(dungeon, mask or {{ Flag.BLOCKED }})
 	end
 end
 
@@ -108,12 +108,12 @@ local function soundRoom(dungeon, r1, c1, r2, c2)
 
 	for r = r1, r2 do
 		for c = c1, c2 do
-			if bit.band(cell[r][c], Flags.BLOCKED) == Flags.BLOCKED then
+			if bit.band(cell[r][c], Flag.BLOCKED) == Flag.BLOCKED then
 				return { blocked = true }
 			end
 
-			if bit.band(cell[r][c], Flags.ROOM) == Flags.ROOM then
-				local id = bit.rshift(bit.band(cell[r][c], Flags.ROOM_ID), 6)
+			if bit.band(cell[r][c], Flag.ROOM) == Flag.ROOM then
+				local id = bit.rshift(bit.band(cell[r][c], Flag.ROOM_ID), 6)
 				local sId = tostring(id)
 				hit[sId] = id + 1
 			end
@@ -188,13 +188,13 @@ local function emplaceRoom(dungeon, b)
 	for h = b, e do
 		for i = d, g do            
             local cell = dungeon.cell[h][i]
-			if bit.band(cell, Flags.ENTRANCE) == Flags.ENTRANCE then
-				cell = bit.band(cell, bit.bnot(Flags.ESPACE))
-			elseif bit.band(cell, Flags.PERIMETER) == Flags.PERIMETER then
-                cell = bit.band(cell, bit.bnot(Flags.PERIMETER))
+			if bit.band(cell, Flag.ENTRANCE) == Flag.ENTRANCE then
+				cell = bit.band(cell, bit.bnot(Flag.ESPACE))
+			elseif bit.band(cell, Flag.PERIMETER) == Flag.PERIMETER then
+                cell = bit.band(cell, bit.bnot(Flag.PERIMETER))
 			end			
 
-            dungeon.cell[h][i] = bit.bor(cell, bit.bor(Flags.ROOM, bit.lshift(f, 6)))
+            dungeon.cell[h][i] = bit.bor(cell, bit.bor(Flag.ROOM, bit.lshift(f, 6)))
 		end
 	end
 
@@ -233,19 +233,19 @@ local function emplaceRoom(dungeon, b)
 	end
 
 	for h = b - 1, e + 1 do
-		if bit.band(dungeon.cell[h][d - 1], Mask.room_entrance) == 0 then
-			dungeon.cell[h][d - 1] = bit.bor(dungeon.cell[h][d - 1], Flags.PERIMETER)
+		if bit.band(dungeon.cell[h][d - 1], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[h][d - 1] = bit.bor(dungeon.cell[h][d - 1], Flag.PERIMETER)
 		end
-		if bit.band(dungeon.cell[h][g + 1], Mask.room_entrance) == 0 then
-			dungeon.cell[h][g + 1] = bit.bor(dungeon.cell[h][g + 1], Flags.PERIMETER)
+		if bit.band(dungeon.cell[h][g + 1], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[h][g + 1] = bit.bor(dungeon.cell[h][g + 1], Flag.PERIMETER)
 		end
 	end
 	for i = d - 1, g + 1 do
-		if bit.band(dungeon.cell[b - 1][i], Mask.room_entrance) == 0 then
-			dungeon.cell[b - 1][i] = bit.bor(dungeon.cell[b - 1][i], Flags.PERIMETER)
+		if bit.band(dungeon.cell[b - 1][i], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[b - 1][i] = bit.bor(dungeon.cell[b - 1][i], Flag.PERIMETER)
 		end
-		if bit.band(dungeon.cell[e + 1][i], Mask.room_entrance) == 0 then
-			dungeon.cell[e + 1][i] = bit.bor(dungeon.cell[e + 1][i], Flags.PERIMETER)
+		if bit.band(dungeon.cell[e + 1][i], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[e + 1][i] = bit.bor(dungeon.cell[e + 1][i], Flag.PERIMETER)
 		end
 	end
 end
@@ -270,7 +270,7 @@ local function denseRooms(dungeon)
 		local c = b * 2 + 1
 		for d = 0, dungeon.n_j - 1 do
 			local e = d * 2 + 1
-			if bit.band(dungeon.cell[c][e], Flags.ROOM) == 0 then
+			if bit.band(dungeon.cell[c][e], Flag.ROOM) == 0 then
 				if not((b == 0 or c == 0) and mrandom(2) > 0) then
 					local g = {
 						i = b,
@@ -278,7 +278,7 @@ local function denseRooms(dungeon)
 					}
 					emplaceRoom(dungeon, g)
 					if (dungeon.huge_rooms) then
-						if bit.band(dungeon.cell[c][e], Flags.ROOM) == 0 then
+						if bit.band(dungeon.cell[c][e], Flag.ROOM) == 0 then
 							g = {
 								i = b,
 								j = d,
@@ -342,14 +342,14 @@ local function checkSill(cell, room, sill_r, sill_c, dir)
 	local door_r = sill_r + di
 	local door_c = sill_c + dj
 	local door_cell = cell[door_r][door_c]
-	if bit.band(door_cell, Flags.PERIMETER) == 0 then return end
-	if bit.band(door_cell, Mask.block_door) ~= 0 then return end
+	if bit.band(door_cell, Flag.PERIMETER) == 0 then return end
+	if bit.band(door_cell, Mask.BLOCK_DOOR) ~= 0 then return end
 	local out_r = door_r + di
 	local out_c = door_c + dj
 	local out_cell = cell[out_r][out_c]
-	if bit.band(out_cell, Flags.BLOCKED) == Flags.BLOCKED then return end
+	if bit.band(out_cell, Flag.BLOCKED) == Flag.BLOCKED then return end
 
-	local out_id = tonumber(bit.rshift(bit.band(out_cell, Flags.ROOM_ID), 6))
+	local out_id = tonumber(bit.rshift(bit.band(out_cell, Flag.ROOM_ID), 6))
 
 	if out_id == room.id then return end
 
@@ -415,8 +415,8 @@ local function openDoor(dungeon, room, sill)
     	local r = open_r + di * x
     	local c = open_c + dj * x
 
-    	cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.PERIMETER))
-    	cell[r][c] = bit.bor(cell[r][c], Flags.ENTRANCE)
+    	cell[r][c] = bit.band(cell[r][c], bit.bnot(Flag.PERIMETER))
+    	cell[r][c] = bit.bor(cell[r][c], Flag.ENTRANCE)
     end
 
     local door_type = getDoorType(dungeon)
@@ -425,32 +425,32 @@ local function openDoor(dungeon, room, sill)
     	col = door_c,
     }
 
-    if door_type == Flags.ARCH then
-    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.ARCH)
+    if door_type == Flag.ARCH then
+    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flag.ARCH)
     	door.key = 'arch'
     	door.type = 'Archway'
-    elseif door_type == Flags.DOOR then
-    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.DOOR)
+    elseif door_type == Flag.DOOR then
+    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flag.DOOR)
     	door.key = 'open'
     	door.type = 'Unlocked Door'
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('o'), 24))
-    elseif door_type == Flags.LOCKED then
-    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.LOCKED)
+    elseif door_type == Flag.LOCKED then
+    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flag.LOCKED)
     	door.key = 'lock'
     	door.type = 'Locked Door'
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('x'), 24))
-    elseif door_type == Flags.TRAPPED then
-    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.TRAPPED)
+    elseif door_type == Flag.TRAPPED then
+    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flag.TRAPPED)
     	door.key = 'trap'
     	door.type = 'Trapped Door'
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('t'), 24))
-    elseif door_type == Flags.SECRET then
-    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.SECRET)
+    elseif door_type == Flag.SECRET then
+    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flag.SECRET)
     	door.key = 'secret'
     	door.type = 'Secret Door'
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('s'), 24))
-    elseif door_type == Flags.PORTC then	        	
-    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.PORTC)
+    elseif door_type == Flag.PORTC then	        	
+    	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flag.PORTC)
     	door.key = 'portc'
     	door.type = 'Portcullis'
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('#'), 24))
@@ -479,7 +479,7 @@ local function openRoom(dungeon, room)
 		local door_c = sill.door_c
 		local door_cell = cell[door_r][door_c]
 
-		if bit.band(door_cell, Mask.doorspace) == 0 then
+		if bit.band(door_cell, Mask.DOORSPACE) == 0 then
 			local out_id = sill.out_id
 			if out_id ~= nil then
 				local room_ids = { room.id, out_id } 			
@@ -509,7 +509,7 @@ local function fixDoors(dungeon)
 				local door_c = door.col
 				local door_cell = cell[door_r][door_c]
 
-				if bit.band(door_cell, Mask.openspace) == 0 then goto continue end
+				if bit.band(door_cell, Mask.OPENSPACE) == 0 then goto continue end
 
 				local door_id = door_r..'.'..door_c
 
@@ -548,7 +548,7 @@ local function checkTunnel(cell, r, c, check)
 	local list = check.corridor
 	if list ~= nil then
 		for _, p in ipairs(list) do
-			if bit.band(cell[r + p[1]][c + p[2]], Flags.CORRIDOR) == 0 then
+			if bit.band(cell[r + p[1]][c + p[2]], Flag.CORRIDOR) == 0 then
 				return false
 			end
 		end
@@ -557,7 +557,7 @@ local function checkTunnel(cell, r, c, check)
 	list = check.walled
 	if list ~= nil then
 		for _, p in ipairs(list) do
-			if bit.band(cell[r + p[1]][c + p[2]], Mask.openspace) ~= 0 then
+			if bit.band(cell[r + p[1]][c + p[2]], Mask.OPENSPACE) ~= 0 then
 				return false
 			end			
 		end
@@ -572,25 +572,25 @@ local function emptyBlocks(dungeon)
 	for r = 0, dungeon.n_rows do
 		for c = 0, dungeon.n_cols do
 			-- clear all blocked cells, nothing to see here ...
-			if bit.band(cell[r][c], Flags.BLOCKED) ~= 0 then
-				cell[r][c] = Flags.NOTHING
+			if bit.band(cell[r][c], Flag.BLOCKED) ~= 0 then
+				cell[r][c] = Flag.NOTHING
 			end
 
             --[[
 			-- inside rooms, remove all corridors
-			if bit.band(cell[r][c], Mask.openspace) == Mask.openspace then
-				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.CORRIDOR))
+			if bit.band(cell[r][c], Mask.OPENSPACE) == Mask.OPENSPACE then
+				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flag.CORRIDOR))
 			end
 
 			-- remove all perimeters around rooms
-			if bit.band(cell[r][c], Flags.PERIMETER) ~= 0 then
-				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.PERIMETER))
+			if bit.band(cell[r][c], Flag.PERIMETER) ~= 0 then
+				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flag.PERIMETER))
 			end
 
 			-- only tag door cells if connected to corridor
-			if (bit.band(cell[r][c], Mask.doorspace) ~= 0 and 
-				bit.band(cell[r][c], Flags.CORRIDOR) == 0) then
-				cell[r][c] = bit.band(cell[r][c], bit.bnot(Mask.doorspace))
+			if (bit.band(cell[r][c], Mask.DOORSPACE) ~= 0 and 
+				bit.band(cell[r][c], Flag.CORRIDOR) == 0) then
+				cell[r][c] = bit.band(cell[r][c], bit.bnot(Mask.DOORSPACE))
 			end
             --]]
 		end
@@ -601,17 +601,17 @@ local function collapse(dungeon, r, c, xc)
 	local cell = dungeon.cell
 
     -- FIXME: seems wrong
-	if bit.band(cell[r][c], Mask.openspace) ~= Mask.openspace then return end
+	if bit.band(cell[r][c], Mask.OPENSPACE) ~= Mask.OPENSPACE then return end
 
 	for _, dir in pairs(getKeys(xc)) do
 		if checkTunnel(cell, r, c, xc[dir]) then
 			for _, p in ipairs(xc[dir].close) do
-				cell[r + p[1]][c + p[2]] = Flags.NOTHING
+				cell[r + p[1]][c + p[2]] = Flag.NOTHING
 			end
 
 			local p = xc[dir].open
 			if p ~= nil then
-				cell[r + p[1]][c + p[2]] = bit.bor(cell[r + p[1]][c + p[2]], Flags.CORRIDOR)
+				cell[r + p[1]][c + p[2]] = bit.bor(cell[r + p[1]][c + p[2]], Flag.CORRIDOR)
 			end
 
 			p = xc[dir].recurse
@@ -633,8 +633,8 @@ local function collapseTunnels(dungeon, percentage, xc)
 		for j = 0, dungeon.n_j - 1 do
 			local c = (j * 2) + 1
 
-			if bit.band(cell[r][c], Mask.openspace) == 0 then goto continue end
-			if bit.band(cell[r][c], Mask.stairs) ~= 0 then goto continue end
+			if bit.band(cell[r][c], Mask.OPENSPACE) == 0 then goto continue end
+			if bit.band(cell[r][c], Mask.STAIRS) ~= 0 then goto continue end
 			if all or mrandom(100) < percentage then
 				collapse(dungeon, r, c, xc)
 			end
@@ -746,8 +746,8 @@ local function delveTunnel(dungeon, this_r, this_c, next_r, next_c)
 
 	for r = r1, r2 do
 		for c = c1, c2 do
-			cell[r][c] = bit.band(cell[r][c], bit.bnot(Flags.ENTRANCE))
-			cell[r][c] = bit.bor(cell[r][c], Flags.CORRIDOR)
+			cell[r][c] = bit.band(cell[r][c], bit.bnot(Flag.ENTRANCE))
+			cell[r][c] = bit.bor(cell[r][c], Flag.CORRIDOR)
 		end
 	end
 
@@ -769,7 +769,7 @@ local function soundTunnel(dungeon, mid_r, mid_c, next_r, next_c)
 
 	for r = r1, r2 do
 		for c = c1, c2 do
-			if bit.band(cell[r][c], Mask.block_corr) ~= 0 then return false end
+			if bit.band(cell[r][c], Mask.BLOCK_CORR) ~= 0 then return false end
 		end
 	end	
 
@@ -816,7 +816,7 @@ local function corridors(dungeon)
 		for j = 1, dungeon.n_j - 1 do
 			local c = j * 2 + 1
 
-			if bit.band(cell[r][c], Flags.CORRIDOR) == Flags.CORRIDOR then goto continue end
+			if bit.band(cell[r][c], Flag.CORRIDOR) == Flag.CORRIDOR then goto continue end
 
 			tunnel(dungeon, i, j, last_dir)
 
@@ -834,8 +834,8 @@ local function stairEnds(dungeon)
 		for j = 0, dungeon.n_j - 1 do
 			local c = (j * 2) + 1
 
-			if bit.band(cell[r][c], Flags.CORRIDOR) == 0 then goto continue end
-			if bit.band(cell[r][c], Mask.stairs) ~= 0 then goto continue end
+			if bit.band(cell[r][c], Flag.CORRIDOR) == 0 then goto continue end
+			if bit.band(cell[r][c], Mask.STAIRS) ~= 0 then goto continue end
 
 			for _, dir in ipairs(getKeys(stair_end)) do
 				if checkTunnel(cell, r, c, stair_end[dir]) then
@@ -881,11 +881,11 @@ local function emplaceStairs(dungeon)
 		local s_type = i < 2 and (i + 1) or mrandom(2)
 
 		if s_type == 1 then
-			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_DN)
+			cell[r][c] = bit.bor(cell[r][c], Flag.STAIR_DN)
 			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte('d'), 24))
 			stair.key = 'down'
 		else
-			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_UP)
+			cell[r][c] = bit.bor(cell[r][c], Flag.STAIR_UP)
 			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte('u'), 24))
 			stair.key = 'up'
 		end
