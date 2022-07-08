@@ -1,120 +1,14 @@
 require 'src/flags'
 require 'src/direction'
+require 'src/close_arc'
+require 'src/close_end'
+require 'src/stair_end'
 
 local Config = require 'src/config'
 local Dungeon = require 'src/dungeon'
 
 local mfloor, mrandom, msqrt, mpow = math.floor, math.random, math.sqrt, math.pow
 local mmax, mmin, mabs, mhuge = math.max, math.min, math.abs, math.huge
-
-local stair_end = {
-    ["north"] = {
-        ["walled"]		= {{1,-1},{0,-1},{-1,-1},{-1,0},{-1,1},{0,1},{1,1}},
-        ["corridor"]	= {{0,0},{1,0},{2,0}},
-        ["stair"]		= {0,0},
-        ["next"]		= {1,0},
-    },
-    ["south"] = {
-        ["walled"]		= {{-1,-1},{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1}},
-        ["corridor"]	= {{0,0},{-1,0},{-2,0}},
-        ["stair"]		= {0,0},
-        ["next"]		= {-1,0},
-    },
-    ["west"] = {
-        ["walled"]		= {{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1},{1,0},{1,1}},
-        ["corridor"]	= {{0,0},{0,1},{0,2}},
-        ["stair"]		= {0,0},
-        ["next"]		= {0,1},
-    },
-    ["east"] = {
-        ["walled"]		= {{-1,-1},{-1,0},{-1,1},{0,1},{1,1},{1,0},{1,-1}},
-        ["corridor"]	= {{0,0},{0,-1},{0,-2}},
-        ["stair"]		= {0,0},
-        ["next"]		= {0,-1},
-    },
-}
-
-local close_arcs = {
-	["north-west"] = {
-        ["corridor"] 	= {{0,0},{-1,0},{-2,0},{-2,-1},{-2,-2},{-1,-2},{0,-2}},
-        ["walled"] 		= {{-1,1},{-2,1},{-3,1},{-3,0},{-3,-1},{-3,-2},{-3,-3},{-2,-3},{-1,-3},{0,-1},{-1,-1}},
-        ["close"] 		= {{-1,0},{-2,0},{-2,-1},{-2,-2},{-1,-2}},
-        ["open"] 		= {0,-1},
-        ["recurse"] 	= {2,0},
-    },
-    ["north-east"] = {
-        ["corridor"] 	= {{0,0},{-1,0},{-2,0},{-2,1},{-2,2},{-1,2},{0,2}},
-        ["walled"] 		= {{-1,-1},{-2,-1},{-3,-1},{-3,0},{-3,1},{-3,2},{-3,3},{-2,3},{-1,3},{0,1},{-1,1}},
-        ["close"] 		= {{-1,0},{-2,0},{-2,1},{-2,2},{-1,2}},
-        ["open"] 		= {0,1},
-        ["recurse"] 	= {2,0},
-    },
-    ["south-west"] = {
-        ["corridor"] 	= {{0,0},{1,0},{2,0},{2,-1},{2,-2},{1,-2},{0,-2}},
-        ["walled"] 		= {{1,1},{2,1},{3,1},{3,0},{3,-1},{3,-2},{3,-3},{2,-3},{1,-3},{0,-1},{1,-1}},
-        ["close"] 		= {{1,0},{2,0},{2,-1},{2,-2},{1,-2}},
-        ["open"] 		= {0,-1},
-        ["recurse"] 	= {-2,0}
-    },
-    ["south-east"] = {
-        ["corridor"] 	= {{0,0},{1,0},{2,0},{2,1},{2,2},{1,2},{0,2}},
-        ["walled"] 		= {{1,-1},{2,-1},{3,-1},{3,0},{3,1},{3,2},{3,3},{2,3},{1,3},{0,1},{1,1}},
-        ["close"] 		= {{1,0},{2,0},{2,1},{2,2},{1,2}},
-        ["open"] 		= {0,1},
-        ["recurse"] 	= {-2,0},
-    },
-    ["west-north"] = {
-        ["corridor"] 	= {{0,0},{0,-1},{0,-2},{-1,-2},{-2,-2},{-2,-1},{-2,0}},
-        ["walled"] 		= {{1,-1},{1,-2},{1,-3},{0,-3},{-1,-3},{-2,-3},{-3,-3},{-3,-2},{-3,-1},{-1,0},{-1,-1}},
-        ["close"] 		= {{0,-1},{0,-2},{-1,-2},{-2,-2},{-2,-1}},
-        ["open"] 		= {-1,0},
-        ["recurse"] 	= {0,2},
-    },
-    ["west-south"] = {
-        ["corridor"] 	= {{0,0},{0,-1},{0,-2},{1,-2},{2,-2},{2,-1},{2,0}},
-        ["walled"] 		= {{-1,-1},{-1,-2},{-1,-3},{0,-3},{1,-3},{2,-3},{3,-3},{3,-2},{3,-1},{1,0},{1,-1}},
-        ["close"] 		= {{0,-1},{0,-2},{1,-2},{2,-2},{2,-1}},
-        ["open"] 		= {1,0},
-        ["recurse"] 	= {0,2},
-    },
-    ["east-north"] = {
-        ["corridor"] 	= {{0,0},{0,1},{0,2},{-1,2},{-2,2},{-2,1},{-2,0}},
-        ["walled"] 		= {{1,1},{1,2},{1,3},{0,3},{-1,3},{-2,3},{-3,3},{-3,2},{-3,1},{-1,0},{-1,1}},
-        ["close"] 		= {{0,1},{0,2},{-1,2},{-2,2},{-2,1}},
-        ["open"] 		= {-1,0},
-        ["recurse"] 	= {0,-2},
-    },
-    ["east-south"] = {
-        ["corridor"] 	= {{0,0},{0,1},{0,2},{1,2},{2,2},{2,1},{2,0}},
-        ["walled"] 		= {{-1,1},{-1,2},{-1,3},{0,3},{1,3},{2,3},{3,3},{3,2},{3,1},{1,0},{1,1}},
-        ["close"] 		= {{0,1},{0,2},{1,2},{2,2},{2,1}},
-        ["open"] 		= {1,0},
-        ["recurse"] 	= {0,-2},
-    }
-}
-
-local close_end = {
-    ["north"] = {
-        ["walled"]		= {{0,-1},{1,-1},{1,0},{1,1},{0,1}},
-        ["close"]		= {{0,0}},
-        ["recurse"]		= {-1,0},
-    },
-    ["south"] = {
-        ["walled"]		= {{0,-1},{-1,-1},{-1,0},{-1,1},{0,1}},
-        ["close"]		= {{0,0}},
-        ["recurse"]		= {1,0},
-    },
-    ["west"] = {
-        ["walled"]		= {{-1,0},{-1,1},{0,1},{1,1},{1,0}},
-        ["close"]		= {{0,0}},
-        ["recurse"]		= {0,-1},
-    },
-    ["east"] = {
-        ["walled"]		= {{-1,0},{-1,-1},{0,-1},{1,-1},{1,0}},
-        ["close"]		= {{0,0}},
-        ["recurse"]		= {0,1},
-    },
-}
 
 local function getDoorType(dungeon)
 	local doorTypes = Config.doors[dungeon["doors"]]
@@ -310,14 +204,14 @@ local function emplaceRoom(a, b)
 		["size"] = c["size"],
 		["row"] = b,
 		["col"] = d,
-		["north"] = b,
+		north = b,
 		["south"] = e,
 		["west"] = d,
 		["east"] = g,
 		["height"] = h,
 		["width"] = i,
 		door = {
-			["north"] = {},
+			north = {},
 			["south"] = {},
 			["west"] = {},
 			["east"] = {},
@@ -435,7 +329,7 @@ local function emplaceRooms(dungeon)
 end
 
 local function allocOpens(dungeon, room)
-	local room_h = (room["south"] - room["north"]) / 2 + 1
+	local room_h = (room["south"] - room.north) / 2 + 1
 	local room_w = (room["east"] - room["west"]) / 2 + 1
 	local flumph = mfloor(msqrt(room_w * room_h))
 	local n_opens = flumph + mrandom(flumph)
@@ -473,9 +367,9 @@ local function doorSills(dungeon, room)
 	local cell = dungeon["cell"]
 	local list = {}
 
-	if room["north"] >= 3 then
+	if room.north >= 3 then
 		for c = room["west"], room["east"], 2 do
-			local sill = checkSill(cell, room, room["north"], c, "north")
+			local sill = checkSill(cell, room, room.north, c, "north")
 			if sill ~= nil then list[#list + 1] = sill end
 		end
 	end
@@ -488,14 +382,14 @@ local function doorSills(dungeon, room)
 	end
 
 	if room["west"] >= 3 then
-		for r = room["north"], room["south"], 2 do
+		for r = room.north, room["south"], 2 do
 			local sill = checkSill(cell, room, r, room["west"], "west")
 			if sill ~= nil then list[#list + 1] = sill end
 		end
 	end
 
 	if room["east"] <= dungeon["n_cols"] - 3 then
-		for r = room["north"], room["south"], 2 do
+		for r = room.north, room["south"], 2 do
 			local sill = checkSill(cell, room, r, room["east"], "east")			
 			if sill ~= nil then list[#list + 1] = sill end
 		end
@@ -809,7 +703,7 @@ local function labelRooms(dungeon)
 		local room = dungeon.room[id]
 		local label = room["id"]
 		local len = string.len(label)
-		local label_r = mfloor((room["north"] + room["south"]) / 2)
+		local label_r = mfloor((room.north + room["south"]) / 2)
 		local label_c = mfloor((room["west"] + room["east"] - len) / 2) + 1
 
 		for c = 0, len - 1 do
