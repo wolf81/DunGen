@@ -546,9 +546,12 @@ end
 
 local function checkTunnel(cell, r, c, check)
 	local list = check.corridor
+
+	local rows, cols = #cell, #cell[r]
+
 	if list ~= nil then
 		for _, p in ipairs(list) do
-			if bit.band(cell[r + p[1]][c + p[2]], Flag.CORRIDOR) == 0 then
+			if cell[r + p[1]][c + p[2]] ~= Flag.CORRIDOR then
 				return false
 			end
 		end
@@ -600,7 +603,11 @@ end
 local function collapse(dungeon, r, c, xc)
 	local cell = dungeon.cell
 
-    -- FIXME: seems wrong
+	-- make sure row and column is within bounds
+	if (r < 0 or r > dungeon.n_rows or c < 0 or c > dungeon.n_cols) then 
+		return 
+	end
+
 	if bit.band(cell[r][c], Mask.OPENSPACE) == 0 then return end
 
 	for _, dir in pairs(getKeys(xc)) do
