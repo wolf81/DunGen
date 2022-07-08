@@ -8,43 +8,44 @@ local Dungeon = {}
 Dungeon.__index = Dungeon
 
 function Dungeon:new(options)
-	local this = {}
+	local self = {}
 
     for k, v in pairs(options) do
-    	this[k] = v
+    	self[k] = v
     end
 
-	local dungeon_size = DungeonSize[options["dungeon_size"]]
-	local dungeon_layout = DungeonLayout[options["dungeon_layout"]]	
-	local aspect = dungeon_layout["aspect"]
+	local dungeon_size = DungeonSize[options.dungeon_size]
+	local dungeon_layout = DungeonLayout[options.dungeon_layout]	
+	local aspect = dungeon_layout.aspect
     local n_i, n_j = dungeon_size, mfloor(dungeon_size * aspect)
-    if n_i % 2 == 0 then n_i = n_i - 1 end
+    local n_rows, n_cols = n_i * 2, n_j * 2
+    local cell = {}
 
-	this["n_i"] = n_i
-	this["n_j"] = n_j
-	this["n_rows"] = n_i * 2
-	this["n_cols"] = n_j * 2
-	this["max_row"] = this["n_rows"] - 1
-	this["max_col"] = this["n_cols"] - 1
-	this["n_rooms"] = 0
-	this["room"] = {}
-	this["door"] = {}
-	this["stair"] = {}
-	this["cell"] = {}
+	self.n_i = n_i
+	self.n_j = n_j
+	self.n_rows = n_i * 2
+	self.n_cols = n_j * 2
+	self.max_row = self.n_rows - 1
+	self.max_col = self.n_cols - 1
+	self.n_rooms = 0
+	self.room = {}
+	self.door = {}
+	self.stair = {}
+	self.cell = {}
 
-	for r = 0, this["n_rows"] do
-		this["cell"][r] = {}
-		for c = 0, this["n_cols"] do
-			this["cell"][r][c] = Flags.NOTHING
+	for r = 0, self.n_rows do
+		self.cell[r] = {}
+		for c = 0, self.n_cols do
+			self.cell[r][c] = Flags.NOTHING
 		end
 	end
 
-	return setmetatable(this, Dungeon)
+	return setmetatable(self, Dungeon)
 end
 
 function Dungeon:getCell(r, c)
-	if r >= 0 and r <= self["max_row"] and c >= 0 and c <= self["max_col"] then
-		return self["cell"][r][c]
+	if r >= 0 and r <= self.max_row and c >= 0 and c <= self.max_col then
+		return self.cell[r][c]
 	end
 
 	return Flags.NOTHING
