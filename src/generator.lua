@@ -267,10 +267,10 @@ end
 
 local function denseRooms(dungeon)
 	for b = 0, dungeon.n_i - 1 do
-		local c = b * 2 + 1
+		local row = b * 2 + 1
 		for d = 0, dungeon.n_j - 1 do
-			local e = d * 2 + 1
-			if bit.band(dungeon.cell[c][e], Flag.ROOM) == 0 then
+			local col = d * 2 + 1
+			if bit.band(dungeon.cell[row][col], Flag.ROOM) == 0 then
 				if not((b == 0 or c == 0) and mrandom(2) > 0) then
 					local g = {
 						i = b,
@@ -278,7 +278,7 @@ local function denseRooms(dungeon)
 					}
 					emplaceRoom(dungeon, g)
 					if (dungeon.huge_rooms) then
-						if bit.band(dungeon.cell[c][e], Flag.ROOM) == 0 then
+						if bit.band(dungeon.cell[row][col], Flag.ROOM) == 0 then
 							g = {
 								i = b,
 								j = d,
@@ -601,7 +601,7 @@ local function collapse(dungeon, r, c, xc)
 	local cell = dungeon.cell
 
     -- FIXME: seems wrong
-	if bit.band(cell[r][c], Mask.OPENSPACE) ~= Mask.OPENSPACE then return end
+	if bit.band(cell[r][c], Mask.OPENSPACE) == 0 then return end
 
 	for _, dir in pairs(getKeys(xc)) do
 		if checkTunnel(cell, r, c, xc[dir]) then
