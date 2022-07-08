@@ -159,12 +159,12 @@ local function emplaceRoom(dungeon, room)
 	room = setRoom(dungeon, room)
 
 	local y1 = room.i * 2 + 1
-	local d = room.j * 2 + 1
+	local x1 = room.j * 2 + 1
 	local y2 = (room.i + room.height) * 2 - 1
-	local g = (room.j + room.width) * 2 - 1
+	local x2 = (room.j + room.width) * 2 - 1
 	if y1 < 1 or y2 > dungeon.max_row then return end
-	if d < 1 or g > dungeon.max_col then return end
-	local f = soundRoom(dungeon, y1, d, y2, g)
+	if x1 < 1 or x2 > dungeon.max_col then return end
+	local f = soundRoom(dungeon, y1, x1, y2, x2)
 	if f.blocked then return end
 
 	local f = getKeys(f)
@@ -184,29 +184,29 @@ local function emplaceRoom(dungeon, room)
 	end
 
 	for y = y1, y2 do
-		for i = d, g do            
-            local cell = dungeon.cell[y][i]
+		for x = x1, x2 do            
+            local cell = dungeon.cell[y][x]
 			if bit.band(cell, Flag.ENTRANCE) == Flag.ENTRANCE then
 				cell = bit.band(cell, bit.bnot(Flag.ESPACE))
 			elseif bit.band(cell, Flag.PERIMETER) == Flag.PERIMETER then
                 cell = bit.band(cell, bit.bnot(Flag.PERIMETER))
 			end			
 
-            dungeon.cell[y][i] = bit.bor(cell, bit.bor(Flag.ROOM, bit.lshift(f, 6)))
+            dungeon.cell[y][x] = bit.bor(cell, bit.bor(Flag.ROOM, bit.lshift(f, 6)))
 		end
 	end
 
 	local h = (y2 - y1 + 1) * 10
-	local i = (g - d + 1) * 10
+	local i = (x2 - x1 + 1) * 10
 	room = {
 		id = f,
 		size = room.size,
 		row = y1,
-		col = d,
-		north = y2,
+		col = x1,
+		north = y1,
 		south = y2,
-		west = d,
-		east = g,
+		west = x1,
+		east = x2,
 		height = h,
 		width = i,
 		door = {
@@ -231,19 +231,19 @@ local function emplaceRoom(dungeon, room)
 	end
 
 	for y = y1 - 1, y2 + 1 do
-		if bit.band(dungeon.cell[y][d - 1], Mask.ROOM_ENTRANCE) == 0 then
-			dungeon.cell[y][d - 1] = bit.bor(dungeon.cell[y][d - 1], Flag.PERIMETER)
+		if bit.band(dungeon.cell[y][x1 - 1], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[y][x1 - 1] = bit.bor(dungeon.cell[y][x1 - 1], Flag.PERIMETER)
 		end
-		if bit.band(dungeon.cell[y][g + 1], Mask.ROOM_ENTRANCE) == 0 then
-			dungeon.cell[y][g + 1] = bit.bor(dungeon.cell[y][g + 1], Flag.PERIMETER)
+		if bit.band(dungeon.cell[y][x2 + 1], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[y][x2 + 1] = bit.bor(dungeon.cell[y][x2 + 1], Flag.PERIMETER)
 		end
 	end
-	for i = d - 1, g + 1 do
-		if bit.band(dungeon.cell[y1 - 1][i], Mask.ROOM_ENTRANCE) == 0 then
-			dungeon.cell[y1 - 1][i] = bit.bor(dungeon.cell[y1 - 1][i], Flag.PERIMETER)
+	for x = x1 - 1, x2 + 1 do
+		if bit.band(dungeon.cell[y1 - 1][x], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[y1 - 1][x] = bit.bor(dungeon.cell[y1 - 1][x], Flag.PERIMETER)
 		end
-		if bit.band(dungeon.cell[y2 + 1][i], Mask.ROOM_ENTRANCE) == 0 then
-			dungeon.cell[y2 + 1][i] = bit.bor(dungeon.cell[y2 + 1][i], Flag.PERIMETER)
+		if bit.band(dungeon.cell[y2 + 1][x], Mask.ROOM_ENTRANCE) == 0 then
+			dungeon.cell[y2 + 1][x] = bit.bor(dungeon.cell[y2 + 1][x], Flag.PERIMETER)
 		end
 	end
 end
