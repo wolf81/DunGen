@@ -89,11 +89,11 @@ end
 
 local function applyLayout(dungeon)
 	local layout = dungeon.dungeon_layout
-	if layout == "round" then
+	if layout == 'round' then
 		roundMask(dungeon)
-	elseif layout == "saltire" then
+	elseif layout == 'saltire' then
 		saltireMask(dungeon)
-	elseif layout == "hexagon" then
+	elseif layout == 'hexagon' then
 		hexagonMask(dungeon)
 	elseif DungeonLayout[layout] ~= nil then
 		local mask = DungeonLayout[layout].mask
@@ -260,7 +260,7 @@ local function allocRooms(a, b)
 	local c = c * c
 	local b = mfloor(b / c) * 2
 	
-	if (a.room_layout == "sparse") then b = mfloor(b / 13) end
+	if (a.room_layout == 'sparse') then b = mfloor(b / 13) end
 
 	return b
 end
@@ -300,11 +300,11 @@ local function scatterRooms(dungeon)
 		emplaceRoom(dungeon)
 
 		if dungeon.huge_rooms then
-			b = allocRooms(dungeon, "medium")
+			b = allocRooms(dungeon, 'medium')
 
 			for c = 0, b - 1 do
 				local d = {
-					size = "medium"
+					size = 'medium'
 				}
 				emplaceRoom(dungeon, d)
 			end
@@ -321,7 +321,7 @@ local function emplaceRooms(dungeon)
 	dungeon.n_rooms = 0
 	dungeon.rooms = {}
 
-	if dungeon.room_layout == "dense" then
+	if dungeon.room_layout == 'dense' then
 		denseRooms(dungeon)
 	else
 		scatterRooms(dungeon)
@@ -369,28 +369,28 @@ local function doorSills(dungeon, room)
 
 	if room.north >= 3 then
 		for c = room.west, room.east, 2 do
-			local sill = checkSill(cell, room, room.north, c, "north")
+			local sill = checkSill(cell, room, room.north, c, 'north')
 			if sill ~= nil then list[#list + 1] = sill end
 		end
 	end
 
 	if room.south <= dungeon.n_rows - 3 then
 		for c = room.west, room.east, 2 do
-			local sill = checkSill(cell, room, room.south, c, "south")
+			local sill = checkSill(cell, room, room.south, c, 'south')
 			if sill ~= nil then list[#list + 1] = sill end
 		end
 	end
 
 	if room.west >= 3 then
 		for r = room.north, room.south, 2 do
-			local sill = checkSill(cell, room, r, room.west, "west")
+			local sill = checkSill(cell, room, r, room.west, 'west')
 			if sill ~= nil then list[#list + 1] = sill end
 		end
 	end
 
 	if room.east <= dungeon.n_cols - 3 then
 		for r = room.north, room.south, 2 do
-			local sill = checkSill(cell, room, r, room.east, "east")			
+			local sill = checkSill(cell, room, r, room.east, 'east')			
 			if sill ~= nil then list[#list + 1] = sill end
 		end
 	end
@@ -427,32 +427,32 @@ local function openDoor(dungeon, room, sill)
 
     if door_type == Flags.ARCH then
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.ARCH)
-    	door.key = "arch"
-    	door.type = "Archway"
+    	door.key = 'arch'
+    	door.type = 'Archway'
     elseif door_type == Flags.DOOR then
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.DOOR)
-    	door.key = "open"
-    	door.type = "Unlocked Door"
+    	door.key = 'open'
+    	door.type = 'Unlocked Door'
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('o'), 24))
     elseif door_type == Flags.LOCKED then
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.LOCKED)
-    	door.key = "lock"
-    	door.type = "Locked Door"
+    	door.key = 'lock'
+    	door.type = 'Locked Door'
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('x'), 24))
     elseif door_type == Flags.TRAPPED then
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.TRAPPED)
-    	door.key = "trap"
-    	door.type = "Trapped Door"
+    	door.key = 'trap'
+    	door.type = 'Trapped Door'
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('t'), 24))
     elseif door_type == Flags.SECRET then
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.SECRET)
-    	door.key = "secret"
-    	door.type = "Secret Door"
+    	door.key = 'secret'
+    	door.type = 'Secret Door'
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('s'), 24))
     elseif door_type == Flags.PORTC then	        	
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], Flags.PORTC)
-    	door.key = "portc"
-    	door.type = "Portcullis"
+    	door.key = 'portc'
+    	door.type = 'Portcullis'
     	cell[door_r][door_c] = bit.bor(cell[door_r][door_c], bit.lshift(string.byte('#'), 24))
     end
 
@@ -659,9 +659,9 @@ local function cleanDungeon(dungeon)
 
 		-- TODO: seems buggy with stair rendering - also not sure what this adds
 
-		if dungeon.corridor_layout == "errant" then
+		if dungeon.corridor_layout == 'errant' then
 			dungeon.close_arcs = dungeon.remove_pct
-		elseif dungeon.corridor_layout == "straight" then
+		elseif dungeon.corridor_layout == 'straight' then
 			dungeon.close_arcs = dungeon.remove_pct
 		end
 	end
@@ -879,12 +879,12 @@ local function emplaceStairs(dungeon)
 
 		if s_type == 1 then
 			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_DN)
-			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte("d"), 24))
-			stair.key = "down"
+			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte('d'), 24))
+			stair.key = 'down'
 		else
 			cell[r][c] = bit.bor(cell[r][c], Flags.STAIR_UP)
-			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte("u"), 24))
-			stair.key = "up"
+			cell[r][c] = bit.bor(cell[r][c], bit.lshift(string.byte('u'), 24))
+			stair.key = 'up'
 		end
 
 		table.insert(dungeon.stair, stair)
