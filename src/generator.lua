@@ -129,6 +129,7 @@ local function setRoom(dungeon, room)
 	local r_size = RoomSize[room.size or dungeon.room_size]
 	local size = r_size.size or 2
 	local radix = r_size.radix or 5
+
 	if room.height == nil then
 		if room.i ~= nil then
 			room.height = mrandom(mmin(mmax(dungeon.n_i - size - room.i, 0), radix)) + size
@@ -196,8 +197,6 @@ local function emplaceRoom(dungeon, room)
 		end
 	end
 
-	local h = (y2 - y1 + 1) * 10
-	local i = (x2 - x1 + 1) * 10
 	room = {
 		id = f,
 		size = room.size,
@@ -207,8 +206,8 @@ local function emplaceRoom(dungeon, room)
 		south = y2,
 		west = x1,
 		east = x2,
-		height = h,
-		width = i,
+		height = (y2 - y1 + 1) * 10,
+		width = (x2 - x1 + 1) * 10,
 		door = {
 			north = {},
 			south = {},
@@ -248,19 +247,18 @@ local function emplaceRoom(dungeon, room)
 	end
 end
 
-local function allocRooms(dungeon, b)
-	local c = b or dungeon.room_size
-	local b = dungeon.n_cols * dungeon.n_rows
-	local d = RoomSize[c]
-	local c = d.size or 2
-	local d = d.radix or 5
-	local c = c + d + 1
-	local c = c * c
-	local b = mfloor(b / c) * 2
+local function allocRooms(dungeon, room_size)
+	local area = dungeon.n_cols * dungeon.n_rows
+	local r_size = RoomSize[room_size or dungeon.room_size]
+	local size = r_size.size or 2
+	local radix = r_size.radix or 5
+	local count = math.floor(area / math.pow(size + radix + 1, 2)) * 2
 	
-	if (dungeon.room_layout == 'sparse') then b = mfloor(b / 13) end
+	if (dungeon.room_layout == 'sparse') then
+		count = mfloor(count / 13) 
+	end
 
-	return b
+	return count
 end
 
 local function denseRooms(dungeon)
@@ -461,7 +459,7 @@ local function openRoom(dungeon, room)
 	local n_opens = allocOpens(dungeon, room)
 	local cell = dungeon.cell
 
-	for i = 0, n_opens do
+	for i = 0, n_opens - 1 do
 		if #list == 0 then break end
 
 		local idx = mrandom(#list)
