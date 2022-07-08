@@ -50,13 +50,6 @@ function shuffle(tbl)
 end
 
 --[[
-Check if x is greater or equal than min and less than max
-]]
-function inRange(x, min, max)
-	return x >= min and x < max
-end
-
---[[
 Traverse a table by alphabetically sorted keys or using custom sort function.
 ]]
 function pairsByKeys(tbl, f)

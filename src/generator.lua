@@ -658,7 +658,7 @@ local function removeDeadends(dungeon, percentage)
 end
 
 local function closeArcs(dungeon)
-	collapseTunnels(dungeon, dungeon.close_arcs, close_arcs)
+	collapseTunnels(dungeon, dungeon.close_arcs, CloseArc)
 end
 
 local function cleanDungeon(dungeon)	
