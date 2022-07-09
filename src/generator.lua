@@ -6,8 +6,10 @@ require 'src.stair_end'
 require 'src.config'
 
 local Dungeon = require 'src.dungeon'
+local prng = require 'src.prng'
 
-local mfloor, mrandom, msqrt, mpow = math.floor, math.random, math.sqrt, math.pow
+local mrandom = prng.random
+local mfloor, msqrt, mpow = math.floor, math.sqrt, math.pow
 local mmax, mmin, mabs, mhuge = math.max, math.min, math.abs, math.huge
 
 local function getDoorType(dungeon)
@@ -132,23 +134,25 @@ local function setRoom(dungeon, room)
 
 	if room.height == nil then
 		if room.i ~= nil then
-			room.height = mrandom(mmin(mmax(dungeon.n_i - size - room.i, 0), radix)) + size
+			local h = mmin(mmax(dungeon.n_i - size - room.i, 0), radix)
+			room.height = mrandom(0, h) + size
 		else
-			room.height = mrandom(radix) + size
+			room.height = mrandom(0, radix) + size
 		end
 	end
 	if room.width == nil then
 		if room.j ~= nil then
-			room.width = mrandom(mmax(dungeon.n_j - size - room.j, 0)) + size
+			local w = mmin(mmax(dungeon.n_j - size - room.j, 0), radix)
+			room.width = mrandom(0, w) + size
 		else
-			room.width = mrandom(radix) + size
+			room.width = mrandom(0, radix) + size
 		end
 	end
 	if room.i == nil then
-		room.i = mrandom(dungeon.n_i - room.height)
+		room.i = mrandom(0, dungeon.n_i - room.height - 1)
 	end
 	if room.j == nil then
-		room.j = mrandom(dungeon.n_j - room.width)
+		room.j = mrandom(0, dungeon.n_j - room.width - 1)
 	end
 
 	return room
@@ -267,7 +271,7 @@ local function denseRooms(dungeon)
 		for j = 0, dungeon.n_j - 1 do
 			local col = j * 2 + 1
 			if bit.band(dungeon.cell[row][col], Flag.ROOM) == 0 then
-				if not((i == 0 or j == 0) and mrandom(2) > 0) then
+				if not((i == 0 or j == 0) and mrandom(0, 2) > 0) then
 					emplaceRoom(dungeon, {
 						i = i,
 						j = j,
@@ -323,7 +327,7 @@ local function allocOpens(dungeon, room)
 	local room_h = (room.south - room.north) / 2 + 1
 	local room_w = (room.east - room.west) / 2 + 1
 	local base = mfloor(msqrt(room_w * room_h))
-	return base + mrandom(base)
+	return base + mrandom(0, base)
 end
 
 local function checkSill(cell, room, sill_r, sill_c, dir)
@@ -627,7 +631,7 @@ local function collapseTunnels(dungeon, percentage, xc)
 
 			if bit.band(cell[r][c], Mask.OPENSPACE) == 0 then goto continue end
 			if bit.band(cell[r][c], Mask.STAIRS) ~= 0 then goto continue end
-			if all or mrandom(100) < percentage then
+			if all or mrandom(0, 100) < percentage then
 				collapse(dungeon, r, c, xc)
 			end
 
@@ -717,7 +721,7 @@ local function tunnelDirs(dungeon, last_dir)
 	local p = dungeon.straight_pct
 
 	if last_dir ~= nil and p ~= nil then
-		if mrandom(100) < p then
+		if mrandom(0, 100) < p then
 			table.insert(dirs, 1, last_dir)
 		end
 	end
@@ -853,8 +857,8 @@ local function emplaceStairs(dungeon)
 	if n == 0 then return end
 
 	if n == mhuge then
-		n = dungeon.n_cols * dungeon.n_rows
-		n = 2 + mrandom(n / 1000)
+		area = dungeon.n_cols * dungeon.n_rows
+		n = 2 + mrandom(0, area / 1000)
 	end
 
 	local list = stairEnds(dungeon)
