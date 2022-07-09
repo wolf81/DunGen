@@ -567,24 +567,6 @@ local function emptyBlocks(dungeon)
 			if bit.band(cell[r][c], Flag.BLOCKED) ~= 0 then
 				cell[r][c] = Flag.NOTHING
 			end
-
-            --[[
-			-- inside rooms, remove all corridors
-			if bit.band(cell[r][c], Mask.OPENSPACE) == Mask.OPENSPACE then
-				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flag.CORRIDOR))
-			end
-
-			-- remove all perimeters around rooms
-			if bit.band(cell[r][c], Flag.PERIMETER) ~= 0 then
-				cell[r][c] = bit.band(cell[r][c], bit.bnot(Flag.PERIMETER))
-			end
-
-			-- only tag door cells if connected to corridor
-			if (bit.band(cell[r][c], Mask.DOORSPACE) ~= 0 and 
-				bit.band(cell[r][c], Flag.CORRIDOR) == 0) then
-				cell[r][c] = bit.band(cell[r][c], bit.bnot(Mask.DOORSPACE))
-			end
-            --]]
 		end
 	end
 end
@@ -680,20 +662,6 @@ local function openRooms(dungeon)
 		openRoom(dungeon, dungeon.room[id])
 	end
 end
-
---[[
-    var b;
-    for (b = 1; b <= dungeon.n_rooms; b++) {
-        var c = dungeon.room[b],
-            d = c.id.toString(),
-            e = d.length,
-            g = Math.floor((c.north + c.south) / 2);
-        c = Math.floor((c.west + c.east - e) / 2) + 1;
-        var f;
-        for (f = 0; f < e; f++) dungeon.cell[g][c + f] |= d.charCodeAt(f) << 24
-    }
-    return a
-]]
 
 local function labelRooms(dungeon)
 	local cell = dungeon.cell
@@ -889,7 +857,7 @@ local function emplaceStairs(dungeon)
 end
 
 local function generate(options)
-	love.math.setRandomSeed(options.seed)
+	prng.randomseed(options.seed)
 
 	local dungeon = Dungeon(options)
 

@@ -2,10 +2,11 @@ require 'src.utils'
 
 local Renderer = require 'src.renderer'
 local Generator = require 'src.generator'
+local prng = require 'src.prng'
 
 local function generatorDefaults()
 	return {
-		seed = love.timer.getTime(),
+		seed 				= prng.random(),
 		--^ number
 		dungeon_size 		= 'medium',
 		--^ fine|dimin|tiny|small|medium|large|huge|gargant|colossal
@@ -42,12 +43,10 @@ end
 local function generate(options)
 	local options = merge(generatorDefaults(), options or {})
 
-	--[[
 	print('\ngenerate:')
 	for k, v in pairs(options) do
 		print(' ' .. k, v)
 	end
-	--]]
 
 	return Generator.generate(options)
 end

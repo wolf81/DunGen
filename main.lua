@@ -22,6 +22,7 @@ end
 
 local function generate()
 	local dungeonOptions = {
+		seed = 'The unnamed horror',
 		dungeon_size = getRandomKey(DungeonSize),
 		dungeon_layout = getRandomKey(DungeonLayout),
 		doors = getRandomKey(Doors),
@@ -34,8 +35,6 @@ local function generate()
 
 	dungeon = DunGen.generate(dungeonOptions)
 
-	print(dungeon.seed)
-
 	local cell_h = math.max(window_h / (dungeon.n_rows + 1), 5)
 	renderOptions.cell_size = cell_h
 
@@ -43,8 +42,11 @@ local function generate()
 
 	local font = love.graphics.getFont()
 	info_texts = {}
-	for k, v in pairs(dungeonOptions) do
-		info_texts[#info_texts + 1] = love.graphics.newText(font, k .. ': ' .. tostring(v))
+	local info_keys = getKeys(dungeonOptions)
+	table.sort(info_keys)
+	for _, info_key in ipairs(info_keys) do
+		local value = dungeonOptions[info_key]
+		info_texts[#info_texts + 1] = love.graphics.newText(font, info_key .. ': ' .. tostring(value))
 	end
 end
 

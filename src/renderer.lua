@@ -515,9 +515,6 @@ local function imageAscend(stair_dim, color)
 end
 
 local function imageDescend(stair_dim, color)
-            for k,v in pairs(stair_dim) do
-                print(k, v)
-            end
     if stair_dim.xc ~= nil then
         local x = stair_dim.xc
         for _, y in ipairs(stair_dim.list) do
